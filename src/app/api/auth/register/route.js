@@ -53,13 +53,19 @@ export async function POST(req) {
             );
         }
 
-        await Student.create({
+        const studentData = {
             studentId: formattedId,
             email,
             password: hashedPassword,
             year,
             semester,
-        });
+        };
+        console.log("Creating student document with data:", JSON.stringify(studentData, null, 2));
+        
+        const newStudent = new Student(studentData);
+        console.log("Mongoose document object keys:", Object.keys(newStudent.toObject()));
+        
+        await newStudent.save();
 
         return NextResponse.json(
             { message: "Student registered successfully" },

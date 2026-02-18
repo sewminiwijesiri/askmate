@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Toast from "../../components/Toast";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -60,7 +61,7 @@ export default function RegisterPage() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setToast({ ...toast, message: "" });
     
     // Validate all fields
     const newErrors = {};
@@ -114,15 +115,17 @@ export default function RegisterPage() {
       });
 
       const data = await res.json();
-      setMessage(data.message);
       
       if (res.ok) {
+        setToast({ message: data.message || "Registration successful! Redirecting...", type: "success" });
         setTimeout(() => {
           router.push("/login");
         }, 1500);
+      } else {
+        setToast({ message: data.message || "Registration failed.", type: "error" });
       }
     } catch (error) {
-      setMessage("An error occurred. Please try again.");
+      setToast({ message: "An error occurred. Please try again.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +145,7 @@ export default function RegisterPage() {
                 onClick={() => {
                   setRole("student");
                   setErrors({});
-                  setMessage("");
+                  setToast({ ...toast, message: "" });
                 }}
                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
                     role === "student" 
@@ -157,7 +160,7 @@ export default function RegisterPage() {
                 onClick={() => {
                   setRole("lecturer");
                   setErrors({});
-                  setMessage("");
+                  setToast({ ...toast, message: "" });
                 }}
                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
                     role === "lecturer" 
@@ -366,11 +369,11 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {message && (
-          <div className={`mt-4 p-2 rounded-lg text-xs text-center ${message.includes("success") || message.includes("successful") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {message}
-          </div>
-        )}
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, message: "" })} 
+        />
 
         <div className="mt-4 text-center text-xs text-gray-500">
           Already have an account?{" "}

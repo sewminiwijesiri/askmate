@@ -20,4 +20,9 @@ const LecturerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Lecturer || mongoose.model("Lecturer", LecturerSchema);
+if (mongoose.models.Lecturer) {
+  delete mongoose.models.Lecturer;
+}
+
+const Lecturer = mongoose.model("Lecturer", LecturerSchema);
+export default Lecturer;

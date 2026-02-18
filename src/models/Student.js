@@ -28,4 +28,9 @@ const StudentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Student || mongoose.model("Student", StudentSchema);
+if (mongoose.models.Student) {
+  delete mongoose.models.Student;
+}
+
+const Student = mongoose.model("Student", StudentSchema);
+export default Student;

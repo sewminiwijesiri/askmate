@@ -48,6 +48,18 @@ export default function DashboardPage() {
                 <span className="font-medium w-24">Role:</span> 
                 <span className="capitalize px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">{user.role}</span>
               </p>
+              {user.role === 'student' && (
+                <>
+                  <p className="flex items-center text-gray-700">
+                    <span className="font-medium w-24">Year:</span> 
+                    <span>{user.year}</span>
+                  </p>
+                  <p className="flex items-center text-gray-700">
+                    <span className="font-medium w-24">Semester:</span> 
+                    <span>{user.semester}</span>
+                  </p>
+                </>
+              )}
             </div>
           </div>
           

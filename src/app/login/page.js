@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Toast from "../../components/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function LoginPage() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
+  const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -33,7 +34,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setToast({ ...toast, message: "" });
 
     // Validate
     const newErrors = {};
@@ -58,9 +59,9 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      setMessage(data.message);
 
       if (res.ok) {
+        setToast({ message: data.message || "Login successful!", type: "success" });
         if (data.token) {
           localStorage.setItem("token", data.token);
           // Store user info if needed
@@ -71,9 +72,11 @@ export default function LoginPage() {
         setTimeout(() => {
           router.push("/dashboard"); // Redirect to dashboard or home
         }, 1500);
+      } else {
+        setToast({ message: data.message || "Login failed.", type: "error" });
       }
     } catch (error) {
-      setMessage("Invalid credentials. Please try again.");
+      setToast({ message: "Invalid credentials. Please try again.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +96,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setRole("student");
                   setErrors({});
-                  setMessage("");
+                  setToast({ ...toast, message: "" });
                 }}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                     role === "student" 
@@ -108,7 +111,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setRole("lecturer");
                   setErrors({});
-                  setMessage("");
+                  setToast({ ...toast, message: "" });
                 }}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                     role === "lecturer" 
@@ -193,11 +196,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {message && (
-          <div className={`mt-4 p-3 rounded-lg text-sm text-center ${message.includes("success") || message.includes("successful") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {message}
-          </div>
-        )}
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, message: "" })} 
+        />
 
         <div className="mt-6 text-center text-sm text-gray-500">
           Don't have an account?{" "}

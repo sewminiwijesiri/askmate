@@ -58,7 +58,8 @@ export async function POST(req) {
         id: user._id,
         userId: role === 'student' ? user.studentId : user.lecturerId,
         role: userRole,
-        email: user.email
+        email: user.email,
+        ...(role === 'student' && { year: user.year, semester: user.semester })
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
@@ -72,7 +73,8 @@ export async function POST(req) {
             id: user._id,
             userId: role === 'student' ? user.studentId : user.lecturerId,
             role: userRole,
-            email: user.email
+            email: user.email,
+            ...(role === 'student' && { year: user.year, semester: user.semester })
         }
       },
       { status: 200 }
