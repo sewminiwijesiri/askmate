@@ -6,19 +6,21 @@ if (!MONGODB_URI) {
   throw new Error("Please define MONGODB_URI in .env.local");
 }
 
-let isConnected = false;
+let cached = global.mongoose;
 
-export const connectDB = async () => {
-  if (isConnected) {
-    return;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+export async function connectDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
   }
 
-  try {
-    const db = await mongoose.connect(MONGODB_URI);
-    isConnected = db.connections[0].readyState;
-    console.log("✅ MongoDB Connected Successfully");
-  } catch (error) {
-    console.log("❌ MongoDB Connection Failed");
-    console.error(error);
-  }
-};
+  cached.conn = await cached.promise;
+  return cached.conn;
+}

@@ -1,65 +1,88 @@
-import Image from "next/image";
+
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800 p-4">
+      <main className="flex flex-col items-center text-center space-y-8 max-w-2xl px-4 sm:px-6 lg:px-8">
+        
+        {/* Hero Section */}
+        <div className="space-y-4">
+          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-gray-900 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 pb-2">
+            AskMate
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 font-medium">
+            Your intelligent companion for answers and collaboration.
+          </p>
+          <p className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
+            Join our community to ask questions, share knowledge, and connect with experts in real-time.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center pt-8">
+          <Link 
+            href="/register" 
+            className="group relative inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-white transition-all duration-200 bg-indigo-600 rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 shadow-lg hover:shadow-indigo-500/30 dark:focus:ring-offset-zinc-900"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Get Started
+            <svg 
+              className="w-5 h-5 ml-2 -mr-1 transition-transform group-hover:translate-x-1" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Link>
+          
+          <Link 
+            href="/login" 
+            className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold text-gray-700 transition-all duration-200 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:bg-zinc-800 dark:text-gray-200 dark:border-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-white dark:focus:ring-offset-zinc-900 shadow-sm"
           >
-            Documentation
-          </a>
+            Sign In
+          </Link>
         </div>
+
+        {/* Features Preview (Optional - keeping it clean for now) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-16 text-left w-full">
+          <div className="p-4 rounded-2xl bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border border-gray-100 dark:border-zinc-700 hover:border-indigo-100 dark:hover:border-indigo-900 transition-colors">
+            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Ask Questions</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Get answers from the community quickly.</p>
+          </div>
+          
+          <div className="p-4 rounded-2xl bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border border-gray-100 dark:border-zinc-700 hover:border-indigo-100 dark:hover:border-indigo-900 transition-colors">
+            <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Collaborate</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Engage in discussions and share insights.</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border border-gray-100 dark:border-zinc-700 hover:border-indigo-100 dark:hover:border-indigo-900 transition-colors">
+            <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Find Solutions</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Discover extensive knowledge base.</p>
+          </div>
+        </div>
+
       </main>
+      
+      {/* Footer / Copyright */}
+      <footer className="absolute bottom-4 text-center text-sm text-gray-400 dark:text-gray-500">
+        © {new Date().getFullYear()} AskMate. All rights reserved.
+      </footer>
     </div>
   );
 }
