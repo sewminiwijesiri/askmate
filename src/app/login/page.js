@@ -1,13 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Toast from "../../components/Toast";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-orange-50">
+      <div className="animate-pulse text-primary font-medium">Loading login form...</div>
+    </div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [role, setRole] = useState("student");
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "student" || roleParam === "lecturer") {
+      setRole(roleParam);
+    }
+  }, [searchParams]);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "student" || roleParam === "lecturer") {
+      setRole(roleParam);
+      setIsAdmin(false);
+    } else if (roleParam === "admin") {
+      setIsAdmin(true);
+      setRole("admin");
+    }
+  }, [searchParams]);
+
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,11 +51,13 @@ export default function LoginPage() {
     let error = "";
     if (name === "id") {
       if (!value) {
-        error = "ID is required";
-      } else if (role === "student") {
-        if (!/^IT\d{8}$/i.test(value)) error = "Invalid Student ID (e.g., IT12345678)";
-      } else {
-        if (!/^LC\d{8}$/i.test(value)) error = "Invalid Lecturer ID (e.g., LC12345678)";
+        error = isAdmin ? "Username is required" : "ID is required";
+      } else if (!isAdmin) {
+        if (role === "student") {
+          if (!/^IT\d{8}$/i.test(value)) error = "Invalid Student ID (e.g., IT12345678)";
+        } else {
+          if (!/^LC\d{8}$/i.test(value)) error = "Invalid Lecturer ID (e.g., LC12345678)";
+        }
       }
     } else if (name === "password") {
          if (!value) error = "Password is required";
@@ -38,9 +72,12 @@ export default function LoginPage() {
 
     // Validate
     const newErrors = {};
-    if (!id) newErrors.id = "ID is required";
-    else if (role === "student" && !/^IT\d{8}$/i.test(id)) newErrors.id = "Invalid Student ID (e.g., IT12345678)";
-    else if (role === "lecturer" && !/^LC\d{8}$/i.test(id)) newErrors.id = "Invalid Lecturer ID (e.g., LC12345678)";
+    if (!id) {
+        newErrors.id = isAdmin ? "Username is required" : "ID is required";
+    } else if (!isAdmin) {
+        if (role === "student" && !/^IT\d{8}$/i.test(id)) newErrors.id = "Invalid Student ID (e.g., IT12345678)";
+        else if (role === "lecturer" && !/^LC\d{8}$/i.test(id)) newErrors.id = "Invalid Lecturer ID (e.g., LC12345678)";
+    }
 
     if (!password) newErrors.password = "Password is required";
 
@@ -55,7 +92,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ role, id, password }),
+        body: JSON.stringify({ role: isAdmin ? "admin" : role, id, password }),
       });
 
       const data = await res.json();
@@ -64,13 +101,12 @@ export default function LoginPage() {
         setToast({ message: data.message || "Login successful!", type: "success" });
         if (data.token) {
           localStorage.setItem("token", data.token);
-          // Store user info if needed
           if (data.user) {
             localStorage.setItem("user", JSON.stringify(data.user));
           }
         }
         setTimeout(() => {
-          router.push("/dashboard"); // Redirect to dashboard or home
+          router.push("/dashboard");
         }, 1500);
       } else {
         setToast({ message: data.message || "Login failed.", type: "error" });
@@ -83,55 +119,61 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-orange-50 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-500">Sign in to your AskMate account</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {isAdmin ? "Admin Login" : "Welcome Back"}
+          </h1>
+          <p className="text-gray-500">
+            {isAdmin ? "Manage the AskMate platform" : "Sign in to your AskMate account"}
+          </p>
         </div>
 
-        <div className="mb-6 flex p-1 bg-gray-100 rounded-lg">
-            <button
-                type="button"
-                onClick={() => {
-                  setRole("student");
-                  setErrors({});
-                  setToast({ ...toast, message: "" });
-                }}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                    role === "student" 
-                    ? "bg-white text-indigo-600 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-                Student
-            </button>
-            <button
-                type="button"
-                onClick={() => {
-                  setRole("lecturer");
-                  setErrors({});
-                  setToast({ ...toast, message: "" });
-                }}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                    role === "lecturer" 
-                    ? "bg-white text-indigo-600 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-                Lecturer
-            </button>
-        </div>
+        {!isAdmin && (
+          <div className="mb-6 flex p-1 bg-gray-100 rounded-lg">
+              <button
+                  type="button"
+                  onClick={() => {
+                    setRole("student");
+                    setErrors({});
+                    setToast({ ...toast, message: "" });
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                      role === "student" 
+                      ? "bg-white text-primary shadow-sm ring-1 ring-gray-200" 
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+              >
+                  Student
+              </button>
+              <button
+                  type="button"
+                  onClick={() => {
+                    setRole("lecturer");
+                    setErrors({});
+                    setToast({ ...toast, message: "" });
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                      role === "lecturer" 
+                      ? "bg-white text-primary shadow-sm ring-1 ring-gray-200" 
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+              >
+                  Lecturer
+              </button>
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {role === "student" ? "Student ID" : "Lecturer ID"}
+              {isAdmin ? "Username" : (role === "student" ? "Student ID" : "Lecturer ID")}
             </label>
             <input
               type="text"
               name="id"
-              placeholder={role === "student" ? "ITXXXXXXXX" : "LCXXXXXXXX"}
+              placeholder={isAdmin ? "admin_username" : (role === "student" ? "ITXXXXXXXX" : "LCXXXXXXXX")}
               value={id}
               onChange={(e) => {
                 setId(e.target.value);
@@ -190,9 +232,9 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+            className={`w-full py-3 px-4 ${isAdmin ? 'bg-gray-900 hover:bg-gray-800' : 'bg-primary hover:bg-blue-900'} text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed`}
           >
-            {isLoading ? "Signing In..." : "Login"}
+            {isLoading ? "Signing In..." : (isAdmin ? "Login as Admin" : "Login")}
           </button>
         </form>
 
@@ -202,11 +244,30 @@ export default function LoginPage() {
           onClose={() => setToast({ ...toast, message: "" })} 
         />
 
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-indigo-600 hover:text-indigo-500 font-medium">
-            Register
-          </Link>
+        <div className="mt-6 text-center text-sm text-gray-500 space-y-4">
+          {!isAdmin && (
+            <div>
+              Don't have an account?{" "}
+              <Link href="/register" className="text-secondary hover:text-blue-600 font-medium">
+                Register
+              </Link>
+            </div>
+          )}
+          
+          <div className={`${!isAdmin ? 'pt-4 border-t border-gray-100' : ''}`}>
+            <button 
+              onClick={() => {
+                setIsAdmin(!isAdmin);
+                setErrors({});
+                setId("");
+                setPassword("");
+                setToast({ ...toast, message: "" });
+              }}
+              className="text-secondary hover:text-blue-600 font-medium transition-colors"
+            >
+              {isAdmin ? "← Back to User Login" : "Login as Admin"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

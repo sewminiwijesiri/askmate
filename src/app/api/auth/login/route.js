@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/mongodb";
 import Student from "@/models/Student";
 import Lecturer from "@/models/Lecturer";
+import Admin from "@/models/Admin";
 
 export async function POST(req) {
   try {
@@ -26,6 +27,8 @@ export async function POST(req) {
         user = await Student.findOne({ studentId: formattedId });
     } else if (role === 'lecturer') {
         user = await Lecturer.findOne({ lecturerId: formattedId });
+    } else if (role === 'admin') {
+        user = await Admin.findOne({ username: id }); // Admin uses username, and might not be uppercase
     } else {
         return NextResponse.json(
             { message: "Invalid role" },
@@ -56,9 +59,9 @@ export async function POST(req) {
     const token = jwt.sign(
       {
         id: user._id,
-        userId: role === 'student' ? user.studentId : user.lecturerId,
+        userId: role === 'admin' ? user.username : (role === 'student' ? user.studentId : user.lecturerId),
         role: userRole,
-        email: user.email,
+        email: user.email || 'admin@askmate.com',
         ...(role === 'student' && { year: user.year, semester: user.semester })
       },
       process.env.JWT_SECRET,
@@ -71,9 +74,9 @@ export async function POST(req) {
         token,
         user: {
             id: user._id,
-            userId: role === 'student' ? user.studentId : user.lecturerId,
+            userId: role === 'admin' ? user.username : (role === 'student' ? user.studentId : user.lecturerId),
             role: userRole,
-            email: user.email,
+            email: user.email || 'admin@askmate.com',
             ...(role === 'student' && { year: user.year, semester: user.semester })
         }
       },

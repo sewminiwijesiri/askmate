@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import Student from "@/models/Student";
 import Lecturer from "@/models/Lecturer";
+import Helper from "@/models/Helper";
 
 export async function POST(req) {
   try {
-    const { role, id, email, password, year, semester } = await req.json();
+    const { role, id, email, password, year, semester, name, graduationYear, skills } = await req.json();
 
     if (!role || !id || !email || !password) {
       return NextResponse.json(
@@ -106,6 +107,36 @@ export async function POST(req) {
 
         return NextResponse.json(
             { message: "Lecturer registered successfully" },
+            { status: 201 }
+        );
+    } else if (role === "helper") {
+        if (!name || !graduationYear || !skills) {
+            return NextResponse.json(
+                { message: "Name, Graduation Year, and Skills are required for helpers" },
+                { status: 400 }
+            );
+        }
+
+        const existingHelper = await Helper.findOne({ $or: [{ studentID: formattedId }, { email }] });
+        if (existingHelper) {
+            return NextResponse.json(
+                { message: "Helper already registered with this Student ID or Email" },
+                { status: 400 }
+            );
+        }
+
+        await Helper.create({
+            name,
+            studentID: formattedId,
+            email,
+            password: hashedPassword,
+            graduationYear,
+            skills,
+            adminApproved: false,
+        });
+
+        return NextResponse.json(
+            { message: "Helper registration submitted for approval" },
             { status: 201 }
         );
     } else {
