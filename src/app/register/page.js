@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [role, setRole] = useState("student");
   const [id, setId] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,6 +17,8 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
+  const [skills, setSkills] = useState("");
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -27,32 +30,42 @@ export default function RegisterPage() {
         error = "ID is required";
       } else if (role === "student") {
         if (!/^IT\d{8}$/i.test(value)) error = "Invalid Student ID (e.g., IT12345678)";
-      } else {
+      } else if (role === "lecturer") {
         if (!/^LC\d{8}$/i.test(value)) error = "Invalid Lecturer ID (e.g., LC12345678)";
+      } else if (role === "helper") {
+        if (!value) error = "Student ID is required";
       }
     } else if (name === "email") {
       if (!value) {
         error = "Email is required";
+      } else if (role === "helper") {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Invalid email format";
       } else {
-         const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
-         if (id && idPattern.test(id)) {
-            const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
-            if (value.toLowerCase() !== expectedEmail) {
-                error = `Email must be ${expectedEmail}`;
-            }
-         } else if (!/@my\.sliit\.lk$/i.test(value)) {
-             error = "Must be a valid SLIIT email (@my.sliit.lk)";
-         }
+        const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
+        if (id && idPattern.test(id)) {
+          const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
+          if (value.toLowerCase() !== expectedEmail) {
+            error = `Email must be ${expectedEmail}`;
+          }
+        } else if (!/@my\.sliit\.lk$/i.test(value)) {
+          error = "Must be a valid SLIIT email (@my.sliit.lk)";
+        }
       }
     } else if (name === "password") {
-       if (!value) error = "Password is required";
-       else if (value.length < 6) error = "Password must be at least 6 characters";
+      if (!value) error = "Password is required";
+      else if (value.length < 6) error = "Password must be at least 6 characters";
     } else if (name === "confirmPassword") {
-       if (value !== password) error = "Passwords do not match";
+      if (value !== password) error = "Passwords do not match";
+    } else if (name === "name" && role === "helper") {
+      if (!value) error = "Name is required";
     } else if (name === "year" && role === "student") {
-       if (!value) error = "Please select a year";
+      if (!value) error = "Please select a year";
     } else if (name === "semester" && role === "student") {
-       if (!value) error = "Please select a semester";
+      if (!value) error = "Please select a semester";
+    } else if (name === "graduationYear" && role === "helper") {
+      if (!value) error = "Graduation year is required";
+    } else if (name === "skills" && role === "helper") {
+      if (!value) error = "Skills are required";
     }
     
     setErrors((prev) => ({ ...prev, [name]: error }));
@@ -71,18 +84,22 @@ export default function RegisterPage() {
     else if (role === "student" && !/^IT\d{8}$/i.test(id)) newErrors.id = "Invalid Student ID (e.g., IT12345678)";
     else if (role === "lecturer" && !/^LC\d{8}$/i.test(id)) newErrors.id = "Invalid Lecturer ID (e.g., LC12345678)";
 
+    if (role === "helper" && !name) newErrors.name = "Name is required";
+
     // Email Validation
     if (!email) newErrors.email = "Email is required";
-    else {
-        const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
-        if (id && idPattern.test(id)) {
-             const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
-             if (email.toLowerCase() !== expectedEmail) {
-                 newErrors.email = `Email must be ${expectedEmail}`;
-             }
-        } else if (!/@my\.sliit\.lk$/i.test(email)) {
-             newErrors.email = "Must be a valid SLIIT email (@my.sliit.lk)";
+    else if (role === "helper") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Invalid email format";
+    } else {
+      const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
+      if (id && idPattern.test(id)) {
+        const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
+        if (email.toLowerCase() !== expectedEmail) {
+          newErrors.email = `Email must be ${expectedEmail}`;
         }
+      } else if (!/@my\.sliit\.lk$/i.test(email)) {
+        newErrors.email = "Must be a valid SLIIT email (@my.sliit.lk)";
+      }
     }
 
     // Password Validation
@@ -93,25 +110,43 @@ export default function RegisterPage() {
 
     // Student fields
     if (role === "student") {
-        if (!year) newErrors.year = "Please select a year";
-        if (!semester) newErrors.semester = "Please select a semester";
+      if (!year) newErrors.year = "Please select a year";
+      if (!semester) newErrors.semester = "Please select a semester";
+    }
+
+    // Helper fields
+    if (role === "helper") {
+      if (!graduationYear) newErrors.graduationYear = "Graduation year is required";
+      if (!skills) newErrors.skills = "Skills are required";
     }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-        return;
+      return;
     }
 
     setIsLoading(true);
 
     try {
+      const skillsArray = role === "helper" ? skills.split(",").map(skill => skill.trim()).filter(skill => skill !== "") : [];
+      
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ role, id, email, password, year, semester }),
+        body: JSON.stringify({ 
+          role, 
+          id, 
+          email, 
+          password, 
+          year, 
+          semester,
+          name,
+          graduationYear: graduationYear ? parseInt(graduationYear) : undefined,
+          skills: role === "helper" ? skillsArray : undefined
+        }),
       });
 
       const data = await res.json();
@@ -119,7 +154,7 @@ export default function RegisterPage() {
       if (res.ok) {
         setToast({ message: data.message || "Registration successful! Redirecting...", type: "success" });
         setTimeout(() => {
-          router.push("/login");
+          router.push(`/login?role=${role}`);
         }, 1500);
       } else {
         setToast({ message: data.message || "Registration failed.", type: "error" });
@@ -132,7 +167,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-orange-50 p-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
         <div className="text-center mb-5">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Create Account</h1>
@@ -140,47 +175,85 @@ export default function RegisterPage() {
         </div>
 
         <div className="mb-4 flex p-1 bg-gray-100 rounded-lg">
-            <button
-                type="button"
-                onClick={() => {
-                  setRole("student");
-                  setErrors({});
-                  setToast({ ...toast, message: "" });
-                }}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    role === "student" 
-                    ? "bg-white text-indigo-600 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-                Student
-            </button>
-            <button
-                type="button"
-                onClick={() => {
-                  setRole("lecturer");
-                  setErrors({});
-                  setToast({ ...toast, message: "" });
-                }}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    role === "lecturer" 
-                    ? "bg-white text-indigo-600 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-                Lecturer
-            </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole("student");
+              setErrors({});
+              setToast({ ...toast, message: "" });
+            }}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+              role === "student"
+                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Student
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole("lecturer");
+              setErrors({});
+              setToast({ ...toast, message: "" });
+            }}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+              role === "lecturer"
+                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Lecturer
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole("helper");
+              setErrors({});
+              setToast({ ...toast, message: "" });
+            }}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+              role === "helper"
+                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Helper
+          </button>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-3">
+          {role === "helper" && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors({ ...errors, name: "" });
+                }}
+                onBlur={(e) => validateField("name", e.target.value)}
+                className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                  errors.name ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+                } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+              />
+              {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              {role === "student" ? "Student ID" : "Lecturer ID"}
+              {role === "student" ? "Student ID" : role === "lecturer" ? "Lecturer ID" : "University ID"}
             </label>
             <input
               type="text"
               name="id"
-              placeholder={role === "student" ? "ITXXXXXXXX" : "LCXXXXXXXX"}
+              placeholder={role === "student" ? "ITXXXXXXXX" : role === "lecturer" ? "LCXXXXXXXX" : "ITXXXXXXXX"}
               value={id}
               onChange={(e) => {
                 setId(e.target.value);
@@ -188,7 +261,7 @@ export default function RegisterPage() {
               }}
               onBlur={(e) => validateField("id", e.target.value)}
               className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                errors.id ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                errors.id ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
               } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
             />
             {errors.id && <p className="text-xs text-red-600 mt-1">{errors.id}</p>}
@@ -201,7 +274,7 @@ export default function RegisterPage() {
             <input
               type="email"
               name="email"
-              placeholder={role === "student" ? "ITXXXXXXXX@my.sliit.lk" : "LCXXXXXXXX@my.sliit.lk"}
+              placeholder={role === "helper" ? "yourname@example.com" : `${role === "student" ? "IT" : "LC"}XXXXXXXX@my.sliit.lk`}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -209,11 +282,56 @@ export default function RegisterPage() {
               }}
               onBlur={(e) => validateField("email", e.target.value)}
               className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
               } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
             />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
           </div>
+
+          {role === "helper" && (
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Graduation Year
+                </label>
+                <input
+                  type="number"
+                  name="graduationYear"
+                  placeholder="2024"
+                  value={graduationYear}
+                  onChange={(e) => {
+                    setGraduationYear(e.target.value);
+                    if (errors.graduationYear) setErrors({ ...errors, graduationYear: "" });
+                  }}
+                  onBlur={(e) => validateField("graduationYear", e.target.value)}
+                  className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                    errors.graduationYear ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+                  } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+                />
+                {errors.graduationYear && <p className="text-xs text-red-600 mt-1">{errors.graduationYear}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Skills (comma separated)
+                </label>
+                <input
+                  type="text"
+                  name="skills"
+                  placeholder="Java, Python, Web Dev"
+                  value={skills}
+                  onChange={(e) => {
+                    setSkills(e.target.value);
+                    if (errors.skills) setErrors({ ...errors, skills: "" });
+                  }}
+                  onBlur={(e) => validateField("skills", e.target.value)}
+                  className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                    errors.skills ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
+                  } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+                />
+                {errors.skills && <p className="text-xs text-red-600 mt-1">{errors.skills}</p>}
+              </div>
+            </div>
+          )}
 
           {role === "student" && (
             <div className="grid grid-cols-2 gap-3">
@@ -231,7 +349,7 @@ export default function RegisterPage() {
                     }}
                     onBlur={(e) => validateField("year", e.target.value)}
                     className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                      errors.year ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                      errors.year ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
                     } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all appearance-none cursor-pointer`}
                   >
                     <option value="">Select Year</option>
@@ -260,7 +378,7 @@ export default function RegisterPage() {
                     }}
                     onBlur={(e) => validateField("semester", e.target.value)}
                     className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                      errors.semester ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                      errors.semester ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
                     } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all appearance-none cursor-pointer`}
                   >
                     <option value="">Select Semester</option>
@@ -292,7 +410,7 @@ export default function RegisterPage() {
                 }}
                 onBlur={(e) => validateField("password", e.target.value)}
                 className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                  errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                  errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
                 } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all pr-11`}
               />
               <button
@@ -334,7 +452,7 @@ export default function RegisterPage() {
                 }}
                 onBlur={(e) => validateField("confirmPassword", e.target.value)}
                 className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                  errors.confirmPassword ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-indigo-500"
+                  errors.confirmPassword ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
                 } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all pr-11`}
               />
               <button
@@ -363,7 +481,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
+            className="w-full py-2 px-4 bg-primary hover:bg-blue-900 text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
           >
             {isLoading ? "Creating Account..." : "Register"}
           </button>
@@ -377,7 +495,7 @@ export default function RegisterPage() {
 
         <div className="mt-4 text-center text-xs text-gray-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-indigo-600 hover:text-indigo-500 font-medium">
+          <Link href="/login" className="text-secondary hover:text-blue-600 font-medium">
             Sign in
           </Link>
         </div>

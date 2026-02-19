@@ -1,0 +1,5 @@
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 0H0V24" fill="none" class="stroke-current"/>
+    <path d="M0 0H24V24H0z" fill="none"/>
+    <path d="M23 0V24M0 23H24" stroke="white" stroke-opacity="0.2" fill="none"/>
+</svg>
