@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AcademicManager from "@/components/admin/AcademicManager";
 import { 
   Users, 
   UserCheck, 
@@ -22,16 +23,14 @@ import {
   Zap,
   Clock,
   Mail,
-  User as UserIcon,
-  Shapes
+  User as UserIcon
 } from "lucide-react";
-import AcademicManager from "@/components/admin/AcademicManager";
 
 const IconUsers = () => <Users size={20} />;
 const IconAdmin = () => <ShieldCheck size={20} />;
 const IconLecturer = () => <GraduationCap size={20} />;
 const IconHelper = () => <UserCheck size={20} />;
-const IconAcademic = () => <Shapes size={20} />;
+const IconAcademic = () => <BookOpen size={20} />;
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -43,6 +42,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ total: 0, pending: 0 });
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [academicData, setAcademicData] = useState([]); // Added for module counts
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -168,129 +168,173 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 z-50 transition-all duration-300 shadow-sm">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#002147] to-[#003d82] flex items-center justify-center shadow-lg shadow-blue-900/10">
-              <IconAdmin />
+      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200/60 z-50 transition-all duration-300 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div className="p-8">
+          <div className="flex items-center gap-3 mb-10 px-2 transition-transform hover:scale-105 duration-300">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#002147] to-[#004a9f] flex items-center justify-center shadow-lg shadow-blue-900/20 ring-4 ring-blue-50">
+              <ShieldCheck className="text-white" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#002147]">ASKmate</h2>
-              <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Management</p>
+              <h2 className="text-2xl font-black text-[#002147] tracking-tight">ASKmate</h2>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Admin Panel</p>
+              </div>
             </div>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
+            <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 mt-6">
+              Core Management
+            </div>
+            
             <button 
               onClick={() => setActiveTab("helpers")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all group ${
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all duration-300 relative group ${
                 activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers"
-                ? "bg-blue-50 text-[#002147]" 
+                ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10" 
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
               }`}
             >
-              <IconUsers />
-              <span>User Management</span>
+              <Users size={20} className={activeTab !== "helpers" && activeTab !== "students" && activeTab !== "lecturers" ? "text-slate-400 group-hover:text-slate-800 transition-colors" : ""} />
+              <span className="text-sm">User Directory</span>
+              {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
+                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]"></div>
+              )}
             </button>
-            
+
             <button 
               onClick={() => setActiveTab("academic")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all group ${
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all duration-300 relative group ${
                 activeTab === "academic"
-                ? "bg-blue-50 text-[#002147]" 
+                ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10" 
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
               }`}
             >
-              <IconAcademic />
-              <span>Academic Structure</span>
+              <BookOpen size={20} className={activeTab !== "academic" ? "text-slate-400 group-hover:text-slate-800 transition-colors" : ""} />
+              <span className="text-sm">Academic Setup</span>
+              {activeTab === "academic" && (
+                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]"></div>
+              )}
             </button>
             
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all group">
-              <div className="opacity-50 group-hover:opacity-100 transition-opacity">
-                <LayoutDashboard size={20} />
-              </div>
-              <span className="font-semibold">Analytics</span>
+            <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 mt-8">
+              System Insights
+            </div>
+
+            <button className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all duration-300 group">
+              <LayoutDashboard size={20} className="group-hover:text-slate-800 transition-colors" />
+              <span className="text-sm font-bold">Platform Stats</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all group">
-              <div className="opacity-50 group-hover:opacity-100 transition-opacity">
-                <MoreVertical size={20} />
-              </div>
-              <span className="font-semibold">Settings</span>
+            <button className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all duration-300 group">
+              <MoreVertical size={20} className="group-hover:text-slate-800 transition-colors" />
+              <span className="text-sm font-bold">Global Settings</span>
             </button>
           </nav>
         </div>
 
-        <div className="absolute bottom-8 left-0 w-full px-6">
+        <div className="absolute bottom-10 left-0 w-full px-8">
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100"
+            className="flex items-center justify-center gap-3 w-full px-5 py-4 rounded-2xl text-rose-500 bg-rose-50/50 hover:bg-rose-500 hover:text-white transition-all duration-300 border border-rose-100/50 font-bold text-sm group shadow-sm hover:shadow-rose-500/10"
           >
-            <LogOut size={20} />
-            <span className="font-bold">Sign Out</span>
+            <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
+            <span>Terminate Session</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 p-8 lg:p-12">
-        <header className="flex justify-between items-start mb-10">
-          <div>
-            <h1 className="text-3xl font-extrabold text-[#002147] mb-2">Admin Dashboard</h1>
-            <p className="text-slate-500 font-medium">Welcome back! Manage your platform users and approval requests.</p>
+      <main className="ml-64 p-8 lg:p-12 xl:p-16">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-[#002147] tracking-tight">
+              Control <span className="text-blue-600">Center</span>
+            </h1>
+            <p className="text-slate-500 font-semibold text-sm">System administration and user governance dashboard.</p>
           </div>
-          <div className="flex items-center gap-4 bg-white p-1.5 pr-4 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center font-bold text-[#002147] shadow-inner border border-blue-100">
-              {admin.userId?.[0]?.toUpperCase()}
+          
+          <div className="flex items-center gap-5 bg-white p-2.5 pr-6 rounded-[2rem] border border-slate-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.03)] transition-all hover:shadow-[0_8px_32px_rgba(0,0,0,0.05)] cursor-pointer group">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 flex items-center justify-center font-black text-[#002147] border border-blue-200 shadow-inner group-hover:scale-110 transition-transform">
+                {admin.userId?.[0]?.toUpperCase()}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
             </div>
             <div>
-              <p className="text-sm font-bold text-[#002147] leading-tight">{admin.userId}</p>
-              <p className="text-[10px] text-blue-500 font-bold uppercase tracking-tighter">Chief Administrator</p>
+              <p className="text-[13px] font-black text-[#002147] leading-none mb-1 group-hover:text-blue-600 transition-colors">{admin.userId}</p>
+              <div className="flex items-center gap-1.5">
+                <div className="px-2 py-0.5 rounded-md bg-blue-50 text-[9px] text-blue-600 font-black uppercase tracking-widest">
+                  Administrator
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-100 transition-all duration-500"></div>
-            <p className="text-sm font-bold text-slate-400 mb-1 uppercase tracking-wider">Total Users</p>
-            <div className="flex items-end gap-3">
-              <h3 className="text-4xl font-extrabold text-[#002147]">{stats.total}</h3>
-              <span className="text-emerald-500 text-sm font-bold mb-1.5 bg-emerald-50 px-2 py-0.5 rounded-lg">+12.5%</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-blue-100 transition-all duration-700"></div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users size={24} />
+              </div>
+              <div className="text-emerald-500 text-xs font-black bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100/50">
+                +12% Trend
+              </div>
+            </div>
+            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Total User Base</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">{stats.total}</h3>
+              <span className="text-slate-400 font-bold text-sm">Members</span>
             </div>
           </div>
           
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-orange-100 transition-all duration-500"></div>
-            <p className="text-sm font-bold text-slate-400 mb-1 uppercase tracking-wider">Pending Approvals</p>
-            <div className="flex items-end gap-3">
-              <h3 className="text-4xl font-extrabold text-[#002147]">{stats.pending}</h3>
+          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-orange-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-orange-100 transition-all duration-700"></div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Zap size={24} />
+              </div>
               {stats.pending > 0 && (
-                <span className="text-orange-500 text-xs font-bold mb-2 flex items-center gap-1.5 animate-pulse bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                  Review Required
-                </span>
+                <div className="flex items-center gap-1.5 animate-pulse bg-orange-500 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20">
+                   Immediate Action
+                </div>
               )}
+            </div>
+            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Waitlisted Helpers</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">{stats.pending}</h3>
+              <span className="text-slate-400 font-bold text-sm">Requests</span>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-sky-100 transition-all duration-500"></div>
-            <p className="text-sm font-bold text-slate-400 mb-1 uppercase tracking-wider">Active Sessions</p>
-            <div className="flex items-end gap-3">
-              <h3 className="text-4xl font-extrabold text-[#002147]">24</h3>
-              <span className="text-slate-400 text-sm font-medium mb-1.5 italic">Real-time</span>
+          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-indigo-100 transition-all duration-700"></div>
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Clock size={24} />
+              </div>
+              <div className="text-indigo-500 text-xs font-black bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100/50">
+                Live Now
+              </div>
+            </div>
+            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Active Sessions</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">24</h3>
+              <span className="text-slate-400 font-bold text-sm">Online</span>
             </div>
           </div>
         </div>
 
         {/* Filters and Table Area */}
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-slate-100">
-            <div className="flex flex-col lg:flex-row gap-6 justify-between items-center">
+        {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
+        <div className="bg-white border border-slate-200/60 rounded-[3rem] shadow-[0_8px_48px_rgba(0,0,0,0.02)] overflow-hidden transition-all duration-500 hover:shadow-[0_12px_64px_rgba(0,0,0,0.04)]">
+          <div className="p-10 border-b border-slate-100/80">
+            <div className="flex flex-col lg:flex-row gap-8 justify-between items-center">
               {/* Tabs */}
-              <div className="flex p-1.5 bg-slate-100 rounded-2xl self-start lg:self-center">
+              <div className="flex p-2 bg-slate-100/60 backdrop-blur-sm rounded-[1.5rem] self-start lg:self-center border border-slate-200/40">
                 {[
                   { id: "helpers", label: "Helpers", icon: <IconHelper /> },
                   { id: "students", label: "Students", icon: <IconUsers /> },
@@ -299,16 +343,16 @@ export default function AdminDashboard() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                    className={`flex items-center gap-3 px-8 py-3 rounded-2xl text-[13px] font-black transition-all duration-500 ${
                       activeTab === tab.id 
-                      ? "bg-white text-[#002147] shadow-sm border border-slate-200/50" 
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white text-[#002147] shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-200/60 translate-y-0" 
+                      : "text-slate-500 hover:text-slate-800 translate-y-0 hover:-translate-y-0.5"
                     }`}
                   >
-                    <span className={activeTab === tab.id ? "text-blue-500" : "opacity-50"}>{tab.icon}</span>
+                    <span className={activeTab === tab.id ? "text-blue-500 scale-110 transition-transform" : "opacity-50"}>{tab.icon}</span>
                     {tab.label}
                     {tab.id === 'helpers' && stats.pending > 0 && (
-                      <span className="ml-1 w-5 h-5 bg-[#FF9F1C] text-white rounded-full text-[10px] flex items-center justify-center font-black">
+                      <span className="ml-2 w-5 h-5 bg-[#FF9F1C] text-white rounded-full text-[10px] flex items-center justify-center font-black shadow-lg shadow-orange-500/20">
                         {stats.pending}
                       </span>
                     )}
@@ -317,137 +361,147 @@ export default function AdminDashboard() {
               </div>
 
               {/* Search */}
-              <div className="relative w-full lg:w-96 group">
-                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                  <Search size={18} />
+              <div className="relative w-full lg:w-[450px] group">
+                <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-all duration-300">
+                  <Search size={20} strokeWidth={2.5} />
                 </div>
                 <input
                   type="text"
-                  placeholder={`Search by name, email or ID...`}
+                  placeholder={`Universal search for ${activeTab}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-slate-700 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all outline-none"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] py-4.5 pl-16 pr-6 text-sm text-slate-700 font-bold focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100/50 shadow-inner transition-all duration-300 outline-none h-14"
                 />
               </div>
             </div>
           </div>
 
-          {/* Table Container/Academic Manager */}
-          <div className="min-h-[400px]">
-            {activeTab === "academic" ? (
-              <AcademicManager />
-            ) : loading ? (
-              <div className="flex flex-col items-center justify-center h-[400px]">
-                <div className="w-12 h-12 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-400 font-bold tracking-tight">Syncing records...</p>
+          {/* Table Container */}
+          <div className="min-h-[500px]">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-[500px]">
+                <div className="relative">
+                  <div className="w-16 h-16 border-[5px] border-blue-500/10 border-t-blue-600 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-50 rounded-full"></div>
+                  </div>
+                </div>
+                <p className="mt-6 text-slate-400 font-black tracking-widest text-xs uppercase">Platform Synchronizing...</p>
               </div>
             ) : filteredUsers().length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[400px] text-center p-10">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-6">
-                  <Users size={32} />
+              <div className="flex flex-col items-center justify-center h-[500px] text-center p-12">
+                <div className="w-32 h-32 bg-slate-50/50 rounded-[3rem] border border-slate-100 flex items-center justify-center text-slate-200 mb-8 transition-transform hover:scale-110 duration-500">
+                  <Users size={64} strokeWidth={1} />
                 </div>
-                <h3 className="text-xl font-extrabold text-[#002147] mb-2">No results found</h3>
-                <p className="text-slate-500 font-medium max-w-xs">We couldn't find any {activeTab} matching your current search parameters.</p>
+                <h3 className="text-2xl font-black text-[#002147] mb-3">No matching results</h3>
+                <p className="text-slate-500 font-semibold max-w-sm leading-relaxed">We could not find any active directory entries matching your specific query for this category.</p>
+                <button 
+                    onClick={() => setSearchQuery("")}
+                    className="mt-8 px-8 py-3.5 bg-slate-100 text-[#002147] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                    Clear Search
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile Information</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identifier</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                      {activeTab === 'helpers' && <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Skills</th>}
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
+                    <tr className="bg-slate-50/30 border-b border-slate-100/80">
+                      <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Principal Identity</th>
+                      <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Reference ID</th>
+                      <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Account State</th>
+                      {activeTab === 'helpers' && <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Specialization</th>}
+                      <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-100/50">
                     {filteredUsers().map((user) => (
-                      <tr key={user._id} className="group hover:bg-blue-50/30 transition-all duration-200">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform group-hover:scale-110 ${
-                              activeTab === 'helpers' ? 'bg-orange-100 text-[#FF9F1C]' : 
-                              activeTab === 'lecturers' ? 'bg-blue-100 text-[#002147]' : 
-                              'bg-sky-100 text-sky-600'
+                      <tr key={user._id} className="group hover:bg-slate-50/30 transition-all duration-300">
+                        <td className="px-10 py-8">
+                          <div className="flex items-center gap-5">
+                            <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center font-black text-xl transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg ${
+                              activeTab === 'helpers' ? 'bg-orange-100 text-orange-500 shadow-orange-500/5' : 
+                              activeTab === 'lecturers' ? 'bg-indigo-100 text-indigo-600 shadow-indigo-500/5' : 
+                              'bg-blue-100 text-blue-600 shadow-blue-500/5'
                             }`}>
                               {(user.name || user.studentId || user.studentID || user.lecturerId || "U")[0].toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-[15px] font-extrabold text-[#002147] leading-none mb-1.5 capitalize">{user.name || user.username || "Registered Member"}</p>
-                              <p className="text-xs text-slate-500 font-medium">{user.email}</p>
+                              <p className="text-[16px] font-black text-[#002147] leading-tight mb-1.5 capitalize group-hover:text-blue-600 transition-colors">{user.name || user.username || "Anonymous Member"}</p>
+                              <p className="text-xs text-slate-400 font-bold tracking-tight">{user.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-6">
-                          <span className="font-mono text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-[#002147] shadow-sm">
+                        <td className="px-10 py-8">
+                          <span className="font-mono text-xs font-black bg-slate-100/60 px-4 py-2 rounded-xl border border-slate-200/40 text-[#002147] shadow-sm">
                             {user.studentId || user.studentID || user.lecturerId || user.username}
                           </span>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-10 py-8">
                           {activeTab === 'helpers' ? (
                             user.adminApproved ? (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                  Approved
-                              </span>
+                              <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100/60">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                                  Verified
+                              </div>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100 shadow-sm animate-pulse">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                                  Awaiting
-                              </span>
+                              <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-orange-700 bg-orange-50 px-4 py-2 rounded-full border border-orange-100/60 transition-all animate-pulse">
+                                  <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]"></div>
+                                  Pending
+                              </div>
                             )
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-                              Verified
-                            </span>
+                            <div className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-4 py-2 rounded-full border border-blue-100/60">
+                               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                               Active
+                            </div>
                           )}
                         </td>
                         {activeTab === 'helpers' && (
-                          <td className="px-8 py-6">
-                            <div className="flex flex-wrap gap-1.5">
+                          <td className="px-10 py-8">
+                            <div className="flex flex-wrap gap-2">
                               {user.skills?.slice(0, 2).map((skill, i) => (
-                                <span key={i} className="text-[9px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md uppercase font-black tracking-tight border border-slate-200/50">
+                                <span key={i} className="text-[9px] bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200/60 font-black uppercase tracking-tight shadow-sm">
                                   {skill}
                                 </span>
                               ))}
-                              {user.skills?.length > 2 && <span className="text-[9px] text-slate-400 font-bold">+{user.skills.length - 2}</span>}
+                              {user.skills?.length > 2 && <span className="text-[10px] text-slate-400 font-extrabold flex items-center">+{user.skills.length - 2}</span>}
                             </div>
                           </td>
                         )}
-                        <td className="px-8 py-6">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                        <td className="px-10 py-8">
+                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">
                             <button
                               onClick={() => openDetails(user)}
-                              className="p-2.5 bg-blue-50 text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                              title="View Full Details"
+                              className="w-11 h-11 flex items-center justify-center bg-blue-50 text-blue-600 hover:bg-[#002147] hover:text-white rounded-[1rem] transition-all duration-300 shadow-sm active:scale-90"
+                              title="Full Profile"
                             >
-                              <Eye size={18} strokeWidth={2.5} />
+                              <Eye size={20} strokeWidth={2.5} />
                             </button>
                             {activeTab === 'helpers' && !user.adminApproved && (
                               <button
                                 onClick={() => handleApprove(user._id, 'approve')}
-                                className="p-2.5 bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                                title="Approve Identity"
+                                className="w-11 h-11 flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-[1rem] transition-all duration-300 shadow-sm active:scale-90"
+                                title="Approve Helper"
                               >
-                                  <CheckCircle size={18} strokeWidth={2.5} />
+                                  <CheckCircle size={20} strokeWidth={2.5} />
                               </button>
                             )}
                             {activeTab === 'helpers' && user.adminApproved && (
                               <button
                                 onClick={() => handleApprove(user._id, 'disapprove')}
-                                className="p-2.5 bg-orange-50 text-orange-500 hover:bg-[#FF9F1C] hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
-                                title="Revoke Approval"
+                                className="w-11 h-11 flex items-center justify-center bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white rounded-[1rem] transition-all duration-300 shadow-sm active:scale-90"
+                                title="Revoke Status"
                               >
-                                  <XCircle size={18} strokeWidth={2.5} />
+                                  <XCircle size={20} strokeWidth={2.5} />
                               </button>
                             )}
                             <button
                               onClick={() => handleDelete(user._id, activeTab.slice(0, -1))}
-                              className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
+                              className="w-11 h-11 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-[1rem] transition-all duration-300 shadow-sm active:scale-90"
                               title="Delete Account"
                             >
-                              <Trash2 size={18} strokeWidth={2.5} />
+                              <Trash2 size={20} strokeWidth={2.5} />
                             </button>
                           </div>
                         </td>
@@ -459,87 +513,98 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+        )}
+
+        {activeTab === "academic" && (
+          <div className="bg-white border border-slate-200/60 rounded-[3rem] shadow-[0_8px_48px_rgba(0,0,0,0.02)] p-10">
+             <AcademicManager />
+          </div>
+        )}
 
         {/* Details Modal */}
         {isModalOpen && selectedUser && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
             <div 
-              className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+              className="bg-white w-full max-w-3xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 border border-white/50"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="relative h-32 bg-gradient-to-r from-[#002147] to-[#003d82] p-8">
+              <div className="relative h-48 bg-gradient-to-br from-[#002147] to-[#004a9f] p-10 flex flex-col justify-end">
                 <button 
                   onClick={closeDetails}
-                  className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                  className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white text-white hover:text-[#002147] rounded-2xl transition-all duration-300 backdrop-blur-lg group"
                 >
-                  <XCircle size={24} />
+                  <XCircle size={24} className="group-hover:rotate-90 transition-transform" />
                 </button>
-                <div className="absolute -bottom-12 left-8 flex items-end gap-6">
-                  <div className={`w-24 h-24 rounded-3xl border-4 border-white flex items-center justify-center font-black text-3xl shadow-xl ${
-                    activeTab === 'helpers' ? 'bg-orange-100 text-[#FF9F1C]' : 
-                    activeTab === 'lecturers' ? 'bg-blue-100 text-[#002147]' : 
-                    'bg-sky-100 text-sky-600'
+                <div className="absolute -bottom-16 left-12 flex items-end gap-8">
+                  <div className={`w-32 h-32 rounded-[2.5rem] border-[6px] border-white flex items-center justify-center font-black text-4xl shadow-2xl shadow-blue-900/10 ${
+                    activeTab === 'helpers' ? 'bg-orange-100 text-orange-500' : 
+                    activeTab === 'lecturers' ? 'bg-indigo-100 text-indigo-600' : 
+                    'bg-blue-100 text-blue-600'
                   }`}>
                     {(selectedUser.name || selectedUser.studentId || selectedUser.studentID || selectedUser.lecturerId || "U")[0].toUpperCase()}
                   </div>
-                  <div className="mb-2">
-                    <h2 className="text-2xl font-black text-[#002147] capitalize">{selectedUser.name || selectedUser.username || "Registered Member"}</h2>
-                    <p className="text-slate-500 font-bold text-sm tracking-wide uppercase">{activeTab.slice(0, -1)} Profile</p>
+                  <div className="mb-4">
+                    <h2 className="text-3xl font-black text-[#002147] capitalize tracking-tight">{selectedUser.name || selectedUser.username || "Member Profile"}</h2>
+                    <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[11px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-[0.15em]">{activeTab.slice(0, -1)}</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                        <span className="text-[11px] font-black text-blue-500 uppercase tracking-[0.15em]">Verified Account</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Modal Content */}
-              <div className="p-8 pt-16 max-h-[70vh] overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="px-12 pt-24 pb-12 max-h-[65vh] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                   {/* Basic Info */}
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Identification</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-slate-700">
-                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Mail size={16} />
+                      <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pl-1">Global Information</h4>
+                      <div className="space-y-5">
+                        <div className="flex items-center gap-5 p-4 rounded-3xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:border-blue-100">
+                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-500">
+                            <Mail size={20} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Email Address</p>
-                            <p className="text-sm font-bold">{selectedUser.email}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Primary Email</p>
+                            <p className="text-sm font-black text-[#002147]">{selectedUser.email}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 text-slate-700">
-                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <UserIcon size={16} />
+                        <div className="flex items-center gap-5 p-4 rounded-3xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:border-blue-100">
+                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-indigo-500">
+                            <UserIcon size={20} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">System Identifier</p>
-                            <span className="font-mono text-xs font-bold bg-slate-100 px-2 py-0.5 rounded text-[#002147]">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Access Identification</p>
+                            <span className="font-mono text-xs font-black text-[#002147]">
                               {selectedUser.studentId || selectedUser.studentID || selectedUser.lecturerId || selectedUser.username}
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 text-slate-700">
-                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Clock size={16} />
+                        <div className="flex items-center gap-5 p-4 rounded-3xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:border-blue-100">
+                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-500">
+                            <Clock size={20} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Member Since</p>
-                            <p className="text-sm font-bold">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Member Since</p>
+                            <p className="text-sm font-black text-[#002147]">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {activeTab === 'helpers' && (
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Academic Info</h4>
-                        <div className="flex items-center gap-3 text-slate-700">
-                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                            <Calendar size={16} />
+                      <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100/30 rounded-[2.5rem] border border-blue-200/50">
+                        <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4 pl-1">Academic Timeline</h4>
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600">
+                            <Calendar size={20} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Graduation Year</p>
-                            <p className="text-sm font-extrabold text-[#002147]">{selectedUser.graduationYear}</p>
+                            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1.5">Class Of</p>
+                            <p className="text-2xl font-black text-[#002147] leading-none">{selectedUser.graduationYear}</p>
                           </div>
                         </div>
                       </div>
@@ -547,58 +612,34 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Skills and Expertise */}
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {activeTab === 'helpers' ? (
                       <>
                         <div>
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Expertise & Status</h4>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-400">
-                                <Award size={16} />
+                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pl-1">Performance Metrics</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
+                                <Award size={18} />
                               </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Proficiency Level</p>
-                                <span className={`text-xs font-black uppercase px-2 py-0.5 rounded ${
-                                  selectedUser.expertiseLevel === 'Expert' ? 'bg-purple-100 text-purple-600' :
-                                  selectedUser.expertiseLevel === 'Intermediate' ? 'bg-blue-100 text-blue-600' :
-                                  'bg-slate-100 text-slate-600'
-                                }`}>
-                                  {selectedUser.expertiseLevel || 'Beginner'}
-                                </span>
-                              </div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Proficiency</p>
+                              <p className="text-sm font-black text-[#002147]">{selectedUser.expertiseLevel || 'Standard'}</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-400">
-                                <Star size={16} />
+                            <div className="p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                              <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
+                                <Star size={18} />
                               </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Platform Reputation</p>
-                                <p className="text-sm font-black text-emerald-600">{selectedUser.reputation || 0} Points</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-400">
-                                <Zap size={16} />
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">Availability</p>
-                                <p className="text-sm font-bold">
-                                  {selectedUser.availableForUrgentHelp ? 
-                                    <span className="text-amber-600">Flash Responder ⚡</span> : 
-                                    <span className="text-slate-500">Standard Support</span>
-                                  }
-                                </p>
-                              </div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Reputation</p>
+                              <p className="text-xl font-black text-orange-600">{selectedUser.reputation || 0}</p>
                             </div>
                           </div>
                         </div>
 
                         <div>
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Core Skillset</h4>
-                          <div className="flex flex-wrap gap-2">
+                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 pl-1">Core Expertise</h4>
+                          <div className="flex flex-wrap gap-2.5">
                             {selectedUser.skills?.map((skill, i) => (
-                              <span key={i} className="text-[10px] bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl font-black border border-slate-100 uppercase tracking-tight">
+                              <span key={i} className="text-[10px] bg-white text-slate-700 px-4 py-2 rounded-xl font-black border border-slate-200 shadow-sm uppercase tracking-tight transition-transform hover:-translate-y-0.5 cursor-default">
                                 {skill}
                               </span>
                             ))}
@@ -606,42 +647,43 @@ export default function AdminDashboard() {
                         </div>
 
                         {selectedUser.preferredModules?.length > 0 && (
-                          <div>
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Preferred Modules</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedUser.preferredModules.map((module, i) => (
-                                <div key={i} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-100">
-                                  <BookOpen size={10} />
-                                  <span className="text-[10px] font-black uppercase tracking-tight">{module}</span>
-                                </div>
-                              ))}
+                          <div className="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 pl-1">Direct Module Support</h4>
+                            <div className="flex flex-wrap gap-2.5">
+                                {selectedUser.preferredModules.map((module, i) => (
+                                    <div key={i} className="flex items-center gap-2.5 bg-white text-blue-600 px-4 py-2 rounded-xl border border-blue-100 shadow-sm">
+                                        <BookOpen size={12} className="opacity-70" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{module}</span>
+                                    </div>
+                                ))}
                             </div>
                           </div>
                         )}
                       </>
                     ) : (
-                      <div>
+                      <div className="space-y-8">
                         {activeTab === 'students' && (
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Academic Year</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Year</p>
-                                <p className="text-lg font-black text-[#002147]">{selectedUser.year}</p>
+                          <div>
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pl-1">Academic Placement</h4>
+                            <div className="grid grid-cols-2 gap-5">
+                              <div className="p-6 bg-gradient-to-br from-indigo-50 to-white rounded-[2rem] border border-indigo-100">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Year Level</p>
+                                <p className="text-3xl font-black text-[#002147]">{selectedUser.year}</p>
                               </div>
-                              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Semester</p>
-                                <p className="text-lg font-black text-[#002147]">{selectedUser.semester}</p>
+                              <div className="p-6 bg-gradient-to-br from-sky-50 to-white rounded-[2rem] border border-sky-100">
+                                <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-2">Semester</p>
+                                <p className="text-3xl font-black text-[#002147]">{selectedUser.semester}</p>
                               </div>
                             </div>
                           </div>
                         )}
-                        <div className="mt-8 p-6 bg-blue-50/50 border border-blue-100 rounded-3xl">
-                          <p className="text-xs font-bold text-blue-600 mb-2 flex items-center gap-2">
-                            <ShieldCheck size={14} /> Account Status Verified
+                        <div className="mt-8 p-8 bg-[#002147] rounded-[2.5rem] shadow-xl shadow-blue-900/20 relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full -mr-16 -mt-16 blur-[60px] opacity-20"></div>
+                          <p className="text-xs font-black text-blue-400 mb-3 flex items-center gap-2 relative z-10">
+                            <ShieldCheck size={16} /> DATA VERIFIED
                           </p>
-                          <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                            This {activeTab.slice(0, -1)} has a verified academic identity and is currently active on the platform.
+                          <p className="text-[15px] text-white/90 font-bold leading-relaxed relative z-10">
+                            This {activeTab.slice(0, -1)} registry entry is fully authenticated via the institutional directory service.
                           </p>
                         </div>
                       </div>
@@ -651,12 +693,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+              <div className="p-10 bg-slate-50/80 backdrop-blur-sm border-t border-slate-100 flex justify-end gap-4">
                 <button 
                   onClick={closeDetails}
-                  className="px-8 py-3 bg-[#002147] text-white rounded-2xl font-black text-sm hover:bg-[#003d82] transition-all shadow-lg shadow-blue-900/10 active:scale-95"
+                  className="px-10 py-4 bg-[#002147] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10 active:scale-95 translate-y-0 hover:-translate-y-1"
                 >
-                  Close Profile
+                  Close Directory Entry
                 </button>
               </div>
             </div>
@@ -670,22 +712,31 @@ export default function AdminDashboard() {
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
           background-color: #f8fafc;
+          -webkit-font-smoothing: antialiased;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-          width: 10px;
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
         }
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f8fafc;
         }
-        ::-webkit-scrollbar-thumb {
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #cbd5e1;
-          border-radius: 20px;
-          border: 3px solid #f1f5f9;
         }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
+
+        /* Smooth page entrance */
+        main {
+           animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

@@ -2,19 +2,24 @@ import mongoose from "mongoose";
 
 const ModuleSchema = new mongoose.Schema(
   {
-    name: {
+    moduleName: {
       type: String,
       required: true,
     },
-    code: {
+    moduleCode: {
       type: String,
       required: true,
       unique: true,
     },
-    semesterId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Semester",
+    year: {
+      type: Number,
       required: true,
+      enum: [1, 2, 3, 4],
+    },
+    semester: {
+      type: Number,
+      required: true,
+      enum: [1, 2],
     },
     description: {
       type: String,
@@ -23,4 +28,7 @@ const ModuleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Module || mongoose.model("Module", ModuleSchema);
+// Prevent model overwrite in development
+const Module = mongoose.models.Module || mongoose.model("Module", ModuleSchema);
+
+export default Module;
