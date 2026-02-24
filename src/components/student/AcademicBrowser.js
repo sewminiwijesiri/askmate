@@ -167,151 +167,136 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
   if (selectedModule) {
     return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {/* Module Header */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-60"></div>
-          
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
           <button 
             onClick={resetSelection}
             className="flex items-center gap-2 text-slate-400 hover:text-[#002147] font-bold text-sm mb-6 transition-colors group"
           >
-            <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Year {selectedYear} Modules
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Modules
           </button>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#002147] to-[#003d82] flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-900/20">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 rounded-2xl bg-[#002147] flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-100">
                 {selectedModule.moduleCode}
               </div>
               <div>
-                <h2 className="text-3xl font-black text-[#002147] leading-tight mb-1">
+                <h2 className="text-2xl font-bold text-[#002147] mb-1">
                   {selectedModule.moduleName}
                 </h2>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-wider">
+                  <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
                     {selectedModule.moduleCode}
                   </span>
-                  <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                  <span className="text-slate-500 font-bold text-sm">
-                    Level {selectedYear} • Semester {selectedSemester}
+                  <span className="text-slate-400 text-sm font-medium">
+                    Year {selectedYear} • Sem {selectedSemester}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
             <button 
               onClick={() => setActiveView("resources")}
-              className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${
+              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
                 activeView === "resources" 
-                ? "bg-[#002147] text-white border-[#002147] shadow-xl shadow-blue-900/10" 
-                : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-blue-200"
+                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100" 
+                : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-[#4DA8DA]/30"
               }`}
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${activeView === "resources" ? "bg-white/10" : "bg-white shadow-sm"}`}>
-                <FileText size={22} className={activeView === "resources" ? "text-white" : "text-blue-500"} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeView === "resources" ? "bg-white/10" : "bg-white shadow-sm"}`}>
+                <FileText size={20} className={activeView === "resources" ? "text-white" : "text-[#4DA8DA]"} />
               </div>
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-widest opacity-60">Study Materials</p>
-                <p className="font-black">Access Resources</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Resources</p>
+                <p className="font-bold text-sm">Study Materials</p>
               </div>
             </button>
 
             <button 
               onClick={() => setActiveView("qa")}
-              className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${
+              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
                 activeView === "qa" 
-                ? "bg-[#002147] text-white border-[#002147] shadow-xl shadow-blue-900/10" 
-                : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-blue-200"
+                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100" 
+                : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-[#4DA8DA]/30"
               }`}
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${activeView === "qa" ? "bg-white/10" : "bg-white shadow-sm"}`}>
-                <HelpCircle size={22} className={activeView === "qa" ? "text-white" : "text-orange-500"} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeView === "qa" ? "bg-white/10" : "bg-white shadow-sm"}`}>
+                <HelpCircle size={20} className={activeView === "qa" ? "text-white" : "text-[#FF9F1C]"} />
               </div>
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-widest opacity-60">Peer Discussion</p>
-                <p className="font-black">Ask & Answer</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Consultation</p>
+                <p className="font-bold text-sm">Q&A Hub</p>
               </div>
             </button>
 
-            <button className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 text-slate-600 border border-slate-100 hover:bg-white hover:border-blue-200 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-500">
-                <Layers size={22} />
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 text-slate-600 border border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-500">
+                <Layers size={20} />
               </div>
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-widest opacity-60">Module Stats</p>
-                <p className="font-black">Insights</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">Status</p>
+                <p className="font-bold text-sm">Insights</p>
               </div>
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* Dynamic Content Based on activeView */}
-        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm min-h-[400px]">
+        {/* Dynamic Content */}
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[400px]">
           {activeView === "resources" && (
-            <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="space-y-6 animate-in fade-in duration-500">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-black text-[#002147]">Learning Resources</h3>
-                  <p className="text-slate-500 font-medium mt-1">Lecture notes, presentations, and tutorials.</p>
+                  <h3 className="text-xl font-bold text-[#002147]">Learning Resources</h3>
+                  <p className="text-slate-500 text-sm mt-1">Shared materials for this module.</p>
                 </div>
                 <button 
                   onClick={() => setIsUploadOpen(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#002147] text-white rounded-2xl font-black text-sm hover:bg-[#003d82] transition-all shadow-lg shadow-blue-900/10 active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#002147] text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-md active:scale-95"
                 >
-                  <Plus size={18} />
+                  <Plus size={16} />
                   Contribute
                 </button>
               </div>
 
               {resLoading ? (
-                <div className="flex flex-col items-center justify-center h-[200px]">
-                  <div className="w-10 h-10 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin"></div>
+                <div className="flex justify-center py-20">
+                  <div className="w-8 h-8 border-3 border-blue-50/10 border-t-[#FF9F1C] rounded-full animate-spin"></div>
                 </div>
               ) : resources.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[200px] text-center border-2 border-dashed border-slate-100 rounded-3xl p-8">
-                   <p className="text-slate-400 font-bold">No resources uploaded yet for this module.</p>
-                   <button onClick={() => setIsUploadOpen(true)} className="mt-4 text-blue-600 font-black text-sm hover:underline">Be the first to contribute!</button>
+                <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                   <p className="text-slate-400 font-bold text-sm">No resources yet.</p>
+                   <button onClick={() => setIsUploadOpen(true)} className="mt-2 text-[#4DA8DA] font-bold text-sm hover:underline">Be the first to contribute</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {resources.map((res) => (
-                    <div key={res._id} className="group p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-100 hover:shadow-xl hover:shadow-blue-900/5 transition-all">
+                    <div key={res._id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all group">
                       <div className="flex justify-between items-start mb-4">
-                        <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm ${res.resourceType === 'link' ? 'text-orange-500' : 'text-blue-500'}`}>
-                          {res.resourceType === 'link' ? <LinkIcon size={24} /> : <FileIcon size={24} />}
+                        <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm ${res.resourceType === 'link' ? 'text-orange-500' : 'text-blue-500'}`}>
+                          {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <a 
-                            href={res.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
-                          >
-                            <ExternalLink size={20} />
-                          </a>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#4DA8DA]"><ExternalLink size={16} /></a>
                           {res.uploadedBy === user.userId && (
                             <>
-                              <button onClick={() => startEdit(res)} className="p-2 text-slate-400 hover:text-emerald-500 transition-colors">
-                                <Edit2 size={18} />
-                              </button>
-                              <button onClick={() => handleDeleteResource(res._id)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors">
-                                <Trash2 size={18} />
-                              </button>
+                              <button onClick={() => startEdit(res)} className="p-2 text-slate-400 hover:text-emerald-500"><Edit2 size={16} /></button>
+                              <button onClick={() => handleDeleteResource(res._id)} className="p-2 text-slate-400 hover:text-rose-500"><Trash2 size={16} /></button>
                             </>
                           )}
                         </div>
                       </div>
-                      <h4 className="font-black text-[#002147] mb-1 group-hover:text-blue-600 transition-colors">{res.title}</h4>
-                      <p className="text-sm text-slate-500 font-medium mb-4 line-clamp-2">{res.description || "No description provided."}</p>
+                      <h4 className="font-bold text-[#002147] mb-1">{res.title}</h4>
+                      <p className="text-xs text-slate-500 font-medium mb-4 line-clamp-1">{res.description || "No description."}</p>
                       <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
                         <div className="flex flex-col">
-                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">By {res.uploaderName}</span>
-                           <span className="text-[9px] font-bold text-slate-300 uppercase">{new Date(res.createdAt).toLocaleDateString()}</span>
+                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">By {res.uploaderName}</span>
                         </div>
-                        <span className="px-3 py-1 bg-white border border-slate-100 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-tight">
+                        <span className="px-2 py-0.5 bg-white border border-slate-100 rounded text-[9px] font-bold text-slate-400 uppercase">
                           {res.resourceType}
                         </span>
                       </div>
@@ -323,104 +308,85 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
           )}
 
           {activeView === "qa" && (
-            <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="space-y-6 animate-in fade-in duration-500">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-black text-[#002147]">Question & Answer</h3>
-                  <p className="text-slate-500 font-medium mt-1">Get help from helpers and lecturers.</p>
+                  <h3 className="text-xl font-bold text-[#002147]">Q&A Discussion</h3>
+                  <p className="text-slate-500 text-sm mt-1">Get help from the community.</p>
                 </div>
-                <button className="flex items-center gap-2 px-6 py-3 bg-[#FF9F1C] text-white rounded-2xl font-black text-sm hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20">
-                  <MessageCircle size={18} />
-                  Ask a Question
+                <button className="px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md">
+                  Ask Question
                 </button>
               </div>
-
-              <div className="space-y-4">
-                <div className="flex flex-col items-center justify-center h-[200px] text-center border-2 border-dashed border-slate-100 rounded-3xl p-8">
-                   <p className="text-slate-400 font-bold">The Q&A community is growing. Start a discussion!</p>
-                </div>
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                 <p className="text-slate-400 font-bold text-sm">No discussions started yet.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Upload/Edit Modal */}
+        {/* Modal simplified */}
         {(isUploadOpen || editingResource) && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-black text-[#002147]">{editingResource ? 'Edit Resource' : 'Share Resource'}</h2>
-                  <p className="text-slate-500 font-medium">For {selectedModule.moduleName}</p>
-                </div>
-                <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); }} className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400">
-                  <X size={20} />
+            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-[#002147]">{editingResource ? 'Edit Resource' : 'Share Resource'}</h2>
+                <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400">
+                  <X size={18} />
                 </button>
               </div>
-              <form onSubmit={editingResource ? handleUpdateResource : handleUploadResource} className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
+              <form onSubmit={editingResource ? handleUpdateResource : handleUploadResource} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Title</label>
                   <input
                     type="text"
                     required
                     value={uploadData.title}
                     onChange={(e) => setUploadData({ ...uploadData, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-                    placeholder="e.g., Week 1 Algorithms Notes"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                    placeholder="Resource name"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Type</label>
                     <select
                       value={uploadData.resourceType}
                       onChange={(e) => setUploadData({ ...uploadData, resourceType: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="link">Useful Link</option>
-                      <option value="pdf">PDF Document</option>
-                      <option value="word">Word Doc</option>
-                      <option value="text">Plain Text</option>
+                      <option value="link">Link</option>
+                      <option value="pdf">PDF</option>
+                      <option value="word">Word</option>
+                      <option value="text">Text</option>
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource URL</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">URL</label>
                     <input
                       type="url"
                       required
                       value={uploadData.url}
                       onChange={(e) => setUploadData({ ...uploadData, url: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
                       placeholder="https://..."
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description (Optional)</label>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Description</label>
                   <textarea
                     value={uploadData.description}
                     onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-28 resize-none"
-                    placeholder="Provide some context about this resource..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-500 transition-all"
                   />
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => { setIsUploadOpen(false); setEditingResource(null); }}
-                    className="flex-1 px-6 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all border border-slate-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-6 py-4 bg-[#002147] text-white rounded-2xl font-black text-sm hover:bg-[#003d82] transition-all shadow-xl shadow-blue-900/10 active:scale-95"
-                  >
-                    {editingResource ? 'Save Changes' : 'Upload Resource'}
-                  </button>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => { setIsUploadOpen(false); setEditingResource(null); }} className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm">Cancel</button>
+                  <button type="submit" className="flex-1 py-3 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md">{editingResource ? 'Save' : 'Upload'}</button>
                 </div>
               </form>
             </div>
@@ -431,58 +397,45 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Navigation Sidebar for Years/Semesters */}
-        <div className="w-full lg:w-80 space-y-6">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-2 h-full bg-[#002147]"></div>
-            <h3 className="text-xs font-black text-[#002147] uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-              <GraduationCap size={18} className="text-blue-500" />
-              Academic Year
-            </h3>
-            <div className="space-y-2">
+        {/* Navigation Sidebar */}
+        <div className="w-full lg:w-64 space-y-4">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Academic Year</h3>
+            <div className="space-y-1">
               {[1, 2, 3, 4].map((year) => (
                 <button
                   key={year}
                   onClick={() => setSelectedYear(year)}
-                  className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-sm transition-all duration-300 ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-[13px] transition-all ${
                     selectedYear === year
-                      ? "bg-[#002147] text-white shadow-xl shadow-blue-900/20 translate-x-1"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-[#002147]"
+                      ? "bg-[#002147] text-white shadow-md"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                   }`}
                 >
-                  <span className="flex items-center gap-3">
-                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] ${selectedYear === year ? "bg-white/20" : "bg-slate-100"}`}>
-                      Y{year}
-                    </span>
-                    Year {year}
-                  </span>
-                  <ChevronRight size={16} className={selectedYear === year ? "opacity-100" : "opacity-0"} />
+                  <span>Year {year}</span>
+                  <ChevronRight size={14} className={selectedYear === year ? "opacity-100" : "opacity-0"} />
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-2 h-full bg-[#FF9F1C]"></div>
-            <h3 className="text-xs font-black text-[#002147] uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-              <Calendar size={18} className="text-orange-500" />
-              Semester
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Semester</h3>
+            <div className="grid grid-cols-2 gap-2">
               {[1, 2].map((sem) => (
                 <button
                   key={sem}
                   onClick={() => setSelectedSemester(sem)}
-                  className={`px-4 py-6 rounded-2xl font-black text-sm transition-all duration-300 text-center flex flex-col items-center gap-2 ${
+                  className={`py-4 rounded-xl font-bold text-sm transition-all text-center flex flex-col items-center gap-1 ${
                     selectedSemester === sem
-                      ? "bg-orange-50 text-orange-700 border-2 border-orange-200 shadow-lg shadow-orange-500/5 scale-105"
-                      : "bg-slate-50 text-slate-500 border-2 border-transparent hover:bg-slate-100"
+                      ? "bg-orange-50 text-orange-600 border border-orange-200"
+                      : "bg-slate-50 text-slate-500 border border-transparent hover:bg-slate-100"
                   }`}
                 >
-                  <span className="text-[10px] opacity-60 uppercase tracking-widest">Sem</span>
-                  <span className="text-xl leading-none">{sem}</span>
+                  <span className="text-[9px] opacity-60 uppercase">Sem</span>
+                  <span className="text-lg leading-none">{sem}</span>
                 </button>
               ))}
             </div>
@@ -490,74 +443,56 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
         </div>
 
         {/* Modules List */}
-        <div className="flex-1 space-y-6">
-          <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm min-h-[600px] relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50/50 rounded-full -mr-48 -mt-48 blur-3xl opacity-50"></div>
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8 relative z-10">
+        <div className="flex-1">
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm min-h-[500px]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
               <div>
-                <h2 className="text-4xl font-black text-[#002147] tracking-tight">
-                  Academic <span className="text-blue-600">Modules</span>
-                </h2>
-                <p className="text-slate-500 font-semibold mt-2">
-                  Browse Year {selectedYear}, Semester {selectedSemester} resources.
-                </p>
+                <h2 className="text-2xl font-bold text-[#002147] tracking-tight">Academic Hub</h2>
+                <p className="text-slate-500 text-sm mt-1">Year {selectedYear} • Semester {selectedSemester}</p>
               </div>
 
-              <div className="relative w-full md:w-80 group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+              <div className="relative w-full sm:w-64 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="text"
-                  placeholder="Filter modules..."
+                  placeholder="Search modules..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100/50 transition-all"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-[400px]">
-                <div className="w-16 h-16 border-[6px] border-blue-500/10 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-                <p className="text-slate-400 font-black tracking-widest text-xs uppercase">Fetching Modules...</p>
+              <div className="flex flex-col items-center justify-center h-[300px]">
+                <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
               </div>
             ) : filteredModules.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-[400px] text-center p-12 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100 mt-4">
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-slate-200 mb-8 shadow-sm">
-                  <BookOpen size={48} />
-                </div>
-                <h3 className="text-2xl font-black text-[#002147] mb-3">No modules found</h3>
-                <p className="text-slate-500 font-semibold max-w-sm mx-auto leading-relaxed">
-                  There are currently no modules listed for Year {selectedYear} Semester {selectedSemester} in our directory.
-                </p>
+              <div className="flex flex-col items-center justify-center h-[300px] text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
+                <BookOpen size={40} className="text-slate-200 mb-4" />
+                <h3 className="text-lg font-bold text-[#002147] mb-1">No modules found</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">Try selecting a different year or semester.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredModules.map((module) => (
                   <div
                     key={module._id}
                     onClick={() => setSelectedModule(module)}
-                    className="group bg-slate-50 border border-slate-100 p-8 rounded-[2.5rem] hover:bg-white hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 cursor-pointer"
+                    className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group"
                   >
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#002147] font-black text-sm shadow-sm group-hover:bg-blue-50 transition-colors group-hover:scale-110 duration-500">
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="px-2 py-1 bg-white border border-slate-100 rounded text-[10px] font-bold text-[#002147] uppercase">
                         {module.moduleCode}
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
-                        <ArrowRight size={20} />
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-300 group-hover:bg-[#002147] group-hover:text-white transition-all">
+                        <ArrowRight size={16} />
                       </div>
                     </div>
-                    <h4 className="text-xl font-black text-[#002147] mb-3 group-hover:text-blue-600 transition-colors">
-                      {module.moduleName}
-                    </h4>
-                    <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed font-medium mb-6">
-                      {module.description || "Comprehensive coverage of " + module.moduleName + " principles and practical applications."}
+                    <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {module.description || "Browse resources and discussions for " + module.moduleName}
                     </p>
-                    <div className="flex items-center gap-4 pt-6 border-t border-slate-200/50">
-                      <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        <FileText size={14} className="text-blue-500" /> Help Resources
-                      </div>
-                    </div>
                   </div>
                 ))}
               </div>
