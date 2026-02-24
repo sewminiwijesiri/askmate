@@ -184,7 +184,7 @@ export default function RegisterPage() {
             }}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
               role === "student"
-                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
                 : "text-gray-500 hover:text-gray-900"
             }`}
           >
@@ -199,7 +199,7 @@ export default function RegisterPage() {
             }}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
               role === "lecturer"
-                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
                 : "text-gray-500 hover:text-gray-900"
             }`}
           >
@@ -214,7 +214,7 @@ export default function RegisterPage() {
             }}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
               role === "helper"
-                ? "bg-white text-primary shadow-sm ring-1 ring-gray-200"
+                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
                 : "text-gray-500 hover:text-gray-900"
             }`}
           >
@@ -481,7 +481,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 bg-primary hover:bg-blue-900 text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
+            className="w-full py-2 px-4 bg-[#002147] hover:bg-blue-950 text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
           >
             {isLoading ? "Creating Account..." : "Register"}
           </button>
@@ -495,7 +495,7 @@ export default function RegisterPage() {
 
         <div className="mt-4 text-center text-xs text-gray-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-secondary hover:text-blue-600 font-medium">
+          <Link href="/login" className="text-[#4DA8DA] hover:text-blue-600 font-medium">
             Sign in
           </Link>
         </div>

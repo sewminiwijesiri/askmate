@@ -57,26 +57,26 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm">
         <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-10 h-10 bg-[#002147]/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <svg className="w-6 h-6 text-[#002147]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-primary tracking-tight">ASKmate</span>
+            <span className="text-2xl font-bold text-[#002147] tracking-tight">ASKmate</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-600">
-            <a href="#features" className="hover:text-primary hover:font-semibold transition-all">Features</a>
-            <a href="#partners" className="hover:text-primary hover:font-semibold transition-all">Partners</a>
-            <a href="#resources" className="hover:text-primary hover:font-semibold transition-all">Resources</a>
+            <a href="#features" className="hover:text-[#002147] hover:font-semibold transition-all">Features</a>
+            <a href="#partners" className="hover:text-[#002147] hover:font-semibold transition-all">Partners</a>
+            <a href="#resources" className="hover:text-[#002147] hover:font-semibold transition-all">Resources</a>
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-sm font-semibold text-primary hover:text-blue-900 transition-colors px-4 py-2">
+            <Link href="/login" className="text-sm font-semibold text-[#002147] hover:text-blue-900 transition-colors px-4 py-2">
               Sign In
             </Link>
-            <Link href="/register" className="text-sm font-bold text-white bg-accent hover:bg-orange-600 px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <Link href="/register" className="text-sm font-bold text-white bg-[#FF9F1C] hover:bg-orange-600 px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
               Get Started
             </Link>
           </div>
@@ -93,18 +93,18 @@ export default function Home() {
               {/* Text Content */}
               <div className="flex-1 text-center lg:text-left">
                 <div className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-1.5 text-sm font-semibold text-blue-100 mb-8 animate-fade-in-up">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-accent mr-3 animate-pulse"></span>
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-[#FF9F1C] mr-3 animate-pulse"></span>
                   #1 Platform for University Collaboration
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
                   Elevate Your <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-blue-300">Academic Journey</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4DA8DA] to-blue-300">Academic Journey</span>
                 </h1>
                 <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                   Join a thriving community of scholars. Get instant answers, share resources, and connect with mentors to achieve your best results.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5">
-                  <Link href="/register" className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-accent rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1">
+                  <Link href="/register" className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-[#FF9F1C] rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1">
                     Start Learning Now
                   </Link>
                   <Link href="/login" className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:shadow-md transition-all">
@@ -159,7 +159,7 @@ export default function Home() {
                   title: "Module-Specific Q&A",
                   desc: "Don't get lost in general threads. Ask questions tagged by your specific course modules for precise help.",
                   color: "bg-blue-100",
-                  iconColor: "text-primary",
+                  iconColor: "text-[#002147]",
                   icon: (
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -170,7 +170,7 @@ export default function Home() {
                   title: "AI-Powered Assistance",
                   desc: "Get 24/7 instant feedback on your queries with our integrated AI, specifically trained on academic contexts.",
                   color: "bg-orange-100",
-                  iconColor: "text-accent",
+                  iconColor: "text-[#FF9F1C]",
                   icon: (
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -181,7 +181,7 @@ export default function Home() {
                   title: "Lecturer Verified",
                   desc: "Gain confidence in your answers with verification badges from lecturers and top-rated community helpers.",
                   color: "bg-sky-100",
-                  iconColor: "text-secondary",
+                  iconColor: "text-[#4DA8DA]",
                   icon: (
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -193,7 +193,7 @@ export default function Home() {
                    <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${feature.iconColor}`}>
                       {feature.icon}
                    </div>
-                   <h3 className="text-2xl font-bold text-primary mb-4">{feature.title}</h3>
+                   <h3 className="text-2xl font-bold text-[#002147] mb-4">{feature.title}</h3>
                    <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
                 </div>
               ))}
@@ -204,7 +204,7 @@ export default function Home() {
         {/* Roles / Community Section */}
         <section className="py-24 bg-[#00152edd]">
            <div className="container mx-auto px-4 md:px-6">
-              <div className="bg-blue-50 rounded-[3rem] p-8 md:p-20 relative overflow-hidden text-primary">
+              <div className="bg-blue-50 rounded-[3rem] p-8 md:p-20 relative overflow-hidden text-[#002147]">
                  {/* Decorative background circles */}
                  <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-white opacity-40"></div>
                  <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-60 h-60 rounded-full bg-blue-200 opacity-20"></div>
@@ -214,14 +214,14 @@ export default function Home() {
                        <h2 className="text-4xl md:text-5xl font-bold mb-8">Join the Ecosystem</h2>
                        <div className="space-y-8">
                           <div className="flex gap-6">
-                             <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">S</div>
+                             <div className="w-12 h-12 bg-[#FF9F1C] rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">S</div>
                              <div>
                                 <h3 className="text-2xl font-bold mb-2">For Students</h3>
                                 <p className="text-gray-600">Access peer support, clarify doubts, and prepare for exams with confidence by leveraging community knowledge.</p>
                              </div>
                           </div>
                           <div className="flex gap-6">
-                             <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">L</div>
+                             <div className="w-12 h-12 bg-[#4DA8DA] rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xl">L</div>
                              <div>
                                 <h3 className="text-2xl font-bold mb-2">For Lecturers</h3>
                                 <p className="text-gray-600">Gauge student understanding, address common misconceptions efficiently, and endorse high-quality answers.</p>
@@ -229,7 +229,7 @@ export default function Home() {
                           </div>
                        </div>
                        <div className="mt-12">
-                          <Link href="/register" className="inline-block bg-primary text-white font-bold px-10 py-4 rounded-full hover:bg-blue-900 transition-colors shadow-lg">
+                          <Link href="/register" className="inline-block bg-[#002147] text-white font-bold px-10 py-4 rounded-full hover:bg-blue-900 transition-colors shadow-lg">
                              Become a Member
                           </Link>
                        </div>
@@ -240,7 +240,7 @@ export default function Home() {
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-full h-64 bg-white shadow-xl rounded-2xl border border-blue-100 p-6 transform rotate-3 transition-transform hover:rotate-0 duration-500">
                                 <div className="flex items-center gap-4 mb-4 border-b border-gray-100 pb-4">
-                                   <div className="w-10 h-10 rounded-full bg-accent shadow-sm"></div>
+                                   <div className="w-10 h-10 rounded-full bg-[#FF9F1C] shadow-sm"></div>
                                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
                                 </div>
                                 <div className="space-y-3">
@@ -249,7 +249,7 @@ export default function Home() {
                                    <div className="h-3 w-4/6 bg-gray-100 rounded"></div>
                                 </div>
                                 <div className="mt-6 flex gap-3">
-                                   <div className="h-8 w-20 bg-secondary rounded-full shadow-sm"></div>
+                                   <div className="h-8 w-20 bg-[#4DA8DA] rounded-full shadow-sm"></div>
                                    <div className="h-8 w-20 bg-blue-50 rounded-full"></div>
                                 </div>
                             </div>
@@ -268,12 +268,12 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
              <div className="col-span-1 md:col-span-1">
                 <Link href="/" className="flex items-center space-x-2 mb-6">
-                   <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                   <div className="w-8 h-8 bg-[#FF9F1C] rounded-lg flex items-center justify-center">
                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                      </svg>
                    </div>
-                   <span className="text-2xl font-bold tracking-tight text-primary">ASKmate</span>
+                   <span className="text-2xl font-bold tracking-tight text-[#002147]">ASKmate</span>
                 </Link>
                 <p className="text-gray-500 mb-6">Empowering students to achieve academic excellence through collaboration.</p>
                 <div className="flex space-x-4">
@@ -283,9 +283,9 @@ export default function Home() {
                       { name: 'instagram', icon: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></> },
                       { name: 'linkedin', icon: <><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></> }
                    ].map((social) => (
-                      <a key={social.name} href="#" className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center hover:bg-accent transition-colors group">
+                      <a key={social.name} href="#" className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center hover:bg-[#FF9F1C] transition-colors group">
                          <span className="sr-only">{social.name}</span>
-                         <svg className="w-5 h-5 text-primary group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                         <svg className="w-5 h-5 text-[#002147] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             {social.icon}
                          </svg>
                       </a>
