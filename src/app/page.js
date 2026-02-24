@@ -1,5 +1,10 @@
+"use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
+import Modal from '../components/Modal';
+import LoginForm from '../components/LoginForm';
+import RegisterForm from '../components/RegisterForm';
 
 // Custom SVG Illustration Component mimicking the "graduate holding diploma" style
 const GraduateIllustration = () => (
@@ -50,6 +55,20 @@ const GraduateIllustration = () => (
 
 
 export default function Home() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
+  const openLogin = (e) => {
+    if (e) e.preventDefault();
+    setShowLogin(true);
+    setShowRegister(false);
+  };
+
+  const openRegister = (e) => {
+    if (e) e.preventDefault();
+    setShowRegister(true);
+    setShowLogin(false);
+  };
   return (
     <div className="min-h-screen flex flex-col bg-[#002147] font-sans text-white">
       
@@ -73,12 +92,18 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-sm font-semibold text-[#002147] hover:text-blue-900 transition-colors px-4 py-2">
+            <button 
+              onClick={openLogin}
+              className="text-sm font-semibold text-[#002147] hover:text-blue-950 transition-colors px-4 py-2 cursor-pointer"
+            >
               Sign In
-            </Link>
-            <Link href="/register" className="text-sm font-bold text-white bg-[#FF9F1C] hover:bg-orange-600 px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            </button>
+            <button 
+              onClick={openRegister}
+              className="text-sm font-bold text-white bg-[#FF9F1C] hover:bg-orange-600 px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 cursor-pointer"
+            >
               Get Started
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -104,12 +129,18 @@ export default function Home() {
                   Join a thriving community of scholars. Get instant answers, share resources, and connect with mentors to achieve your best results.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5">
-                  <Link href="/register" className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-[#FF9F1C] rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1">
+                  <button 
+                    onClick={openRegister}
+                    className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-[#FF9F1C] rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-500/30 transform hover:-translate-y-1 cursor-pointer"
+                  >
                     Start Learning Now
-                  </Link>
-                  <Link href="/login" className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:shadow-md transition-all">
+                  </button>
+                  <button 
+                    onClick={openLogin}
+                    className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:shadow-md transition-all cursor-pointer"
+                  >
                     View Demo
-                  </Link>
+                  </button>
                 </div>
                 
                 <div className="mt-12 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-500 font-medium">
@@ -330,6 +361,19 @@ export default function Home() {
         </div>
       </footer>
 
+      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)}>
+        <LoginForm 
+          onSuccess={() => setShowLogin(false)} 
+          onSwitchToRegister={openRegister}
+        />
+      </Modal>
+
+      <Modal isOpen={showRegister} onClose={() => setShowRegister(false)}>
+        <RegisterForm 
+          onSuccess={() => setShowRegister(false)} 
+          onSwitchToLogin={openLogin}
+        />
+      </Modal>
     </div>
   );
 }
