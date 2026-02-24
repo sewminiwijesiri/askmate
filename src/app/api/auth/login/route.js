@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import Student from "@/models/Student";
 import Lecturer from "@/models/Lecturer";
 import Admin from "@/models/Admin";
+import Helper from "@/models/Helper";
 
 export async function POST(req) {
   try {
@@ -27,6 +28,8 @@ export async function POST(req) {
         user = await Student.findOne({ studentId: formattedId });
     } else if (role === 'lecturer') {
         user = await Lecturer.findOne({ lecturerId: formattedId });
+    } else if (role === 'helper') {
+        user = await Helper.findOne({ studentID: formattedId });
     } else if (role === 'admin') {
         user = await Admin.findOne({ username: id }); // Admin uses username, and might not be uppercase
     } else {
@@ -41,6 +44,14 @@ export async function POST(req) {
         { message: "User not found" },
         { status: 404 }
       );
+    }
+
+    // Check if helper is approved by admin
+    if (role === 'helper' && !user.adminApproved) {
+        return NextResponse.json(
+            { message: "Your account is pending admin approval. You will be able to log in once approved." },
+            { status: 403 }
+        );
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -59,7 +70,7 @@ export async function POST(req) {
     const token = jwt.sign(
       {
         id: user._id,
-        userId: role === 'admin' ? user.username : (role === 'student' ? user.studentId : user.lecturerId),
+        userId: role === 'admin' ? user.username : (role === 'student' || role === 'helper' ? (user.studentId || user.studentID) : user.lecturerId),
         role: userRole,
         email: user.email || 'admin@askmate.com',
         ...(role === 'student' && { year: user.year, semester: user.semester })
@@ -74,7 +85,7 @@ export async function POST(req) {
         token,
         user: {
             id: user._id,
-            userId: role === 'admin' ? user.username : (role === 'student' ? user.studentId : user.lecturerId),
+            userId: role === 'admin' ? user.username : (role === 'student' || role === 'helper' ? (user.studentId || user.studentID) : user.lecturerId),
             role: userRole,
             email: user.email || 'admin@askmate.com',
             ...(role === 'student' && { year: user.year, semester: user.semester })

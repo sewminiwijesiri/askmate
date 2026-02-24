@@ -31,7 +31,7 @@ export default function DashboardPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Welcome, {user.role === 'student' ? 'Student' : 'Lecturer'}!
+            Welcome, <span className="capitalize">{user.role}</span>!
           </h1>
           <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
             <h2 className="text-xl font-semibold text-indigo-900 mb-4">Profile Details</h2>
@@ -59,6 +59,18 @@ export default function DashboardPage() {
                     <span>{user.semester}</span>
                   </p>
                 </>
+              )}
+
+              {user.role === 'admin' && (
+                <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-amber-800 font-medium mb-3">Admin Controls Available</p>
+                  <button 
+                    onClick={() => router.push("/admin/dashboard")}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all"
+                  >
+                    Go to Admin Dashboard
+                  </button>
+                </div>
               )}
             </div>
           </div>
