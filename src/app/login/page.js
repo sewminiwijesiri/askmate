@@ -8,7 +8,7 @@ import Toast from "../../components/Toast";
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-orange-50">
-      <div className="animate-pulse text-primary font-medium">Loading login form...</div>
+      <div className="animate-pulse text-[#002147] font-medium">Loading login form...</div>
     </div>}>
       <LoginForm />
     </Suspense>
@@ -141,7 +141,7 @@ function LoginForm() {
                   }}
                   className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                       role === "student" 
-                      ? "bg-white text-primary shadow-sm ring-1 ring-gray-200" 
+                      ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200" 
                       : "text-gray-500 hover:text-gray-900"
                   }`}
               >
@@ -156,7 +156,7 @@ function LoginForm() {
                   }}
                   className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                       role === "lecturer" 
-                      ? "bg-white text-primary shadow-sm ring-1 ring-gray-200" 
+                      ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200" 
                       : "text-gray-500 hover:text-gray-900"
                   }`}
               >
@@ -232,7 +232,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-3 px-4 ${isAdmin ? 'bg-gray-900 hover:bg-gray-800' : 'bg-primary hover:bg-blue-900'} text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed`}
+            className={`w-full py-3 px-4 ${isAdmin ? 'bg-gray-900 hover:bg-gray-800' : 'bg-[#002147] hover:bg-blue-950'} text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed`}
           >
             {isLoading ? "Signing In..." : (isAdmin ? "Login as Admin" : "Login")}
           </button>
@@ -248,7 +248,7 @@ function LoginForm() {
           {!isAdmin && (
             <div>
               Don't have an account?{" "}
-              <Link href="/register" className="text-secondary hover:text-blue-600 font-medium">
+              <Link href="/register" className="text-[#4DA8DA] hover:text-blue-600 font-medium">
                 Register
               </Link>
             </div>
@@ -263,7 +263,7 @@ function LoginForm() {
                 setPassword("");
                 setToast({ ...toast, message: "" });
               }}
-              className="text-secondary hover:text-blue-600 font-medium transition-colors"
+              className="text-[#4DA8DA] hover:text-blue-600 font-medium transition-colors"
             >
               {isAdmin ? "← Back to User Login" : "Login as Admin"}
             </button>

@@ -24,7 +24,7 @@ export default function Toast({ message, type, onClose, duration = 3000 }) {
   );
 
   return (
-    <div className={`fixed top-5 right-5 z-50 flex items-center w-full max-w-xs p-4 rounded-lg shadow-lg text-white ${bgColor} transition-all duration-300 transform translate-y-0 opacity-100 animate-slide-in`}>
+    <div className={`fixed top-5 right-5 z-50 flex items-center w-full max-w-xs p-4 rounded-lg shadow-lg text-white ${bgColor} transition-all duration-300 transform translate-y-0 opacity-100 animate-[slideIn_0.4s_cubic-bezier(0.16,1,0.3,1)_forwards]`}>
       <div className="flex-shrink-0 mr-3">
         {icon}
       </div>
