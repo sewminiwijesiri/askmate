@@ -111,10 +111,14 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
   const handleUpdateResource = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`/api/resources/${editingResource._id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ ...uploadData, userId: user.userId })
       });
 
@@ -130,9 +134,11 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
   const handleDeleteResource = async (id) => {
     if (!confirm("Are you sure you want to delete this resource?")) return;
+    const token = localStorage.getItem("token");
     try {
       const res = await fetch(`/api/resources/${id}?userId=${user.userId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
         fetchResources();
@@ -282,7 +288,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#4DA8DA]"><ExternalLink size={16} /></a>
-                          {res.uploadedBy === user.userId && (
+                          {(res.uploadedBy === user.userId || user.role === 'admin') && (
                             <>
                               <button onClick={() => startEdit(res)} className="p-2 text-slate-400 hover:text-emerald-500"><Edit2 size={16} /></button>
                               <button onClick={() => handleDeleteResource(res._id)} className="p-2 text-slate-400 hover:text-rose-500"><Trash2 size={16} /></button>

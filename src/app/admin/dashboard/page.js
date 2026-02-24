@@ -23,6 +23,7 @@ import {
   Zap,
   Clock,
   Mail,
+  Bell,
   User as UserIcon
 } from "lucide-react";
 
@@ -168,68 +169,66 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200/60 z-50 transition-all duration-300 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 h-full w-72 bg-[#002147] border-r border-white/10 z-50 transition-all duration-300 shadow-2xl">
         <div className="p-8">
-          <div className="flex items-center gap-3 mb-10 px-2 transition-transform hover:scale-105 duration-300">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#002147] to-[#004a9f] flex items-center justify-center shadow-lg shadow-blue-900/20 ring-4 ring-blue-50">
-              <ShieldCheck className="text-white" size={24} />
+          <div className="flex items-center gap-3 mb-12 px-2 transition-transform hover:scale-105 duration-300">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-lg border border-white/20">
+              <ShieldCheck className="text-white" size={22} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-[#002147] tracking-tight">ASKmate</h2>
+              <h2 className="text-xl font-bold text-white tracking-tight">ASKmate</h2>
               <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Admin Panel</p>
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></div>
+                <p className="text-[10px] text-blue-200/60 font-bold tracking-widest uppercase">Admin Portal</p>
               </div>
             </div>
           </div>
 
           <nav className="space-y-1.5">
-            <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 mt-6">
+            <div className="px-4 py-3 text-[10px] font-bold text-blue-200/40 uppercase tracking-[0.2em] mb-2 mt-6">
               Core Management
             </div>
             
-            <button 
-              onClick={() => setActiveTab("helpers")}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all duration-300 relative group ${
-                activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers"
-                ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-              }`}
-            >
-              <Users size={20} className={activeTab !== "helpers" && activeTab !== "students" && activeTab !== "lecturers" ? "text-slate-400 group-hover:text-slate-800 transition-colors" : ""} />
-              <span className="text-sm">User Directory</span>
-              {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
-                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]"></div>
-              )}
-            </button>
-
-            <button 
-              onClick={() => setActiveTab("academic")}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all duration-300 relative group ${
-                activeTab === "academic"
-                ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-              }`}
-            >
-              <BookOpen size={20} className={activeTab !== "academic" ? "text-slate-400 group-hover:text-slate-800 transition-colors" : ""} />
-              <span className="text-sm">Academic Setup</span>
-              {activeTab === "academic" && (
-                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]"></div>
-              )}
-            </button>
+            {[
+              { id: "helpers", label: "User Directory", icon: Users, isUsers: true },
+              { id: "academic", label: "Academic Hub", icon: BookOpen },
+            ].map((item) => {
+              const isActive = item.isUsers 
+                ? (activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers")
+                : activeTab === item.id;
+              
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl font-bold transition-all duration-300 relative group ${
+                    isActive
+                    ? "bg-white/10 text-white" 
+                    : "text-blue-100/60 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <item.icon size={18} className={isActive ? "text-orange-400" : "text-blue-200/40 group-hover:text-white transition-colors"} />
+                  <span className="text-[13px]">{item.label}</span>
+                  {isActive && (
+                    <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                  )}
+                </button>
+              );
+            })}
             
-            <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 mt-8">
+            <div className="px-4 py-3 text-[10px] font-bold text-blue-200/40 uppercase tracking-[0.2em] mb-2 mt-8">
               System Insights
             </div>
 
-            <button className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all duration-300 group">
-              <LayoutDashboard size={20} className="group-hover:text-slate-800 transition-colors" />
-              <span className="text-sm font-bold">Platform Stats</span>
+            <button className="w-full flex items-center gap-4 px-5 py-3.5 rounded-xl text-blue-100/60 hover:bg-white/5 hover:text-white transition-all duration-300 group">
+              <LayoutDashboard size={18} className="text-blue-200/40 group-hover:text-white transition-colors" />
+              <span className="text-[13px] font-bold">Platform Stats</span>
             </button>
             
-            <button className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-800 transition-all duration-300 group">
-              <MoreVertical size={20} className="group-hover:text-slate-800 transition-colors" />
-              <span className="text-sm font-bold">Global Settings</span>
+            <button className="w-full flex items-center gap-4 px-5 py-3.5 rounded-xl text-blue-100/60 hover:bg-white/5 hover:text-white transition-all duration-300 group">
+              <MoreVertical size={18} className="text-blue-200/40 group-hover:text-white transition-colors" />
+              <span className="text-[13px] font-bold">Settings</span>
             </button>
           </nav>
         </div>
@@ -237,104 +236,71 @@ export default function AdminDashboard() {
         <div className="absolute bottom-10 left-0 w-full px-8">
           <button 
             onClick={handleLogout}
-            className="flex items-center justify-center gap-3 w-full px-5 py-4 rounded-2xl text-rose-500 bg-rose-50/50 hover:bg-rose-500 hover:text-white transition-all duration-300 border border-rose-100/50 font-bold text-sm group shadow-sm hover:shadow-rose-500/10"
+            className="flex items-center justify-center gap-3 w-full px-5 py-3.5 rounded-xl text-white/60 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-300 font-bold text-[13px] group border border-transparent hover:border-rose-500/20"
           >
-            <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
-            <span>Terminate Session</span>
+            <LogOut size={16} className="group-hover:rotate-12 transition-transform" />
+            <span>Logout Portal</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 p-8 lg:p-12 xl:p-16">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+      {/* Main Content */}
+      <main className="lg:ml-72 min-h-screen p-6 md:p-10">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-black text-[#002147] tracking-tight">
-              Control <span className="text-blue-600">Center</span>
+            <h1 className="text-3xl font-bold text-rose-600">
+              Control Center
             </h1>
-            <p className="text-slate-500 font-semibold text-sm">System administration and user governance dashboard.</p>
+            <p className="text-slate-500 font-medium text-sm">System administration and user governance dashboard.</p>
           </div>
           
-          <div className="flex items-center gap-5 bg-white p-2.5 pr-6 rounded-[2rem] border border-slate-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.03)] transition-all hover:shadow-[0_8px_32px_rgba(0,0,0,0.05)] cursor-pointer group">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 flex items-center justify-center font-black text-[#002147] border border-blue-200 shadow-inner group-hover:scale-110 transition-transform">
+          <div className="flex items-center gap-4">
+            <button className="relative w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
+              <Bell size={20} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full"></span>
+            </button>
+
+            <div className="flex items-center gap-3 bg-white pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-[#002147] flex items-center justify-center text-white font-bold text-sm">
                 {admin.userId?.[0]?.toUpperCase()}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
-            </div>
-            <div>
-              <p className="text-[13px] font-black text-[#002147] leading-none mb-1 group-hover:text-blue-600 transition-colors">{admin.userId}</p>
-              <div className="flex items-center gap-1.5">
-                <div className="px-2 py-0.5 rounded-md bg-blue-50 text-[9px] text-blue-600 font-black uppercase tracking-widest">
-                  Administrator
-                </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-[13px] font-bold text-[#002147] leading-none">{admin.userId}</p>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Administrator</p>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-blue-100 transition-all duration-700"></div>
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Users size={24} />
-              </div>
-              <div className="text-emerald-500 text-xs font-black bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100/50">
-                +12% Trend
-              </div>
-            </div>
-            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Total User Base</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">{stats.total}</h3>
-              <span className="text-slate-400 font-bold text-sm">Members</span>
-            </div>
-          </div>
-          
-          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-orange-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-orange-100 transition-all duration-700"></div>
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Zap size={24} />
-              </div>
-              {stats.pending > 0 && (
-                <div className="flex items-center gap-1.5 animate-pulse bg-orange-500 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20">
-                   Immediate Action
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+          {[
+            { label: "Total Members", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100", trend: "+12%" },
+            { label: "Waitlisted", value: stats.pending, icon: Zap, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100", alert: stats.pending > 0 },
+            { label: "Active Sessions", value: "24", icon: Clock, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100", status: "Live" },
+          ].map((stat, i) => (
+            <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group relative overflow-hidden`}>
+               <div className="flex justify-between items-center mb-4">
+                <div className={`w-10 h-10 rounded-xl bg-white shadow-sm ${stat.color} flex items-center justify-center`}>
+                  <stat.icon size={20} />
                 </div>
-              )}
-            </div>
-            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Waitlisted Helpers</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">{stats.pending}</h3>
-              <span className="text-slate-400 font-bold text-sm">Requests</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200/60 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-50 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-indigo-100 transition-all duration-700"></div>
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Clock size={24} />
+                {stat.trend && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{stat.trend}</span>}
+                {stat.alert && <span className="text-[10px] font-bold text-white bg-orange-500 px-2 py-1 rounded-md animate-pulse">Required</span>}
+                {stat.status && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">{stat.status}</span>}
               </div>
-              <div className="text-indigo-500 text-xs font-black bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100/50">
-                Live Now
-              </div>
+              <p className="text-[11px] font-bold text-slate-400 mb-1 uppercase tracking-wider">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-[#002147]">{stat.value}</h3>
             </div>
-            <p className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-[0.2em]">Active Sessions</p>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-5xl font-black text-[#002147] tracking-tighter">24</h3>
-              <span className="text-slate-400 font-bold text-sm">Online</span>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Filters and Table Area */}
         {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
-        <div className="bg-white border border-slate-200/60 rounded-[3rem] shadow-[0_8px_48px_rgba(0,0,0,0.02)] overflow-hidden transition-all duration-500 hover:shadow-[0_12px_64px_rgba(0,0,0,0.04)]">
-          <div className="p-10 border-b border-slate-100/80">
-            <div className="flex flex-col lg:flex-row gap-8 justify-between items-center">
+        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+          <div className="p-8 border-b border-slate-100">
+            <div className="flex flex-col lg:flex-row gap-6 justify-between items-center">
               {/* Tabs */}
-              <div className="flex p-2 bg-slate-100/60 backdrop-blur-sm rounded-[1.5rem] self-start lg:self-center border border-slate-200/40">
+              <div className="flex p-1.5 bg-slate-100 rounded-xl self-start lg:self-center">
                 {[
                   { id: "helpers", label: "Helpers", icon: <IconHelper /> },
                   { id: "students", label: "Students", icon: <IconUsers /> },
@@ -343,16 +309,16 @@ export default function AdminDashboard() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-3 px-8 py-3 rounded-2xl text-[13px] font-black transition-all duration-500 ${
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${
                       activeTab === tab.id 
-                      ? "bg-white text-[#002147] shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-200/60 translate-y-0" 
-                      : "text-slate-500 hover:text-slate-800 translate-y-0 hover:-translate-y-0.5"
+                      ? "bg-white text-[#002147] shadow-sm" 
+                      : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
-                    <span className={activeTab === tab.id ? "text-blue-500 scale-110 transition-transform" : "opacity-50"}>{tab.icon}</span>
+                    <span className={activeTab === tab.id ? "text-[#4DA8DA]" : "opacity-50"}>{tab.icon}</span>
                     {tab.label}
                     {tab.id === 'helpers' && stats.pending > 0 && (
-                      <span className="ml-2 w-5 h-5 bg-[#FF9F1C] text-white rounded-full text-[10px] flex items-center justify-center font-black shadow-lg shadow-orange-500/20">
+                      <span className="ml-2 w-5 h-5 bg-[#FF9F1C] text-white rounded-full text-[10px] flex items-center justify-center font-bold">
                         {stats.pending}
                       </span>
                     )}
@@ -361,16 +327,16 @@ export default function AdminDashboard() {
               </div>
 
               {/* Search */}
-              <div className="relative w-full lg:w-[450px] group">
-                <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-all duration-300">
-                  <Search size={20} strokeWidth={2.5} />
+              <div className="relative w-full lg:w-96 group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                  <Search size={18} />
                 </div>
                 <input
                   type="text"
-                  placeholder={`Universal search for ${activeTab}...`}
+                  placeholder={`Search ${activeTab}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] py-4.5 pl-16 pr-6 text-sm text-slate-700 font-bold focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100/50 shadow-inner transition-all duration-300 outline-none h-14"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#4DA8DA]/20 focus:border-[#4DA8DA] transition-all"
                 />
               </div>
             </div>

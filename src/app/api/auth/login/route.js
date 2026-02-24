@@ -71,6 +71,7 @@ export async function POST(req) {
       {
         id: user._id,
         userId: role === 'admin' ? user.username : (role === 'student' || role === 'helper' ? (user.studentId || user.studentID) : user.lecturerId),
+        name: user.name || (role === 'admin' ? 'Admin' : user.userId),
         role: userRole,
         email: user.email || 'admin@askmate.com',
         ...(role === 'student' && { year: user.year, semester: user.semester })
@@ -86,6 +87,7 @@ export async function POST(req) {
         user: {
             id: user._id,
             userId: role === 'admin' ? user.username : (role === 'student' || role === 'helper' ? (user.studentId || user.studentID) : user.lecturerId),
+            name: user.name || (role === 'admin' ? 'Admin' : user.userId),
             role: userRole,
             email: user.email || 'admin@askmate.com',
             ...(role === 'student' && { year: user.year, semester: user.semester })
