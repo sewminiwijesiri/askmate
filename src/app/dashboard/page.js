@@ -106,14 +106,14 @@ export default function StudentDashboard() {
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Trust Score", value: "850", icon: ShieldCheck, color: "text-[#4DA8DA]" },
-                { label: "Answers", value: "12", icon: MessageSquare, color: "text-[#4DA8DA]" },
-                { label: "Points", value: "2.4k", icon: Star, color: "text-[#4DA8DA]" },
-                { label: "Helper Rank", value: "#42", icon: Award, color: "text-[#4DA8DA]" },
+                { label: "Trust Score", value: "850", icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+                { label: "Answers", value: "12", icon: MessageSquare, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+                { label: "Points", value: "2.4k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+                { label: "Helper Rank", value: "#42", icon: Award, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
               ].map((stat, i) => (
-                <div key={i} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group`}>
                    <div className="flex justify-between items-center mb-4">
-                    <div className={`w-10 h-10 rounded-xl bg-[#4DA8DA]/5 ${stat.color} flex items-center justify-center`}>
+                    <div className={`w-10 h-10 rounded-xl bg-white shadow-sm ${stat.color} flex items-center justify-center`}>
                       <stat.icon size={20} />
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded-md">
@@ -142,15 +142,19 @@ export default function StudentDashboard() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="bg-white border border-slate-200 p-6 rounded-2xl hover:shadow-md transition-all group">
+                    {[
+                      { id: 1, color: "blue" },
+                      { id: 2, color: "orange" }
+                    ].map((module) => (
+                      <div key={module.id} className={`bg-white border ${module.color === 'blue' ? 'border-blue-100 hover:border-blue-200' : 'border-orange-100 hover:border-orange-200'} p-6 rounded-2xl hover:shadow-md transition-all group relative overflow-hidden`}>
+                        <div className={`absolute top-0 left-0 w-1 h-full ${module.color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
                         <div className="flex justify-between items-start mb-4">
-                          <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                            SOFT-10{i}
+                          <span className={`px-2.5 py-1 ${module.color === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'} rounded-lg text-[10px] font-bold uppercase tracking-wider`}>
+                            SOFT-10{module.id}
                           </span>
-                          <BookOpen size={18} className="text-slate-300 group-hover:text-[#4DA8DA] transition-colors" />
+                          <BookOpen size={18} className={`text-slate-300 group-hover:${module.color === 'blue' ? 'text-blue-500' : 'text-orange-500'} transition-colors`} />
                         </div>
-                        <h4 className="text-lg font-bold text-[#002147] mb-2">Software Engineering {i}</h4>
+                        <h4 className="text-lg font-bold text-[#002147] mb-2">Software Engineering {module.id}</h4>
                         <p className="text-slate-500 text-sm mb-6 line-clamp-2">
                           Master the principles of software architecture and design patterns.
                         </p>
@@ -200,9 +204,9 @@ export default function StudentDashboard() {
                       { name: "Sarah Smith", points: "3.2k", rank: 2 },
                       { name: "Mike Ross", points: "2.9k", rank: 3 },
                     ].map((helper, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer">
+                      <div key={i} className={`flex items-center justify-between p-3 rounded-xl hover:shadow-sm transition-all cursor-pointer ${i === 0 ? 'bg-orange-50/50' : 'hover:bg-slate-50'}`}>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-sm">
+                          <div className={`w-10 h-10 rounded-lg ${i === 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center font-bold text-sm`}>
                             {helper.name[0]}
                           </div>
                           <div>
@@ -210,7 +214,11 @@ export default function StudentDashboard() {
                             <p className="text-[11px] text-slate-400 font-semibold">{helper.points} pts</p>
                           </div>
                         </div>
-                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md ${i === 0 ? "bg-orange-50 text-orange-600" : "bg-slate-100 text-slate-500"}`}>
+                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md ${
+                          i === 0 ? "bg-orange-500 text-white" : 
+                          i === 1 ? "bg-slate-200 text-slate-700" : 
+                          "bg-amber-100 text-amber-700"
+                        }`}>
                           #{helper.rank}
                         </span>
                       </div>

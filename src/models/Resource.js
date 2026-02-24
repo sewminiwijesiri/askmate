@@ -34,7 +34,7 @@ const ResourceSchema = new mongoose.Schema(
     uploaderRole: {
       type: String,
       required: true,
-      enum: ["student", "helper", "lecturer"],
+      enum: ["student", "helper", "lecturer", "admin"],
     },
   },
   { timestamps: true }
