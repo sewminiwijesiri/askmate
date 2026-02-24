@@ -92,7 +92,7 @@ export default function Home() {
               
               {/* Text Content */}
               <div className="flex-1 text-center lg:text-left">
-                <div className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-1.5 text-sm font-semibold text-blue-100 mb-8 animate-fade-in-up">
+                <div className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-1.5 text-sm font-semibold text-blue-100 mb-8 animate-[fadeInUp_1s_ease-out_forwards]">
                   <span className="flex h-2.5 w-2.5 rounded-full bg-[#FF9F1C] mr-3 animate-pulse"></span>
                   #1 Platform for University Collaboration
                 </div>
@@ -293,38 +293,38 @@ export default function Home() {
                 </div>
              </div>
              <div>
-                <h4 className="font-bold text-lg mb-6 text-primary">Platform</h4>
+                <h4 className="font-bold text-lg mb-6 text-[#002147]">Platform</h4>
                 <ul className="space-y-4 text-gray-500">
-                   <li><a href="#" className="hover:text-primary transition-colors">Browse Modules</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">Ask a Question</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">Resource Library</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">AI Tutor</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Browse Modules</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Ask a Question</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Resource Library</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">AI Tutor</a></li>
                 </ul>
              </div>
              <div>
-                <h4 className="font-bold text-lg mb-6 text-primary">Company</h4>
+                <h4 className="font-bold text-lg mb-6 text-[#002147]">Company</h4>
                 <ul className="space-y-4 text-gray-500">
-                   <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                   <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">About Us</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Careers</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Blog</a></li>
+                   <li><a href="#" className="hover:text-[#002147] transition-colors">Contact</a></li>
                 </ul>
              </div>
              <div>
-                <h4 className="font-bold text-lg mb-6 text-primary">Stay Updated</h4>
+                <h4 className="font-bold text-lg mb-6 text-[#002147]">Stay Updated</h4>
                 <p className="text-gray-500 mb-4">Subscribe to our newsletter for the latest academic tips.</p>
                 <form className="flex">
-                   <input type="email" placeholder="Enter your email" className="bg-blue-50 border-none outline-none text-gray-800 placeholder-gray-400 px-4 py-3 rounded-l-lg w-full focus:ring-1 focus:ring-accent" />
-                   <button className="bg-accent px-6 py-3 rounded-r-lg font-bold text-white hover:bg-orange-600 transition-colors">Go</button>
+                   <input type="email" placeholder="Enter your email" className="bg-blue-50 border-none outline-none text-gray-800 placeholder-gray-400 px-4 py-3 rounded-l-lg w-full focus:ring-1 focus:ring-[#FF9F1C]" />
+                   <button className="bg-[#FF9F1C] px-6 py-3 rounded-r-lg font-bold text-white hover:bg-orange-600 transition-colors">Go</button>
                 </form>
              </div>
           </div>
           <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
              <p>© {new Date().getFullYear()} ASKmate. All rights reserved.</p>
              <div className="flex space-x-8 mt-4 md:mt-0">
-                <a href="#" className="hover:text-primary">Privacy Policy</a>
-                <a href="#" className="hover:text-primary">Terms of Service</a>
-                <a href="#" className="hover:text-primary">Cookie Settings</a>
+                <a href="#" className="hover:text-[#002147]">Privacy Policy</a>
+                <a href="#" className="hover:text-[#002147]">Terms of Service</a>
+                <a href="#" className="hover:text-[#002147]">Cookie Settings</a>
              </div>
           </div>
         </div>
