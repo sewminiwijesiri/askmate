@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Trash2, 
-  Edit2, 
-  BookOpen, 
-  GraduationCap, 
-  Calendar, 
-  ChevronRight, 
-  FileText, 
-  Link as LinkIcon, 
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  ChevronRight,
+  FileText,
+  Link as LinkIcon,
   ExternalLink,
   ChevronLeft,
   X,
@@ -32,7 +32,9 @@ export default function AcademicManager() {
   const [resLoading, setResLoading] = useState(false);
   const [isResModalOpen, setIsResModalOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
-  const [resData, setResData] = useState({ title: "", description: "", resourceType: "link", url: "" });
+  const [resData, setResData] = useState({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchModules();
@@ -62,7 +64,7 @@ export default function AcademicManager() {
   const fetchResources = async () => {
     try {
       setResLoading(true);
-      const res = await fetch(`/api/resources?moduleId=${selectedModule._id}`);
+      const res = await fetch(`/api/resources?moduleId=${selectedModule._id}&status=all`);
       if (res.ok) {
         const data = await res.json();
         setResources(data);
@@ -106,36 +108,47 @@ export default function AcademicManager() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     const adminUser = JSON.parse(localStorage.getItem("user"));
-    
+
     try {
+      setIsUploading(true);
       const method = editingResource ? "PATCH" : "POST";
       const url = editingResource ? `/api/resources/${editingResource._id}` : "/api/resources";
-      
-      const payload = {
-        ...resData,
-        module: selectedModule._id,
-        uploadedBy: adminUser.userId,
-        uploaderName: adminUser.name || adminUser.userId,
-        uploaderRole: "admin"
-      };
+
+      const formData = new FormData();
+      formData.append("title", resData.title);
+      formData.append("description", resData.description);
+      formData.append("resourceType", resData.resourceType);
+      formData.append("category", resData.category);
+      formData.append("module", selectedModule._id);
+      formData.append("uploadedBy", adminUser.userId);
+      formData.append("uploaderName", adminUser.name || adminUser.userId);
+      formData.append("uploaderRole", "admin");
+
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      } else {
+        formData.append("url", resData.url);
+      }
 
       const res = await fetch(url, {
         method,
-        headers: { 
-          "Content-Type": "application/json",
+        headers: {
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       if (res.ok) {
         fetchResources();
         setIsResModalOpen(false);
         setEditingResource(null);
-        setResData({ title: "", description: "", resourceType: "link", url: "" });
+        setResData({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
+        setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error managing resource:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -153,14 +166,33 @@ export default function AcademicManager() {
     }
   };
 
+  const handleApproveResource = async (id, status = "approved") => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`/api/resources/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) fetchResources();
+    } catch (error) {
+      console.error("Error approving resource:", error);
+    }
+  };
+
   const startEditResource = (resource) => {
     setEditingResource(resource);
     setResData({
       title: resource.title,
       description: resource.description,
       resourceType: resource.resourceType,
+      category: resource.category || "Short Note",
       url: resource.url
     });
+    setSelectedFile(null);
     setIsResModalOpen(true);
   };
 
@@ -184,11 +216,10 @@ export default function AcademicManager() {
                   <button
                     key={year}
                     onClick={() => setSelectedYear(year)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${
-                      selectedYear === year
-                        ? "bg-[#002147] text-white shadow-lg shadow-blue-900/10"
-                        : "text-slate-500 hover:bg-slate-50"
-                    }`}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${selectedYear === year
+                      ? "bg-[#002147] text-white shadow-lg shadow-blue-900/10"
+                      : "text-slate-500 hover:bg-slate-50"
+                      }`}
                   >
                     <span>Year {year}</span>
                     {selectedYear === year && <ChevronRight size={16} />}
@@ -207,11 +238,10 @@ export default function AcademicManager() {
                   <button
                     key={sem}
                     onClick={() => setSelectedSemester(sem)}
-                    className={`py-3.5 rounded-xl font-bold transition-all text-center ${
-                      selectedSemester === sem
-                        ? "bg-orange-50 text-orange-700 border border-orange-100"
-                        : "text-slate-500 hover:bg-slate-50"
-                    }`}
+                    className={`py-3.5 rounded-xl font-bold transition-all text-center ${selectedSemester === sem
+                      ? "bg-orange-50 text-orange-700 border border-orange-100"
+                      : "text-slate-500 hover:bg-slate-50"
+                      }`}
                   >
                     Sem {sem}
                   </button>
@@ -271,7 +301,7 @@ export default function AcademicManager() {
                           {module.moduleCode}
                         </div>
                         <div className="flex gap-2">
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteModule(module._id); }}
                             className="p-3 text-slate-300 hover:text-rose-500 transition-colors bg-white rounded-xl shadow-sm hover:shadow-md"
                           >
@@ -286,7 +316,7 @@ export default function AcademicManager() {
                         {module.description || "Comprehensive curriculum details for this specialized module."}
                       </p>
                       <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-                         <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Manage Resources →</span>
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Manage Resources →</span>
                       </div>
                     </div>
                   ))}
@@ -295,7 +325,7 @@ export default function AcademicManager() {
             </div>
           ) : (
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm min-h-[600px] animate-in slide-in-from-right-4 duration-500">
-              <button 
+              <button
                 onClick={() => setSelectedModule(null)}
                 className="flex items-center gap-2 text-slate-400 hover:text-[#002147] font-black text-xs uppercase tracking-widest mb-10 transition-all hover:-translate-x-1"
               >
@@ -310,15 +340,15 @@ export default function AcademicManager() {
                   <div>
                     <h2 className="text-3xl font-black text-[#002147] tracking-tight mb-2">{selectedModule.moduleName}</h2>
                     <div className="flex items-center gap-3">
-                       <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
+                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
                         {selectedModule.moduleCode}
-                       </span>
-                       <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                       <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">Resources Repository</p>
+                      </span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                      <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">Resources Repository</p>
                     </div>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsResModalOpen(true)}
                   className="flex items-center gap-2 px-8 py-4 bg-[#002147] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10 active:scale-95 translate-y-0 hover:-translate-y-1"
                 >
@@ -328,18 +358,18 @@ export default function AcademicManager() {
               </div>
 
               {resLoading ? (
-                 <div className="flex flex-col items-center justify-center h-[300px]">
-                    <div className="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin"></div>
-                 </div>
+                <div className="flex flex-col items-center justify-center h-[300px]">
+                  <div className="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin"></div>
+                </div>
               ) : resources.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[350px] text-center bg-slate-50/30 border-2 border-dashed border-slate-100 rounded-[3rem]">
-                   <div className="w-24 h-24 bg-white shadow-sm rounded-[2rem] flex items-center justify-center text-slate-200 mb-8">
-                     <FileText size={48} />
-                   </div>
-                   <h3 className="text-2xl font-black text-[#002147] mb-3">Resource Vault Empty</h3>
-                   <p className="text-slate-500 font-semibold max-w-sm mx-auto leading-relaxed">
-                     This module currently has no shared materials. Upload administrative or learning resources.
-                   </p>
+                  <div className="w-24 h-24 bg-white shadow-sm rounded-[2rem] flex items-center justify-center text-slate-200 mb-8">
+                    <FileText size={48} />
+                  </div>
+                  <h3 className="text-2xl font-black text-[#002147] mb-3">Resource Vault Empty</h3>
+                  <p className="text-slate-500 font-semibold max-w-sm mx-auto leading-relaxed">
+                    This module currently has no shared materials. Upload administrative or learning resources.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -358,28 +388,59 @@ export default function AcademicManager() {
                           </button>
                         </div>
                       </div>
-                      <h4 className="text-lg font-black text-[#002147] mb-2 group-hover:text-blue-600 transition-colors">{res.title}</h4>
+
+                      <div className="flex items-center gap-2 mb-4">
+                        <h4 className="text-lg font-black text-[#002147] group-hover:text-blue-600 transition-colors">{res.title}</h4>
+                        {res.status === "pending" && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-tight">Pending</span>
+                        )}
+                        {res.status === "rejected" && (
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black uppercase tracking-tight">Rejected</span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-500 font-medium mb-6 line-clamp-2 leading-relaxed">{res.description || "Administrative documentation for this module."}</p>
-                      
+
                       <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[10px] font-black text-[#002147] shadow-sm uppercase">
-                             {(res.uploaderName || "A")[0]}
+                            {(res.uploaderName || "A")[0]}
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Uploaded By</p>
                             <p className="text-xs font-black text-slate-700 leading-none">{res.uploaderName}</p>
                           </div>
                         </div>
-                        <a 
-                          href={res.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
+                        <div className="flex items-center px-4 py-1.5 bg-[#002147]/10 text-[#002147] rounded-lg border border-[#002147]/10">
+                          <span className="text-[9px] font-black uppercase tracking-wider">{res.category || "General"}</span>
+                        </div>
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#002147] rounded-xl font-black text-[10px] uppercase tracking-widest border border-slate-100 hover:bg-[#002147] hover:text-white transition-all shadow-sm"
                         >
                           View Resource <ExternalLink size={14} />
                         </a>
                       </div>
+
+                      {
+                        res.status === "pending" && (
+                          <div className="mt-6 flex gap-2">
+                            <button
+                              onClick={() => handleApproveResource(res._id, "approved")}
+                              className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/10"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleApproveResource(res._id, "rejected")}
+                              className="flex-1 py-3 bg-rose-50 text-rose-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )
+                      }
                     </div>
                   ))}
                 </div>
@@ -390,143 +451,202 @@ export default function AcademicManager() {
       </div>
 
       {/* Add Module Modal */}
-      {isAddingMode && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-            <div className="p-10 border-b border-slate-100 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-black text-[#002147]">New Academic Module</h2>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Year {selectedYear} • Semester {selectedSemester}</p>
-              </div>
-              <button onClick={() => setIsAddingMode(false)} className="p-3 rounded-2xl hover:bg-slate-50 text-slate-400 transition-all">
-                <X size={24} />
-              </button>
-            </div>
-            <form onSubmit={handleAddModule} className="p-10 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newModule.moduleName}
-                  onChange={(e) => setNewModule({ ...newModule, moduleName: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
-                  placeholder="e.g., Quantum Computing Fundamentals"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Code</label>
-                <input
-                  type="text"
-                  required
-                  value={newModule.moduleCode}
-                  onChange={(e) => setNewModule({ ...newModule, moduleCode: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
-                  placeholder="e.g., CS-Q402"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Abstract (Optional)</label>
-                <textarea
-                  value={newModule.description}
-                  onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-32 resize-none placeholder:text-slate-300"
-                  placeholder="The primary focus of this unit is..."
-                />
-              </div>
-              <div className="flex gap-4 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setIsAddingMode(false)}
-                  className="flex-1 px-8 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-8 py-4 bg-[#002147] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10"
-                >
-                  Confirm Module
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Resource Modal */}
-      {isResModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden">
-            <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <div>
-                <h2 className="text-2xl font-black text-[#002147]">{editingResource ? 'Modify Resource' : 'Archive Resource'}</h2>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                  Global repository update for {selectedModule.moduleCode}
-                </p>
-              </div>
-              <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); }} className="p-3 rounded-2xl hover:bg-white text-slate-400 transition-all shadow-sm">
-                <X size={24} />
-              </button>
-            </div>
-            <form onSubmit={handleResourceSubmit} className="p-10 space-y-6">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Title</label>
-                <input
-                  type="text"
-                  required
-                  value={resData.title}
-                  onChange={(e) => setResData({ ...resData, title: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
-                  placeholder="Material identification"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Media Format</label>
-                  <select
-                    value={resData.resourceType}
-                    onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-black focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="link">Hyperlink</option>
-                    <option value="pdf">PDF Document</option>
-                    <option value="word">MS Word Document</option>
-                    <option value="text">Raw Text File</option>
-                  </select>
+      {
+        isAddingMode && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+              <div className="p-10 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-black text-[#002147]">New Academic Module</h2>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Year {selectedYear} • Semester {selectedSemester}</p>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Access URL</label>
+                <button onClick={() => setIsAddingMode(false)} className="p-3 rounded-2xl hover:bg-slate-50 text-slate-400 transition-all">
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleAddModule} className="p-10 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Name</label>
                   <input
-                    type="url"
+                    type="text"
                     required
-                    value={resData.url}
-                    onChange={(e) => setResData({ ...resData, url: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="https://cloud.storage/res"
+                    value={newModule.moduleName}
+                    onChange={(e) => setNewModule({ ...newModule, moduleName: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
+                    placeholder="e.g., Quantum Computing Fundamentals"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administrative Note</label>
-                <textarea
-                  value={resData.description}
-                  onChange={(e) => setResData({ ...resData, description: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold h-32 resize-none focus:outline-none focus:border-blue-500 transition-all"
-                  placeholder="Contextual information for students..."
-                />
-              </div>
-
-              <div className="flex gap-4 pt-6">
-                <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); }} className="flex-1 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Discard</button>
-                <button type="submit" className="flex-1 py-4 bg-[#002147] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/10 transition-all">Save Changes</button>
-              </div>
-            </form>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Code</label>
+                  <input
+                    type="text"
+                    required
+                    value={newModule.moduleCode}
+                    onChange={(e) => setNewModule({ ...newModule, moduleCode: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
+                    placeholder="e.g., CS-Q402"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Abstract (Optional)</label>
+                  <textarea
+                    value={newModule.description}
+                    onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-32 resize-none placeholder:text-slate-300"
+                    placeholder="The primary focus of this unit is..."
+                  />
+                </div>
+                <div className="flex gap-4 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMode(false)}
+                    className="flex-1 px-8 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-8 py-4 bg-[#002147] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10"
+                  >
+                    Confirm Module
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* Resource Modal */}
+      {
+        isResModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden">
+              <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                  <h2 className="text-2xl font-black text-[#002147]">{editingResource ? 'Modify Resource' : 'Archive Resource'}</h2>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                    Global repository update for {selectedModule.moduleCode}
+                  </p>
+                </div>
+                <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-3 rounded-2xl hover:bg-white text-slate-400 transition-all shadow-sm">
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleResourceSubmit} className="p-10 space-y-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={resData.title}
+                    onChange={(e) => setResData({ ...resData, title: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
+                    placeholder="Material identification"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Media Format</label>
+                    <select
+                      value={resData.resourceType}
+                      onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-black focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="link">Hyperlink</option>
+                      <option value="pdf">PDF Document</option>
+                      <option value="word">MS Word Document</option>
+                      <option value="text">Raw Text File</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      {resData.resourceType === 'link' ? 'Access URL' : 'Document File'}
+                    </label>
+                    {resData.resourceType === 'link' ? (
+                      <input
+                        type="url"
+                        required
+                        value={resData.url}
+                        onChange={(e) => setResData({ ...resData, url: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
+                        placeholder="https://cloud.storage/res"
+                      />
+                    ) : (
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          required={!editingResource}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            setSelectedFile(file);
+                            if (file && !resData.title) {
+                              setResData({ ...resData, title: file.name.split('.')[0] });
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          accept={
+                            resData.resourceType === 'pdf' ? '.pdf' :
+                              resData.resourceType === 'word' ? '.doc,.docx' :
+                                resData.resourceType === 'text' ? '.txt' : '*'
+                          }
+                        />
+                        <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold flex items-center gap-3 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
+                          <FileIcon size={18} className="text-blue-500 flex-shrink-0" />
+                          <span className="truncate">{selectedFile ? selectedFile.name : (editingResource ? 'Change document...' : 'Browse documents...')}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Category</label>
+                  <select
+                    value={resData.category}
+                    onChange={(e) => setResData({ ...resData, category: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-black focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="Short Note">Short Note</option>
+                    <option value="Lecture Note">Lecture Note</option>
+                    <option value="YouTube Link">YouTube Link</option>
+                    <option value="Past Paper">Past Paper</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administrative Note</label>
+                  <textarea
+                    value={resData.description}
+                    onChange={(e) => setResData({ ...resData, description: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold h-32 resize-none focus:outline-none focus:border-blue-500 transition-all"
+                    placeholder="Contextual information for students..."
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-6">
+                  <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Discard</button>
+                  <button
+                    type="submit"
+                    disabled={isUploading}
+                    className="flex-1 py-4 bg-[#002147] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        Syncing...
+                      </>
+                    ) : (editingResource ? 'Save Changes' : 'Upload Resource')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

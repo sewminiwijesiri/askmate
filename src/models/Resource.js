@@ -12,7 +12,11 @@ const ResourceSchema = new mongoose.Schema(
     resourceType: {
       type: String,
       required: true,
-      enum: ["pdf", "word", "text", "link"],
+    },
+    category: {
+      type: String,
+      required: true,
+      default: "Other",
     },
     url: {
       type: String,
@@ -35,6 +39,16 @@ const ResourceSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ["student", "helper", "lecturer", "admin"],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Assuming there's a User model, if not use String for name/id
     },
   },
   { timestamps: true }
