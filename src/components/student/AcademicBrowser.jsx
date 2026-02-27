@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  BookOpen, 
-  ChevronRight, 
-  FileText, 
-  MessageSquare, 
-  Search, 
-  GraduationCap, 
+import {
+  BookOpen,
+  ChevronRight,
+  FileText,
+  MessageSquare,
+  Search,
+  GraduationCap,
   Calendar,
   Layers,
   Plus,
@@ -34,13 +34,15 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   const [selectedModule, setSelectedModule] = useState(null);
   const [activeView, setActiveView] = useState("modules"); // modules, resources, qa
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Resource States
   const [resources, setResources] = useState([]);
   const [resLoading, setResLoading] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [uploadData, setUploadData] = useState({ title: "", description: "", resourceType: "link", url: "" });
+  const [uploadData, setUploadData] = useState({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
   const [editingResource, setEditingResource] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchModules();
@@ -70,7 +72,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   const fetchResources = async () => {
     try {
       setResLoading(true);
-      const res = await fetch(`/api/resources?moduleId=${selectedModule._id}`);
+      const res = await fetch(`/api/resources?moduleId=${selectedModule._id}&status=all`);
       if (res.ok) {
         const data = await res.json();
         setResources(data);
@@ -85,27 +87,38 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   const handleUploadResource = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        ...uploadData,
-        module: selectedModule._id,
-        uploadedBy: user.userId,
-        uploaderName: user.name || user.userId,
-        uploaderRole: user.role
-      };
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("title", uploadData.title);
+      formData.append("description", uploadData.description);
+      formData.append("resourceType", uploadData.resourceType);
+      formData.append("category", uploadData.category);
+      formData.append("module", selectedModule._id);
+      formData.append("uploadedBy", user.userId);
+      formData.append("uploaderName", user.name || user.userId);
+      formData.append("uploaderRole", user.role);
+
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      } else {
+        formData.append("url", uploadData.url);
+      }
 
       const res = await fetch("/api/resources", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       if (res.ok) {
         fetchResources();
         setIsUploadOpen(false);
-        setUploadData({ title: "", description: "", resourceType: "link", url: "" });
+        setUploadData({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
+        setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error uploading resource:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -113,22 +126,38 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
     e.preventDefault();
     const token = localStorage.getItem("token");
     try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append("title", uploadData.title);
+      formData.append("description", uploadData.description);
+      formData.append("resourceType", uploadData.resourceType);
+      formData.append("category", uploadData.category);
+      formData.append("userId", user.userId);
+
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      } else {
+        formData.append("url", uploadData.url);
+      }
+
       const res = await fetch(`/api/resources/${editingResource._id}`, {
         method: "PATCH",
-        headers: { 
-          "Content-Type": "application/json",
+        headers: {
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ ...uploadData, userId: user.userId })
+        body: formData
       });
 
       if (res.ok) {
         fetchResources();
         setEditingResource(null);
-        setUploadData({ title: "", description: "", resourceType: "link", url: "" });
+        setUploadData({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
+        setSelectedFile(null);
       }
     } catch (error) {
       console.error("Error updating resource:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -154,16 +183,18 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
       title: resource.title,
       description: resource.description,
       resourceType: resource.resourceType,
+      category: resource.category || "Short Note",
       url: resource.url
     });
+    setSelectedFile(null);
   };
 
   const filteredModules = modules.filter(
-    (m) => 
-      m.year === selectedYear && 
+    (m) =>
+      m.year === selectedYear &&
       m.semester === selectedSemester &&
-      (m.moduleName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-       m.moduleCode.toLowerCase().includes(searchQuery.toLowerCase()))
+      (m.moduleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.moduleCode.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const resetSelection = () => {
@@ -176,7 +207,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {/* Module Header */}
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <button 
+          <button
             onClick={resetSelection}
             className="flex items-center gap-2 text-slate-400 hover:text-[#002147] font-bold text-sm mb-6 transition-colors group"
           >
@@ -205,13 +236,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-            <button 
+            <button
               onClick={() => setActiveView("resources")}
-              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                activeView === "resources" 
-                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100" 
+              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${activeView === "resources"
+                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100"
                 : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-[#4DA8DA]/30"
-              }`}
+                }`}
             >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeView === "resources" ? "bg-white/10" : "bg-white shadow-sm"}`}>
                 <FileText size={20} className={activeView === "resources" ? "text-white" : "text-[#4DA8DA]"} />
@@ -222,13 +252,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
               </div>
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveView("qa")}
-              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                activeView === "qa" 
-                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100" 
+              className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${activeView === "qa"
+                ? "bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-100"
                 : "bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-[#4DA8DA]/30"
-              }`}
+                }`}
             >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeView === "qa" ? "bg-white/10" : "bg-white shadow-sm"}`}>
                 <HelpCircle size={20} className={activeView === "qa" ? "text-white" : "text-[#FF9F1C]"} />
@@ -260,7 +289,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                   <h3 className="text-xl font-bold text-[#002147]">Learning Resources</h3>
                   <p className="text-slate-500 text-sm mt-1">Shared materials for this module.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsUploadOpen(true)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-[#002147] text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-md active:scale-95"
                 >
@@ -275,19 +304,19 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 </div>
               ) : resources.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                   <p className="text-slate-400 font-bold text-sm">No resources yet.</p>
-                   <button onClick={() => setIsUploadOpen(true)} className="mt-2 text-[#4DA8DA] font-bold text-sm hover:underline">Be the first to contribute</button>
+                  <p className="text-slate-400 font-bold text-sm">No resources yet.</p>
+                  <button onClick={() => setIsUploadOpen(true)} className="mt-2 text-[#4DA8DA] font-bold text-sm hover:underline">Be the first to contribute</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {resources.map((res) => (
-                    <div key={res._id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all group">
+                  {resources.filter(r => r.status === "approved" || r.uploadedBy === user.userId).map((res) => (
+                    <div key={res._id} className={`p-5 rounded-2xl border transition-all group ${res.status === 'pending' ? 'bg-amber-50/30 border-amber-100' : 'bg-slate-50 border-slate-100 hover:border-blue-200'}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm ${res.resourceType === 'link' ? 'text-orange-500' : 'text-blue-500'}`}>
                           {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#4DA8DA]"><ExternalLink size={16} /></a>
+                          {res.status === "approved" && <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#4DA8DA]"><ExternalLink size={16} /></a>}
                           {(res.uploadedBy === user.userId || user.role === 'admin') && (
                             <>
                               <button onClick={() => startEdit(res)} className="p-2 text-slate-400 hover:text-emerald-500"><Edit2 size={16} /></button>
@@ -296,11 +325,17 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                           )}
                         </div>
                       </div>
-                      <h4 className="font-bold text-[#002147] mb-1">{res.title}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-[#002147]">{res.title}</h4>
+                        {res.status === "pending" && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[8px] font-black uppercase">Pending</span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500 font-medium mb-4 line-clamp-1">{res.description || "No description."}</p>
                       <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
                         <div className="flex flex-col">
-                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">By {res.uploaderName}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">By {res.uploaderName}</span>
+                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-0.5">{res.category || "General"}</span>
                         </div>
                         <span className="px-2 py-0.5 bg-white border border-slate-100 rounded text-[9px] font-bold text-slate-400 uppercase">
                           {res.resourceType}
@@ -325,7 +360,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 </button>
               </div>
               <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                 <p className="text-slate-400 font-bold text-sm">No discussions started yet.</p>
+                <p className="text-slate-400 font-bold text-sm">No discussions started yet.</p>
               </div>
             </div>
           )}
@@ -337,7 +372,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-[#002147]">{editingResource ? 'Edit Resource' : 'Share Resource'}</h2>
-                <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400">
+                <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400">
                   <X size={18} />
                 </button>
               </div>
@@ -353,7 +388,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                     placeholder="Resource name"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Type</label>
@@ -369,16 +404,60 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">URL</label>
-                    <input
-                      type="url"
-                      required
-                      value={uploadData.url}
-                      onChange={(e) => setUploadData({ ...uploadData, url: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
-                      placeholder="https://..."
-                    />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                      {uploadData.resourceType === 'link' ? 'URL' : 'File'}
+                    </label>
+                    {uploadData.resourceType === 'link' ? (
+                      <input
+                        type="url"
+                        required
+                        value={uploadData.url}
+                        onChange={(e) => setUploadData({ ...uploadData, url: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                        placeholder="https://..."
+                      />
+                    ) : (
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          required={!editingResource}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            setSelectedFile(file);
+                            if (file && !uploadData.title) {
+                              setUploadData({ ...uploadData, title: file.name.split('.')[0] });
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          accept={
+                            uploadData.resourceType === 'pdf' ? '.pdf' :
+                              uploadData.resourceType === 'word' ? '.doc,.docx' :
+                                uploadData.resourceType === 'text' ? '.txt' : '*'
+                          }
+                        />
+                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium flex items-center gap-2 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
+                          <FileIcon size={14} className="text-blue-500 flex-shrink-0" />
+                          <span className="truncate text-[11px]">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
+                  <select
+                    value={uploadData.category}
+                    onChange={(e) => setUploadData({ ...uploadData, category: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="Short Note">Short Note</option>
+                    <option value="Lecture Note">Lecture Note</option>
+                    <option value="YouTube Link">YouTube Link</option>
+                    <option value="Past Paper">Past Paper</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
 
                 <div className="space-y-1">
@@ -391,8 +470,19 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => { setIsUploadOpen(false); setEditingResource(null); }} className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm">Cancel</button>
-                  <button type="submit" className="flex-1 py-3 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md">{editingResource ? 'Save' : 'Upload'}</button>
+                  <button type="button" onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm">Cancel</button>
+                  <button
+                    type="submit"
+                    disabled={isUploading}
+                    className="flex-1 py-3 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                      </>
+                    ) : (editingResource ? 'Save' : 'Upload')}
+                  </button>
                 </div>
               </form>
             </div>
@@ -414,11 +504,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 <button
                   key={year}
                   onClick={() => setSelectedYear(year)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-[13px] transition-all ${
-                    selectedYear === year
-                      ? "bg-[#002147] text-white shadow-md"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                  }`}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-[13px] transition-all ${selectedYear === year
+                    ? "bg-[#002147] text-white shadow-md"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                    }`}
                 >
                   <span>Year {year}</span>
                   <ChevronRight size={14} className={selectedYear === year ? "opacity-100" : "opacity-0"} />
@@ -434,11 +523,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 <button
                   key={sem}
                   onClick={() => setSelectedSemester(sem)}
-                  className={`py-4 rounded-xl font-bold text-sm transition-all text-center flex flex-col items-center gap-1 ${
-                    selectedSemester === sem
-                      ? "bg-orange-50 text-orange-600 border border-orange-200"
-                      : "bg-slate-50 text-slate-500 border border-transparent hover:bg-slate-100"
-                  }`}
+                  className={`py-4 rounded-xl font-bold text-sm transition-all text-center flex flex-col items-center gap-1 ${selectedSemester === sem
+                    ? "bg-orange-50 text-orange-600 border border-orange-200"
+                    : "bg-slate-50 text-slate-500 border border-transparent hover:bg-slate-100"
+                    }`}
                 >
                   <span className="text-[9px] opacity-60 uppercase">Sem</span>
                   <span className="text-lg leading-none">{sem}</span>
@@ -459,7 +547,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
               <div className="relative w-full sm:w-64 group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input 
+                <input
                   type="text"
                   placeholder="Search modules..."
                   value={searchQuery}
