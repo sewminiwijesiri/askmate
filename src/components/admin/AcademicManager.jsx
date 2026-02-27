@@ -14,7 +14,9 @@ import {
   ExternalLink,
   ChevronLeft,
   X,
-  File as FileIcon
+  File as FileIcon,
+  Search,
+  Download
 } from "lucide-react";
 
 export default function AcademicManager() {
@@ -35,6 +37,8 @@ export default function AcademicManager() {
   const [resData, setResData] = useState({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [resourceCategory, setResourceCategory] = useState("All");
+  const [resourceSearchQuery, setResourceSearchQuery] = useState("");
 
   useEffect(() => {
     fetchModules();
@@ -120,9 +124,9 @@ export default function AcademicManager() {
       formData.append("resourceType", resData.resourceType);
       formData.append("category", resData.category);
       formData.append("module", selectedModule._id);
-      formData.append("uploadedBy", adminUser.userId);
-      formData.append("uploaderName", adminUser.name || adminUser.userId);
-      formData.append("uploaderRole", "admin");
+      formData.append("uploadedBy", adminUser?.userId || "admin");
+      formData.append("uploaderName", adminUser?.name || (adminUser?.role === 'admin' ? 'Administrator' : adminUser?.userId || 'Admin'));
+      formData.append("uploaderRole", adminUser?.role || "admin");
 
       if (selectedFile) {
         formData.append("file", selectedFile);
@@ -372,77 +376,148 @@ export default function AcademicManager() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {resources.map((res) => (
-                    <div key={res._id} className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-300 group">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${res.resourceType === 'link' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`}>
-                          {res.resourceType === 'link' ? <LinkIcon size={24} /> : <FileIcon size={24} />}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => startEditResource(res)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-emerald-500 transition-colors">
-                            <Edit2 size={18} />
-                          </button>
-                          <button onClick={() => handleDeleteResource(res._id)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-rose-500 transition-colors">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-4">
-                        <h4 className="text-lg font-black text-[#002147] group-hover:text-blue-600 transition-colors">{res.title}</h4>
-                        {res.status === "pending" && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-tight">Pending</span>
-                        )}
-                        {res.status === "rejected" && (
-                          <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black uppercase tracking-tight">Rejected</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-500 font-medium mb-6 line-clamp-2 leading-relaxed">{res.description || "Administrative documentation for this module."}</p>
-
-                      <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[10px] font-black text-[#002147] shadow-sm uppercase">
-                            {(res.uploaderName || "A")[0]}
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Uploaded By</p>
-                            <p className="text-xs font-black text-slate-700 leading-none">{res.uploaderName}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center px-4 py-1.5 bg-[#002147]/10 text-[#002147] rounded-lg border border-[#002147]/10">
-                          <span className="text-[9px] font-black uppercase tracking-wider">{res.category || "General"}</span>
-                        </div>
-                        <a
-                          href={res.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#002147] rounded-xl font-black text-[10px] uppercase tracking-widest border border-slate-100 hover:bg-[#002147] hover:text-white transition-all shadow-sm"
+                <div className="flex flex-col gap-8">
+                  {/* Category Filter & Search for Admin */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-slate-100">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setResourceCategory("All")}
+                        className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${resourceCategory === "All"
+                          ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10"
+                          : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                          }`}
+                      >
+                        All Artifacts
+                      </button>
+                      {["Short Note", "Lecture Note", "YouTube Link", "Past Paper", "Tutorial", "Other"].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setResourceCategory(cat)}
+                          className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${resourceCategory === cat
+                            ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10"
+                            : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                            }`}
                         >
-                          View Resource <ExternalLink size={14} />
-                        </a>
-                      </div>
-
-                      {
-                        res.status === "pending" && (
-                          <div className="mt-6 flex gap-2">
-                            <button
-                              onClick={() => handleApproveResource(res._id, "approved")}
-                              className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-900/10"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleApproveResource(res._id, "rejected")}
-                              className="flex-1 py-3 bg-rose-50 text-rose-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )
-                      }
+                          {cat}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+
+                    <div className="relative w-full md:w-72 group">
+                      <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search by title or info..."
+                        value={resourceSearchQuery}
+                        onChange={(e) => setResourceSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border border-slate-100 rounded-[1.25rem] text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {resources
+                      .filter(r => resourceCategory === "All" || r.category === resourceCategory)
+                      .filter(r => r.title.toLowerCase().includes(resourceSearchQuery.toLowerCase()) || (r.description && r.description.toLowerCase().includes(resourceSearchQuery.toLowerCase())))
+                      .map((res) => (
+                        <div key={res._id} className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-300 group">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-500' :
+                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-500' :
+                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-500' :
+                                  'bg-blue-50 text-blue-500'
+                              }`}>
+                              {res.resourceType === 'link' ? <LinkIcon size={24} /> : <FileIcon size={24} />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {res.resourceType !== 'link' && (
+                                <button
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = res.url;
+                                    link.download = res.title || 'download';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }}
+                                  className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-orange-500 transition-colors border border-slate-50"
+                                  title="Download"
+                                >
+                                  <Download size={18} />
+                                </button>
+                              )}
+                              <button onClick={() => startEditResource(res)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-emerald-500 transition-colors border border-slate-50">
+                                <Edit2 size={18} />
+                              </button>
+                              <button onClick={() => handleDeleteResource(res._id)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-rose-500 transition-colors border border-slate-50">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-4">
+                            <h4 className="text-xl font-black text-[#002147] group-hover:text-blue-600 transition-colors leading-tight">{res.title}</h4>
+                            {res.status === "pending" && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-amber-200">Pending</span>
+                            )}
+                            {res.status === "rejected" && (
+                              <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-rose-200">Rejected</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-500 font-medium mb-8 line-clamp-2 leading-relaxed">{res.description || "Administrative documentation for this module."}</p>
+
+                          <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] font-black text-[#002147] shadow-sm uppercase border border-slate-100">
+                                {(res.uploaderName || "U")[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Uploaded By</p>
+                                <p className="text-xs font-black text-slate-700 leading-none">
+                                  {res.uploaderRole === 'admin' ? (res.uploaderName === 'Admin' || !res.uploaderName || /^IT\d{8}$/i.test(res.uploaderName) ? 'Administrator' : res.uploaderName) : res.uploaderName}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                  res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                    'bg-blue-50 text-blue-600 border border-blue-100'
+                                }`}>
+                                {res.category || "General"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-8 flex gap-3">
+                            <a
+                              href={res.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-white text-[#002147] rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 hover:bg-[#002147] hover:text-white transition-all shadow-sm"
+                            >
+                              Open Resource <ExternalLink size={14} />
+                            </a>
+                            {res.status === "pending" && (
+                              <div className="flex gap-2 flex-[1.5]">
+                                <button
+                                  onClick={() => handleApproveResource(res._id, "approved")}
+                                  className="flex-1 py-3.5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleApproveResource(res._id, "rejected")}
+                                  className="flex-1 py-3.5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               )}
             </div>

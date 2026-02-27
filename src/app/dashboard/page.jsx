@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation";
 import StudentSidebar from "@/components/student/StudentSidebar";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
 import ProfileSection from "@/components/student/ProfileSection";
-import { 
-  Bell, 
-  Search, 
-  Zap, 
-  Award, 
-  Clock, 
-  ChevronRight, 
-  MessageSquare, 
-  BookOpen, 
+import MyResources from "@/components/student/MyResources";
+import {
+  Bell,
+  Search,
+  Zap,
+  Award,
+  Clock,
+  ChevronRight,
+  MessageSquare,
+  BookOpen,
   Plus,
   TrendingUp,
   Star,
@@ -61,11 +62,11 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100">
-      <StudentSidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        user={user} 
-        onLogout={handleLogout} 
+      <StudentSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Main Content */}
@@ -77,12 +78,12 @@ export default function StudentDashboard() {
               Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
             </h1>
             <p className="text-slate-500 font-medium">
-              {user.role === "student" 
-                ? `Continue your ${user.year || 1}st year studies` 
+              {user.role === "student"
+                ? `Continue your ${user.year || 1}st year studies`
                 : `Manage your ${user.role} workspace`}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <button className="relative w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
               <Bell size={20} />
@@ -112,7 +113,7 @@ export default function StudentDashboard() {
                 { label: "Helper Rank", value: "#42", icon: Award, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
               ].map((stat, i) => (
                 <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group`}>
-                   <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-4">
                     <div className={`w-10 h-10 rounded-xl bg-white shadow-sm ${stat.color} flex items-center justify-center`}>
                       <stat.icon size={20} />
                     </div>
@@ -133,14 +134,14 @@ export default function StudentDashboard() {
                 <section>
                   <div className="flex justify-between items-center mb-5">
                     <h3 className="text-xl font-bold text-[#002147]">Current Modules</h3>
-                    <button 
+                    <button
                       onClick={() => setActiveTab("academic")}
                       className="text-[#4DA8DA] font-bold text-sm hover:underline flex items-center gap-1"
                     >
                       View All <ChevronRight size={14} />
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       { id: 1, color: "blue" },
@@ -160,8 +161,8 @@ export default function StudentDashboard() {
                         </p>
                         <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                           <div className="flex -space-x-2">
-                           <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
-                           <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
                           </div>
                           <button className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#002147] hover:text-white transition-all">
                             <ArrowRight size={18} />
@@ -177,7 +178,7 @@ export default function StudentDashboard() {
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold mb-2">Stuck on a problem?</h3>
                       <p className="text-blue-100 text-sm mb-6 max-w-sm">Our AI-powered assistant and elite helpers are ready to guide you.</p>
-                      <button 
+                      <button
                         onClick={() => setActiveTab("qa")}
                         className="px-8 py-3 bg-[#FF9F1C] hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-orange-500/10 active:scale-95"
                       >
@@ -214,11 +215,10 @@ export default function StudentDashboard() {
                             <p className="text-[11px] text-slate-400 font-semibold">{helper.points} pts</p>
                           </div>
                         </div>
-                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md ${
-                          i === 0 ? "bg-orange-500 text-white" : 
-                          i === 1 ? "bg-slate-200 text-slate-700" : 
-                          "bg-amber-100 text-amber-700"
-                        }`}>
+                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md ${i === 0 ? "bg-orange-500 text-white" :
+                          i === 1 ? "bg-slate-200 text-slate-700" :
+                            "bg-amber-100 text-amber-700"
+                          }`}>
                           #{helper.rank}
                         </span>
                       </div>
@@ -246,9 +246,9 @@ export default function StudentDashboard() {
 
         {activeTab === "academic" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <AcademicBrowser 
-              defaultYear={user.year} 
-              defaultSemester={user.semester} 
+            <AcademicBrowser
+              defaultYear={user.year}
+              defaultSemester={user.semester}
               user={user}
             />
           </div>
@@ -256,8 +256,8 @@ export default function StudentDashboard() {
 
         {activeTab === "profile" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <ProfileSection 
-              user={user} 
+            <ProfileSection
+              user={user}
               onUpdate={(updatedUser) => setUser(updatedUser)}
               onDelete={handleLogout}
             />
@@ -265,16 +265,22 @@ export default function StudentDashboard() {
         )}
 
         {/* Placeholder tabs */}
-        {(activeTab === "resources" || activeTab === "qa") && (
+        {activeTab === "resources" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <MyResources user={user} />
+          </div>
+        )}
+
+        {activeTab === "qa" && (
           <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-8">
               <Zap size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-[#002147] mb-3">Module Integration</h3>
+            <h3 className="text-2xl font-bold text-[#002147] mb-3">Consultation Hub</h3>
             <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
-              We're polishing this section to focus on Year {user.year || 1} Semester {user.semester || 1} content.
+              We're preparing a space for you to ask questions and get expert advice for your Year {user.year || 1} studies.
             </p>
-            <button 
+            <button
               onClick={() => setActiveTab("academic")}
               className="px-8 py-3.5 bg-[#002147] text-white rounded-xl font-bold text-sm hover:translate-y-[-2px] transition-all shadow-md active:scale-95"
             >

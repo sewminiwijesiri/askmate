@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Resource from "@/models/Resource";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import Module from "@/models/Module";
+import cloudinary from "@/lib/cloudinary";
 
 export async function GET(req) {
   try {
@@ -10,9 +10,11 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const moduleId = searchParams.get("moduleId");
     const status = searchParams.get("status");
+    const userId = searchParams.get("userId");
     
     let query = {};
     if (moduleId) query.module = moduleId;
+    if (userId) query.uploadedBy = userId;
     if (status) {
       if (status !== "all") query.status = status;
     } else {
@@ -20,10 +22,13 @@ export async function GET(req) {
       query.status = "approved";
     }
 
-    const resources = await Resource.find(query).sort({ createdAt: -1 });
+    const resources = await Resource.find(query)
+      .populate("module", "moduleName moduleCode")
+      .sort({ createdAt: -1 });
     
     return NextResponse.json(resources);
   } catch (error) {
+    console.error("GET /api/resources error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -51,18 +56,25 @@ export async function POST(req) {
       const file = formData.get("file");
       if (file && typeof file !== "string") {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const originalName = file.name || "upload";
-        const fileExt = originalName.includes(".") ? originalName.split(".").pop() : "bin";
-        const filename = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-        const uploadDir = join(process.cwd(), "public", "uploads");
         
         try {
-          await mkdir(uploadDir, { recursive: true });
-          await writeFile(join(uploadDir, filename), buffer);
-          data.url = `/uploads/${filename}`;
+          const uploadResponse = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                resource_type: "auto",
+                folder: "askmate_resources"
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+          
+          data.url = uploadResponse.secure_url;
         } catch (fileError) {
-          console.error("File upload error:", fileError);
-          return NextResponse.json({ error: "File upload failed" }, { status: 500 });
+          console.error("Cloudinary upload error:", fileError);
+          return NextResponse.json({ error: "File upload to Cloudinary failed" }, { status: 500 });
         }
       } else {
         data.url = formData.get("url");
