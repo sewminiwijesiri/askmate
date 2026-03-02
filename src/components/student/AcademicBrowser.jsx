@@ -218,7 +218,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
             <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-[#002147] flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-100">
+              <div className="w-fit min-w-[4rem] px-5 h-16 rounded-2xl bg-[#002147] flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-100">
                 {selectedModule.moduleCode}
               </div>
               <div>

@@ -101,17 +101,34 @@ export default function StudentDashboard() {
       <main className="lg:ml-72 min-h-screen p-6 md:p-10">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-[#002147]">
-              Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
-            </h1>
-            <p className="text-slate-500 font-medium">
-              {user.role === "student"
-                ? `Continue your ${user.year || 1}${user.year == 1 ? "st" : user.year == 2 ? "nd" : user.year == 3 ? "rd" : "th"
-                } year studies`
-                : `Manage your ${user.role} workspace`}
-            </p>
-          </div>
+          {activeTab === "dashboard" ? (
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-[#002147]">
+                Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
+              </h1>
+              <p className="text-slate-500 font-medium">
+                {user.role === "student"
+                  ? `Continue your ${user.year || 1}${user.year == 1 ? "st" : user.year == 2 ? "nd" : user.year == 3 ? "rd" : "th"
+                  } year studies`
+                  : `Manage your ${user.role} workspace`}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-[#4DA8DA] capitalize">
+                {activeTab === "academic" ? "Academic Hub" :
+                  activeTab === "resources" ? "My Resources" :
+                    activeTab === "profile" ? "Student Profile" :
+                      activeTab === "qa" ? "Consultation Hub" : activeTab}
+              </h1>
+              <p className="text-slate-500 font-medium">
+                Student Portal • {activeTab === "academic" ? "Browse Knowledge" :
+                  activeTab === "resources" ? "Manage Contributions" :
+                    activeTab === "profile" ? "Account Settings" :
+                      activeTab === "qa" ? "Expert Help" : "Workspace"}
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-4">
             <button className="relative w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
