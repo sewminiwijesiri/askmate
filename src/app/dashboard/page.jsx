@@ -23,7 +23,12 @@ import {
   ArrowRight,
   LayoutDashboard,
   GraduationCap,
-  User
+  User,
+  Brain,
+  Trophy,
+  Hourglass,
+  Activity,
+  MessageCircle
 } from "lucide-react";
 
 export default function StudentDashboard() {
@@ -103,8 +108,14 @@ export default function StudentDashboard() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
           {activeTab === "dashboard" ? (
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold text-[#002147]">
+              <h1 className="text-3xl font-bold text-[#002147] flex flex-wrap items-center gap-3">
                 Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
+                <span className={`text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-[0.15em] font-black border shadow-sm ${user.role === 'helper' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                  user.role === 'student' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                    'bg-slate-50 text-slate-600 border-slate-100'
+                  }`}>
+                  {user.role}
+                </span>
               </h1>
               <p className="text-slate-500 font-medium">
                 {user.role === "student"
@@ -119,13 +130,13 @@ export default function StudentDashboard() {
                 {activeTab === "academic" ? "Academic Hub" :
                   activeTab === "resources" ? "My Resources" :
                     activeTab === "profile" ? "Student Profile" :
-                      activeTab === "qa" ? "Consultation Hub" : activeTab}
+                      activeTab === "qa" ? (user.role === "helper" ? "Recommend Questions" : "Consultation Hub") : activeTab}
               </h1>
               <p className="text-slate-500 font-medium">
                 Student Portal • {activeTab === "academic" ? "Browse Knowledge" :
                   activeTab === "resources" ? "Manage Contributions" :
                     activeTab === "profile" ? "Account Settings" :
-                      activeTab === "qa" ? "Expert Help" : "Workspace"}
+                      activeTab === "qa" ? (user.role === "helper" ? "Share Your Expertise" : "Expert Help") : "Workspace"}
               </p>
             </div>
           )}
@@ -142,7 +153,8 @@ export default function StudentDashboard() {
               </div>
               <div className="hidden sm:block">
                 <p className="text-[13px] font-bold text-[#002147] leading-none">{user.userId}</p>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{user.role}</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${user.role === 'helper' ? 'text-orange-500' : 'text-slate-400'
+                  }`}>{user.role}</p>
               </div>
             </div>
           </div>
@@ -152,23 +164,34 @@ export default function StudentDashboard() {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
+              {(user.role === "helper" ? [
+                { label: "🧠 Questions Answered", value: "24", icon: Brain, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+                { label: "⭐ Reputation Points", value: "1.2k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+                { label: "🏆 Rank", value: "#12", icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+                { label: "⏳ Pending Recommended Questions", value: "5", icon: Hourglass, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+              ] : [
                 { label: "Trust Score", value: "850", icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
                 { label: "Answers", value: "12", icon: MessageSquare, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
                 { label: "Points", value: "2.4k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
                 { label: "Helper Rank", value: "#42", icon: Award, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-              ].map((stat, i) => (
-                <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className={`w-10 h-10 rounded-xl bg-white shadow-sm ${stat.color} flex items-center justify-center`}>
-                      <stat.icon size={20} />
+              ]).map((stat, i) => (
+                <div key={i} className={`${stat.bg} border ${stat.border} p-7 rounded-[28px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
+                  <div className="flex justify-between items-start">
+                    <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                      <stat.icon size={24} />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded-md">
-                      Stats
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.15em] bg-slate-50/50 px-3 py-1.5 rounded-full border border-slate-100">
+                      Live Stats
                     </span>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-400 mb-1 uppercase tracking-wider">{stat.label}</p>
-                  <h3 className="text-2xl font-bold text-[#002147]">{stat.value}</h3>
+                  <div className="mt-6">
+                    <p className="text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider opacity-80">{stat.label}</p>
+                    <h3 className="text-3xl font-extrabold text-[#002147] tracking-tight">{stat.value}</h3>
+                  </div>
+                  {/* Subtle background decoration */}
+                  <div className={`absolute -right-2 -bottom-2 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`}>
+                    <stat.icon size={80} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -179,12 +202,14 @@ export default function StudentDashboard() {
               <div className="xl:col-span-2 space-y-8">
                 <section>
                   <div className="flex justify-between items-center mb-5">
-                    <h3 className="text-xl font-bold text-[#002147]">Current Modules</h3>
+                    <h3 className="text-xl font-bold text-[#002147]">
+                      {user.role === "helper" ? "📘 My Skilled Modules" : "Current Modules"}
+                    </h3>
                     <button
                       onClick={() => setActiveTab("academic")}
                       className="text-[#4DA8DA] font-bold text-sm hover:underline flex items-center gap-1"
                     >
-                      View All <ChevronRight size={14} />
+                      {user.role === "helper" ? "Manage Skills" : "View All"} <ChevronRight size={14} />
                     </button>
                   </div>
 
@@ -219,23 +244,56 @@ export default function StudentDashboard() {
                             <BookOpen size={18} className={`text-slate-300 group-hover:${i === 0 ? 'text-blue-500' : 'text-orange-500'} transition-colors`} />
                           </div>
                           <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
-                          <p className="text-slate-500 text-sm mb-6 line-clamp-2">
-                            {module.description || `Master the principles of ${module.moduleName}.`}
-                          </p>
-                          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                            <div className="flex -space-x-2">
-                              <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
-                              <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
+
+                          {user.role === "helper" ? (
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <MessageSquare size={12} className="text-blue-500" />
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Answers</span>
+                                </div>
+                                <p className="text-lg font-black text-[#002147] leading-none">{module.answersCount || Math.floor(Math.random() * 15) + 5}</p>
+                              </div>
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Star size={12} className="text-orange-500" />
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rating</span>
+                                </div>
+                                <p className="text-lg font-black text-[#002147] leading-none">{(4 + Math.random()).toFixed(1)}</p>
+                              </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                // Logic to navigate to module in academic hub can be added here if needed
-                                setActiveTab("academic");
-                              }}
-                              className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#002147] hover:text-white transition-all"
-                            >
-                              <ArrowRight size={18} />
-                            </button>
+                          ) : (
+                            <p className="text-slate-500 text-sm mb-6 line-clamp-2">
+                              {module.description || `Master the principles of ${module.moduleName}.`}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                            {user.role === "helper" ? (
+                              <button
+                                onClick={() => setActiveTab("academic")}
+                                className="w-full py-2.5 bg-[#002147] text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#4DA8DA] transition-all shadow-sm flex items-center justify-center gap-2 group/btn"
+                              >
+                                Manage Skills
+                                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                              </button>
+                            ) : (
+                              <>
+                                <div className="flex -space-x-2">
+                                  <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
+                                  <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    // Logic to navigate to module in academic hub can be added here if needed
+                                    setActiveTab("academic");
+                                  }}
+                                  className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#002147] hover:text-white transition-all"
+                                >
+                                  <ArrowRight size={18} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
@@ -248,16 +306,22 @@ export default function StudentDashboard() {
                   </div>
                 </section>
 
+
+
                 <div className="bg-[#002147] p-8 rounded-3xl text-white relative overflow-hidden group">
                   <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
                     <div className="flex-1">
-                      <h3 className="text-2xl font-bold mb-2">Stuck on a problem?</h3>
-                      <p className="text-blue-100 text-sm mb-6 max-w-sm">Our AI-powered assistant and elite helpers are ready to guide you.</p>
+                      <h3 className="text-2xl font-bold mb-2">{user.role === 'helper' ? 'Ready to share expertise?' : 'Stuck on a problem?'}</h3>
+                      <p className="text-blue-100 text-sm mb-6 max-w-sm">
+                        {user.role === 'helper'
+                          ? 'Browse unanswered questions in your skilled modules and build your reputation today.'
+                          : 'Our AI-powered assistant and elite helpers are ready to guide you.'}
+                      </p>
                       <button
                         onClick={() => setActiveTab("qa")}
                         className="px-8 py-3 bg-[#FF9F1C] hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-orange-500/10 active:scale-95"
                       >
-                        Ask Question
+                        {user.role === 'helper' ? 'Answer Questions' : 'Ask Question'}
                       </button>
                     </div>
                     <div className="hidden sm:flex w-32 h-32 bg-white/5 rounded-2xl border border-white/10 items-center justify-center transform rotate-6 border-dashed group-hover:rotate-0 transition-transform">
@@ -348,31 +412,37 @@ export default function StudentDashboard() {
 
         {activeTab === "qa" && (
           <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-8">
-              <Zap size={32} />
+            <div className={`w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center ${user.role === 'helper' ? 'text-blue-400' : 'text-slate-300'} mx-auto mb-8`}>
+              {user.role === 'helper' ? <Brain size={32} /> : <Zap size={32} />}
             </div>
-            <h3 className="text-2xl font-bold text-[#002147] mb-3">Consultation Hub</h3>
+            <h3 className="text-2xl font-bold text-[#002147] mb-3">
+              {user.role === 'helper' ? 'Recommended Questions Hub' : 'Consultation Hub'}
+            </h3>
             <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
-              We're preparing a space for you to ask questions and get expert advice for your Year {user.year || 1} studies.
+              {user.role === 'helper'
+                ? "We're curating the best questions for you to help other students build your reputation."
+                : `We're preparing a space for you to ask questions and get expert advice for your Year ${user.year || 1} studies.`}
             </p>
             <button
-              onClick={() => setActiveTab("academic")}
+              onClick={() => setActiveTab(user.role === 'helper' ? 'dashboard' : 'academic')}
               className="px-8 py-3.5 bg-[#002147] text-white rounded-xl font-bold text-sm hover:translate-y-[-2px] transition-all shadow-md active:scale-95"
             >
-              Academic Hub
+              {user.role === 'helper' ? 'Dashboard' : 'Academic Hub'}
             </button>
           </div>
         )}
       </main>
 
       {/* Mobile Nav Placeholder */}
-      <div className="lg:hidden fixed bottom-0 left-0 w-full h-20 bg-white border-t border-slate-200 flex items-center justify-around px-6 z-[100]">
-        {[LayoutDashboard, GraduationCap, MessageSquare, User].map((Icon, i) => (
-          <button key={i} className="p-3 text-slate-400 hover:text-[#002147] transition-colors">
-            <Icon size={24} />
-          </button>
-        ))}
-      </div>
+      < div className="lg:hidden fixed bottom-0 left-0 w-full h-20 bg-white border-t border-slate-200 flex items-center justify-around px-6 z-[100]" >
+        {
+          [LayoutDashboard, GraduationCap, MessageSquare, User].map((Icon, i) => (
+            <button key={i} className="p-3 text-slate-400 hover:text-[#002147] transition-colors">
+              <Icon size={24} />
+            </button>
+          ))
+        }
+      </div >
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -393,7 +463,7 @@ export default function StudentDashboard() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
 

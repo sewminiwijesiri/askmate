@@ -680,7 +680,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                 {filteredModules.map((module) => (
                   <div
                     key={module._id}
-                    onClick={() => setSelectedModule(module)}
+                    onClick={() => {
+                      setSelectedModule(module);
+                      setActiveView("resources");
+                    }}
                     className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group"
                   >
                     <div className="flex justify-between items-center mb-4">
