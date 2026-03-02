@@ -193,8 +193,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
   const filteredModules = modules.filter(
     (m) =>
-      m.year === selectedYear &&
-      m.semester === selectedSemester &&
+      Number(m.year) === Number(selectedYear) &&
+      Number(m.semester) === Number(selectedSemester) &&
       (m.moduleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.moduleCode.toLowerCase().includes(searchQuery.toLowerCase()))
   );

@@ -30,6 +30,8 @@ export default function StudentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [modules, setModules] = useState([]);
+  const [modulesLoading, setModulesLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -42,6 +44,32 @@ export default function StudentDashboard() {
 
     setUser(JSON.parse(userData));
   }, [router]);
+
+  useEffect(() => {
+    if (user && activeTab === "dashboard") {
+      fetchCurrentModules();
+    }
+  }, [user, activeTab]);
+
+  const fetchCurrentModules = async () => {
+    try {
+      setModulesLoading(true);
+      const res = await fetch("/api/admin/academic");
+      if (res.ok) {
+        const data = await res.json();
+        // Filter by user's year and semester, slice to 2
+        const filtered = data.filter(m =>
+          Number(m.year) === Number(user.year || 1) &&
+          Number(m.semester) === Number(user.semester || 1)
+        ).slice(0, 2);
+        setModules(filtered);
+      }
+    } catch (error) {
+      console.error("Error fetching modules:", error);
+    } finally {
+      setModulesLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -79,7 +107,8 @@ export default function StudentDashboard() {
             </h1>
             <p className="text-slate-500 font-medium">
               {user.role === "student"
-                ? `Continue your ${user.year || 1}st year studies`
+                ? `Continue your ${user.year || 1}${user.year == 1 ? "st" : user.year == 2 ? "nd" : user.year == 3 ? "rd" : "th"
+                } year studies`
                 : `Manage your ${user.role} workspace`}
             </p>
           </div>
@@ -143,33 +172,62 @@ export default function StudentDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { id: 1, color: "blue" },
-                      { id: 2, color: "orange" }
-                    ].map((module) => (
-                      <div key={module.id} className={`bg-white border ${module.color === 'blue' ? 'border-blue-100 hover:border-blue-200' : 'border-orange-100 hover:border-orange-200'} p-6 rounded-2xl hover:shadow-md transition-all group relative overflow-hidden`}>
-                        <div className={`absolute top-0 left-0 w-1 h-full ${module.color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
-                        <div className="flex justify-between items-start mb-4">
-                          <span className={`px-2.5 py-1 ${module.color === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'} rounded-lg text-[10px] font-bold uppercase tracking-wider`}>
-                            SOFT-10{module.id}
-                          </span>
-                          <BookOpen size={18} className={`text-slate-300 group-hover:${module.color === 'blue' ? 'text-blue-500' : 'text-orange-500'} transition-colors`} />
-                        </div>
-                        <h4 className="text-lg font-bold text-[#002147] mb-2">Software Engineering {module.id}</h4>
-                        <p className="text-slate-500 text-sm mb-6 line-clamp-2">
-                          Master the principles of software architecture and design patterns.
-                        </p>
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                          <div className="flex -space-x-2">
-                            <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
-                            <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
+                    {modulesLoading ? (
+                      Array(2).fill(0).map((_, i) => (
+                        <div key={i} className="bg-white border border-slate-100 p-6 rounded-2xl animate-pulse">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="w-16 h-5 bg-slate-100 rounded"></div>
+                            <div className="w-5 h-5 bg-slate-100 rounded"></div>
                           </div>
-                          <button className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#002147] hover:text-white transition-all">
-                            <ArrowRight size={18} />
-                          </button>
+                          <div className="w-3/4 h-6 bg-slate-100 rounded mb-2"></div>
+                          <div className="w-full h-4 bg-slate-50 rounded mb-1"></div>
+                          <div className="w-2/3 h-4 bg-slate-50 rounded mb-6"></div>
+                          <div className="pt-4 border-t border-slate-50 flex justify-between">
+                            <div className="flex -space-x-2">
+                              <div className="w-8 h-8 rounded-full bg-slate-50 border-2 border-white"></div>
+                              <div className="w-8 h-8 rounded-full bg-slate-50 border-2 border-white"></div>
+                            </div>
+                            <div className="w-8 h-8 bg-slate-50 rounded"></div>
+                          </div>
                         </div>
+                      ))
+                    ) : modules.length > 0 ? (
+                      modules.map((module, i) => (
+                        <div key={module._id} className={`bg-white border ${i === 0 ? 'border-blue-100 hover:border-blue-200' : 'border-orange-100 hover:border-orange-200'} p-6 rounded-2xl hover:shadow-md transition-all group relative overflow-hidden`}>
+                          <div className={`absolute top-0 left-0 w-1 h-full ${i === 0 ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
+                          <div className="flex justify-between items-start mb-4">
+                            <span className={`px-2.5 py-1 ${i === 0 ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'} rounded-lg text-[10px] font-bold uppercase tracking-wider`}>
+                              {module.moduleCode}
+                            </span>
+                            <BookOpen size={18} className={`text-slate-300 group-hover:${i === 0 ? 'text-blue-500' : 'text-orange-500'} transition-colors`} />
+                          </div>
+                          <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
+                          <p className="text-slate-500 text-sm mb-6 line-clamp-2">
+                            {module.description || `Master the principles of ${module.moduleName}.`}
+                          </p>
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                            <div className="flex -space-x-2">
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                // Logic to navigate to module in academic hub can be added here if needed
+                                setActiveTab("academic");
+                              }}
+                              className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#002147] hover:text-white transition-all"
+                            >
+                              <ArrowRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-2 py-10 text-center bg-white border border-slate-100 rounded-2xl">
+                        <BookOpen size={32} className="text-slate-200 mx-auto mb-3" />
+                        <p className="text-slate-400 font-bold text-sm">No modules found for your current semester.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </section>
 
