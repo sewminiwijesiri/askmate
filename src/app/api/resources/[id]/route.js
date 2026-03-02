@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Resource from "@/models/Resource";
 import jwt from "jsonwebtoken";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import cloudinary from "@/lib/cloudinary";
 
 const verifyAdminOrOwner = async (req, resource) => {
   const authHeader = req.headers.get("authorization");
@@ -52,18 +51,25 @@ export async function PATCH(req, { params }) {
       const file = formData.get("file");
       if (file && typeof file !== "string") {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const originalName = file.name || "upload";
-        const fileExt = originalName.includes(".") ? originalName.split(".").pop() : "bin";
-        const filename = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-        const uploadDir = join(process.cwd(), "public", "uploads");
         
         try {
-          await mkdir(uploadDir, { recursive: true });
-          await writeFile(join(uploadDir, filename), buffer);
-          data.url = `/uploads/${filename}`;
+          const uploadResponse = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                resource_type: "auto",
+                folder: "askmate_resources"
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(buffer);
+          });
+          
+          data.url = uploadResponse.secure_url;
         } catch (fileError) {
-          console.error("File upload error:", fileError);
-          return NextResponse.json({ error: "File upload failed" }, { status: 500 });
+          console.error("Cloudinary upload error:", fileError);
+          return NextResponse.json({ error: "File upload to Cloudinary failed" }, { status: 500 });
         }
       }
     } else {

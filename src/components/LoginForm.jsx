@@ -2,264 +2,239 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ChevronDown, Eye, EyeOff, ShieldCheck, User } from "lucide-react";
 import Toast from "./Toast";
+
+const loginSchema = z.object({
+  role: z.enum(["student", "lecturer", "helper", "admin"]),
+  id: z.string().min(1, "ID or Username is required"),
+  password: z.string().min(1, "Password is required"),
+}).superRefine((data, ctx) => {
+  if (data.role === "student") {
+    if (!/^IT\d{8}$/i.test(data.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid Student ID (e.g., ITXXXXXXXX)", path: ["id"] });
+    }
+  } else if (data.role === "lecturer") {
+    if (!/^LC\d{8}$/i.test(data.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid Lecturer ID (e.g., LCXXXXXXXX)", path: ["id"] });
+    }
+  }
+});
 
 export default function LoginForm({ onSuccess, onSwitchToRegister }) {
   const router = useRouter();
-  const [role, setRole] = useState("student");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  const validateField = (name, value) => {
-    let error = "";
-    if (name === "id") {
-      if (!value) {
-        error = isAdmin ? "Username is required" : "ID is required";
-      } else if (!isAdmin) {
-        if (role === "student") {
-          if (!/^IT\d{8}$/i.test(value)) error = "Invalid Student ID (e.g., IT12345678)";
-        } else if (role === "lecturer") {
-          if (!/^LC\d{8}$/i.test(value)) error = "Invalid Lecturer ID (e.g., LC12345678)";
-        } else if (role === "helper") {
-          if (!value) error = "University ID is required";
-        }
-      }
-    } else if (name === "password") {
-      if (!value) error = "Password is required";
-    }
-    setErrors(prev => ({ ...prev, [name]: error }));
-    return error;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+    defaultValues: {
+      role: "student",
+      id: "",
+      password: "",
+    },
+  });
+
+  const selectedRole = watch("role");
+
+  // Handle Admin Mode toggle
+  const toggleAdminMode = () => {
+    const newMode = !isAdminMode;
+    setIsAdminMode(newMode);
+    reset({
+      role: newMode ? "admin" : "student",
+      id: "",
+      password: "",
+    });
+    setToast({ message: "", type: "success" });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setToast({ ...toast, message: "" });
-
-    const newErrors = {};
-    if (!id) {
-      newErrors.id = isAdmin ? "Username is required" : "ID is required";
-    } else if (!isAdmin) {
-      if (role === "student" && !/^IT\d{8}$/i.test(id)) newErrors.id = "Invalid Student ID (e.g., IT12345678)";
-      else if (role === "lecturer" && !/^LC\d{8}$/i.test(id)) newErrors.id = "Invalid Lecturer ID (e.g., LC12345678)";
-      else if (role === "helper" && !id) newErrors.id = "University ID is required";
-    }
-
-    if (!password) newErrors.password = "Password is required";
-
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-
+  const onSubmit = async (data) => {
     setIsLoading(true);
+    setToast({ message: "", type: "success" });
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: isAdmin ? "admin" : role, id, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json();
+      const result = await res.json();
 
       if (res.ok) {
-        setToast({ message: data.message || "Login successful!", type: "success" });
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          if (data.user) {
-            localStorage.setItem("user", JSON.stringify(data.user));
+        setToast({ message: result.message || "Login successful!", type: "success" });
+        if (result.token) {
+          localStorage.setItem("token", result.token);
+          if (result.user) {
+            localStorage.setItem("user", JSON.stringify(result.user));
           }
         }
         setTimeout(() => {
           if (onSuccess) onSuccess();
-          if (data.user?.role === "admin") {
+          if (result.user?.role === "admin") {
             router.push("/admin/dashboard");
           } else {
             router.push("/dashboard");
           }
         }, 1500);
       } else {
-        setToast({ message: data.message || "Login failed.", type: "error" });
+        setToast({ message: result.message || "Login failed. Please check your credentials.", type: "error" });
       }
     } catch (error) {
-      setToast({ message: "Invalid credentials. Please try again.", type: "error" });
+      setToast({ message: "An unexpected error occurred. Please try again.", type: "error" });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const getIdLabel = () => {
+    if (isAdminMode) return "Username";
+    if (selectedRole === "student") return "Student ID";
+    if (selectedRole === "lecturer") return "Lecturer ID";
+    return "University ID";
+  };
+
+  const getIdPlaceholder = () => {
+    if (isAdminMode) return "admin_user";
+    if (selectedRole === "student") return "ITXXXXXXXX";
+    if (selectedRole === "lecturer") return "LCXXXXXXXX";
+    return "ITXXXXXXXX";
+  };
+
   return (
-    <div className="w-full bg-white p-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {isAdmin ? "Admin Login" : "Welcome Back"}
+    <div className="w-full bg-white p-5 sm:p-6 rounded-3xl">
+      <div className="text-center mb-3">
+        <h1 className="text-xl font-bold text-[#002147] mb-0.5 tracking-tight">
+          {isAdminMode ? "Admin Portal" : "Welcome Back"}
         </h1>
-        <p className="text-gray-500">
-          {isAdmin ? "Manage the AskMate platform" : "Sign in to your AskMate account"}
+        <p className="text-gray-500 text-xs font-medium">
+          {isAdminMode ? "Restricted access area" : "Sign in to continue"}
         </p>
       </div>
 
-      {!isAdmin && (
-        <div className="mb-6 flex p-1 bg-gray-100 rounded-lg">
-          <button
-            type="button"
-            onClick={() => {
-              setRole("student");
-              setErrors({});
-              setToast({ ...toast, message: "" });
-            }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-              role === "student"
-                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-                : "text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setRole("lecturer");
-              setErrors({});
-              setToast({ ...toast, message: "" });
-            }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-              role === "lecturer"
-                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-                : "text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            Lecturer
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setRole("helper");
-              setErrors({});
-              setToast({ ...toast, message: "" });
-            }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-              role === "helper"
-                ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-                : "text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            Helper
-          </button>
-        </div>
-      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Role Selection (Only if not Admin) */}
+        {!isAdminMode && (
+          <div className="w-full">
+            <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Login as</label>
+            <div className="relative">
+              <select
+                {...register("role")}
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-[#002147] focus:ring-4 focus:ring-[#002147]/5 outline-none transition-all appearance-none cursor-pointer font-medium"
+              >
+                <option value="student">Student</option>
+                <option value="lecturer">Lecturer</option>
+                <option value="helper">Helper</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#002147]">
+                <ChevronDown size={18} />
+              </div>
+            </div>
+          </div>
+        )}
 
-      <form onSubmit={handleLogin} className="space-y-4">
+        {/* ID / Username Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {isAdmin ? "Username" : (role === "student" ? "Student ID" : role === "lecturer" ? "Lecturer ID" : "University ID")}
-          </label>
-          <input
-            type="text"
-            name="id"
-            placeholder={isAdmin ? "admin_username" : (role === "student" ? "ITXXXXXXXX" : role === "lecturer" ? "LCXXXXXXXX" : "ITXXXXXXXX")}
-            value={id}
-            onChange={(e) => {
-              setId(e.target.value);
-              if (errors.id) setErrors({ ...errors, id: "" });
-            }}
-            onBlur={(e) => validateField("id", e.target.value)}
-            className={`w-full px-4 py-2 rounded-lg border ${
-              errors.id ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-            } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
-          />
-          {errors.id && <p className="text-sm text-red-600 mt-1">{errors.id}</p>}
+          <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">{getIdLabel()}</label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder={getIdPlaceholder()}
+              {...register("id")}
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.id ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-10`}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              {isAdminMode ? <ShieldCheck size={16} /> : <User size={16} />}
+            </div>
+          </div>
+          {errors.id && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.id.message}</p>}
         </div>
 
+        {/* Password Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              name="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password) setErrors({ ...errors, password: "" });
-              }}
-              onBlur={(e) => validateField("password", e.target.value)}
-              className={`w-full px-4 py-2 rounded-lg border ${
-                errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-              } bg-white text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all pr-11`}
+              {...register("password")}
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.password ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-12`}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1 hover:text-[#002147] transition-colors"
             >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                  <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                  <line x1="2" x2="22" y1="2" y2="22"/>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              )}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
+          {errors.password && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.password.message}</p>}
         </div>
 
         <button
           type="submit"
-          disabled={isLoading}
-          className={`w-full py-3 px-4 ${isAdmin ? 'bg-gray-900 hover:bg-gray-800' : 'bg-[#002147] hover:bg-blue-950'} text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed`}
+          disabled={!isValid || isLoading}
+          className={`w-full py-2.5 px-6 ${isAdminMode ? 'bg-gray-900 shadow-gray-200' : 'bg-[#002147] shadow-[#002147]/20'} hover:opacity-90 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm`}
         >
-          {isLoading ? "Signing In..." : (isAdmin ? "Login as Admin" : "Login")}
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Signing In...
+            </span>
+          ) : (isAdminMode ? "Access Admin Dashboard" : "Sign In")}
         </button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-gray-500 space-y-4">
-        {!isAdmin && (
-          <div>
+      <div className="mt-6 text-center space-y-3">
+        {!isAdminMode && (
+          <p className="text-gray-500 text-xs font-medium">
             Don't have an account?{" "}
-            <button 
+            <button
               onClick={onSwitchToRegister}
-              className="text-[#4DA8DA] hover:text-blue-600 font-medium cursor-pointer"
+              className="text-[#4DA8DA] hover:text-[#002147] font-bold underline decoration-2 underline-offset-4 transition-all"
             >
               Register
             </button>
-          </div>
+          </p>
         )}
-        
-        <div className={`${!isAdmin ? 'pt-4 border-t border-gray-100' : ''}`}>
-          <button 
-            onClick={() => {
-              setIsAdmin(!isAdmin);
-              setErrors({});
-              setId("");
-              setPassword("");
-              setToast({ ...toast, message: "" });
-            }}
-            className="text-[#4DA8DA] hover:text-blue-600 font-medium transition-colors"
+
+        <div className={`${!isAdminMode ? 'pt-4 border-t border-gray-100' : ''}`}>
+          <button
+            onClick={toggleAdminMode}
+            className="flex items-center justify-center gap-2 mx-auto text-gray-500 hover:text-[#002147] font-semibold transition-colors text-xs"
           >
-            {isAdmin ? "← Back to User Login" : "Login as Admin"}
+            {isAdminMode ? (
+              <>← Back to User Login</>
+            ) : (
+              <>
+                <ShieldCheck size={14} />
+                <span>Admin Login</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      <Toast 
-        message={toast.message} 
-        type={toast.type} 
-        onClose={() => setToast({ ...toast, message: "" })} 
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, message: "" })}
       />
     </div>
   );

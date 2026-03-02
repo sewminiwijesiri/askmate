@@ -43,6 +43,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   const [editingResource, setEditingResource] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [resourceCategory, setResourceCategory] = useState("All");
+  const [resourceSearchQuery, setResourceSearchQuery] = useState("");
 
   useEffect(() => {
     fetchModules();
@@ -94,9 +96,9 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
       formData.append("resourceType", uploadData.resourceType);
       formData.append("category", uploadData.category);
       formData.append("module", selectedModule._id);
-      formData.append("uploadedBy", user.userId);
-      formData.append("uploaderName", user.name || user.userId);
-      formData.append("uploaderRole", user.role);
+      formData.append("uploadedBy", user?.userId || "unknown");
+      formData.append("uploaderName", user?.name || (user?.role === 'admin' ? 'Administrator' : user?.userId || 'User'));
+      formData.append("uploaderRole", user?.role || "student");
 
       if (selectedFile) {
         formData.append("file", selectedFile);
@@ -308,41 +310,145 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
                   <button onClick={() => setIsUploadOpen(true)} className="mt-2 text-[#4DA8DA] font-bold text-sm hover:underline">Be the first to contribute</button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {resources.filter(r => r.status === "approved" || r.uploadedBy === user.userId).map((res) => (
-                    <div key={res._id} className={`p-5 rounded-2xl border transition-all group ${res.status === 'pending' ? 'bg-amber-50/30 border-amber-100' : 'bg-slate-50 border-slate-100 hover:border-blue-200'}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm ${res.resourceType === 'link' ? 'text-orange-500' : 'text-blue-500'}`}>
-                          {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
-                        </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {res.status === "approved" && <a href={res.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#4DA8DA]"><ExternalLink size={16} /></a>}
-                          {(res.uploadedBy === user.userId || user.role === 'admin') && (
-                            <>
-                              <button onClick={() => startEdit(res)} className="p-2 text-slate-400 hover:text-emerald-500"><Edit2 size={16} /></button>
-                              <button onClick={() => handleDeleteResource(res._id)} className="p-2 text-slate-400 hover:text-rose-500"><Trash2 size={16} /></button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-[#002147]">{res.title}</h4>
-                        {res.status === "pending" && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[8px] font-black uppercase">Pending</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 font-medium mb-4 line-clamp-1">{res.description || "No description."}</p>
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">By {res.uploaderName}</span>
-                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-0.5">{res.category || "General"}</span>
-                        </div>
-                        <span className="px-2 py-0.5 bg-white border border-slate-100 rounded text-[9px] font-bold text-slate-400 uppercase">
-                          {res.resourceType}
-                        </span>
-                      </div>
+                <div className="flex flex-col gap-6">
+                  {/* Category Filter & Search */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setResourceCategory("All")}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${resourceCategory === "All"
+                          ? "bg-[#002147] text-white shadow-lg shadow-blue-900/10"
+                          : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                          }`}
+                      >
+                        All
+                      </button>
+                      {["Short Note", "Lecture Note", "YouTube Link", "Past Paper", "Tutorial", "Other"].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setResourceCategory(cat)}
+                          className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${resourceCategory === cat
+                            ? "bg-[#002147] text-white shadow-lg shadow-blue-900/10"
+                            : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                            }`}
+                        >
+                          {cat}s
+                        </button>
+                      ))}
                     </div>
-                  ))}
+
+                    <div className="relative w-full md:w-64 group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={14} />
+                      <input
+                        type="text"
+                        placeholder="Search materials..."
+                        value={resourceSearchQuery}
+                        onChange={(e) => setResourceSearchQuery(e.target.value)}
+                        className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[12px] font-bold focus:outline-none focus:border-blue-400 focus:bg-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {resources
+                      .filter(r => (r.status === "approved" || r.uploadedBy === user.userId))
+                      .filter(r => resourceCategory === "All" || r.category === resourceCategory)
+                      .filter(r => r.title.toLowerCase().includes(resourceSearchQuery.toLowerCase()) || (r.description && r.description.toLowerCase().includes(resourceSearchQuery.toLowerCase())))
+                      .map((res) => (
+                        <div key={res._id} className={`p-6 rounded-[2rem] border transition-all group ${res.status === 'pending' ? 'bg-amber-50/30 border-amber-100' : 'bg-slate-50 border-slate-100 hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-blue-900/5'}`}>
+                          <div className="flex justify-between items-start mb-6">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-500' :
+                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-500' :
+                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-500' :
+                                  'bg-blue-50 text-blue-500'
+                              }`}>
+                              {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <a
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2.5 bg-white text-slate-400 hover:text-blue-500 rounded-xl shadow-sm border border-slate-100"
+                                title="View Resource"
+                              >
+                                <ExternalLink size={16} />
+                              </a>
+                              {res.resourceType !== 'link' && (
+                                <button
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = res.url;
+                                    link.download = res.title || 'download';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }}
+                                  className="p-2.5 bg-white text-slate-400 hover:text-orange-500 rounded-xl shadow-sm border border-slate-100"
+                                  title="Download"
+                                >
+                                  <Download size={16} />
+                                </button>
+                              )}
+                              {(res.uploadedBy === user.userId || user.role === 'admin') && (
+                                <>
+                                  <button
+                                    onClick={() => startEdit(res)}
+                                    className="p-2.5 bg-white text-slate-400 hover:text-emerald-500 rounded-xl shadow-sm border border-slate-100"
+                                    title="Edit"
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteResource(res._id)}
+                                    className="p-2.5 bg-white text-slate-400 hover:text-rose-500 rounded-xl shadow-sm border border-slate-100"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-black text-[#002147] text-lg lg:text-xl group-hover:text-blue-600 transition-colors leading-tight">{res.title}</h4>
+                            {res.status === "pending" && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-widest border border-amber-200">Pending</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-500 font-medium mb-6 line-clamp-2 leading-relaxed">
+                            {res.description || "No description provided for this learning resource."}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[10px] font-black text-[#002147] shadow-sm uppercase">
+                                {(res.uploaderName || res.uploaderRole || "U")[0].toUpperCase()}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Contributor</span>
+                                <span className="text-[11px] font-bold text-slate-700 leading-none">
+                                  {res.uploadedBy === user.userId ? "Me" : (res.uploaderRole === 'admin' ? 'Administrator' : res.uploaderName)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                                  res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                    'bg-blue-50 text-blue-600 border border-blue-100'
+                                }`}>
+                                {res.category || "General"}
+                              </span>
+                              <span className="px-2.5 py-1 bg-white border border-slate-100 rounded-lg text-[9px] font-bold text-slate-400 uppercase tracking-widest shadow-sm">
+                                {res.resourceType}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -367,128 +473,130 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
         </div>
 
         {/* Modal simplified */}
-        {(isUploadOpen || editingResource) && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-[#002147]">{editingResource ? 'Edit Resource' : 'Share Resource'}</h2>
-                <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400">
-                  <X size={18} />
-                </button>
-              </div>
-              <form onSubmit={editingResource ? handleUpdateResource : handleUploadResource} className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={uploadData.title}
-                    onChange={(e) => setUploadData({ ...uploadData, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="Resource name"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Type</label>
-                    <select
-                      value={uploadData.resourceType}
-                      onChange={(e) => setUploadData({ ...uploadData, resourceType: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="link">Link</option>
-                      <option value="pdf">PDF</option>
-                      <option value="word">Word</option>
-                      <option value="text">Text</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                      {uploadData.resourceType === 'link' ? 'URL' : 'File'}
-                    </label>
-                    {uploadData.resourceType === 'link' ? (
-                      <input
-                        type="url"
-                        required
-                        value={uploadData.url}
-                        onChange={(e) => setUploadData({ ...uploadData, url: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
-                        placeholder="https://..."
-                      />
-                    ) : (
-                      <div className="relative group">
-                        <input
-                          type="file"
-                          required={!editingResource}
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            setSelectedFile(file);
-                            if (file && !uploadData.title) {
-                              setUploadData({ ...uploadData, title: file.name.split('.')[0] });
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          accept={
-                            uploadData.resourceType === 'pdf' ? '.pdf' :
-                              uploadData.resourceType === 'word' ? '.doc,.docx' :
-                                uploadData.resourceType === 'text' ? '.txt' : '*'
-                          }
-                        />
-                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium flex items-center gap-2 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
-                          <FileIcon size={14} className="text-blue-500 flex-shrink-0" />
-                          <span className="truncate text-[11px]">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
-                  <select
-                    value={uploadData.category}
-                    onChange={(e) => setUploadData({ ...uploadData, category: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="Short Note">Short Note</option>
-                    <option value="Lecture Note">Lecture Note</option>
-                    <option value="YouTube Link">YouTube Link</option>
-                    <option value="Past Paper">Past Paper</option>
-                    <option value="Tutorial">Tutorial</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Description</label>
-                  <textarea
-                    value={uploadData.description}
-                    onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm">Cancel</button>
-                  <button
-                    type="submit"
-                    disabled={isUploading}
-                    className="flex-1 py-3 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                        <span>Processing...</span>
-                      </>
-                    ) : (editingResource ? 'Save' : 'Upload')}
+        {
+          (isUploadOpen || editingResource) && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-[#002147]">{editingResource ? 'Edit Resource' : 'Share Resource'}</h2>
+                  <button onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400">
+                    <X size={18} />
                   </button>
                 </div>
-              </form>
+                <form onSubmit={editingResource ? handleUpdateResource : handleUploadResource} className="p-6 space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={uploadData.title}
+                      onChange={(e) => setUploadData({ ...uploadData, title: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      placeholder="Resource name"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Type</label>
+                      <select
+                        value={uploadData.resourceType}
+                        onChange={(e) => setUploadData({ ...uploadData, resourceType: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="link">Link</option>
+                        <option value="pdf">PDF</option>
+                        <option value="word">Word</option>
+                        <option value="text">Text</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                        {uploadData.resourceType === 'link' ? 'URL' : 'File'}
+                      </label>
+                      {uploadData.resourceType === 'link' ? (
+                        <input
+                          type="url"
+                          required
+                          value={uploadData.url}
+                          onChange={(e) => setUploadData({ ...uploadData, url: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                          placeholder="https://..."
+                        />
+                      ) : (
+                        <div className="relative group">
+                          <input
+                            type="file"
+                            required={!editingResource}
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              setSelectedFile(file);
+                              if (file && !uploadData.title) {
+                                setUploadData({ ...uploadData, title: file.name.split('.')[0] });
+                              }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            accept={
+                              uploadData.resourceType === 'pdf' ? '.pdf' :
+                                uploadData.resourceType === 'word' ? '.doc,.docx' :
+                                  uploadData.resourceType === 'text' ? '.txt' : '*'
+                            }
+                          />
+                          <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium flex items-center gap-2 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
+                            <FileIcon size={14} className="text-blue-500 flex-shrink-0" />
+                            <span className="truncate text-[11px]">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
+                    <select
+                      value={uploadData.category}
+                      onChange={(e) => setUploadData({ ...uploadData, category: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="Short Note">Short Note</option>
+                      <option value="Lecture Note">Lecture Note</option>
+                      <option value="YouTube Link">YouTube Link</option>
+                      <option value="Past Paper">Past Paper</option>
+                      <option value="Tutorial">Tutorial</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Description</label>
+                    <textarea
+                      value={uploadData.description}
+                      onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => { setIsUploadOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm">Cancel</button>
+                    <button
+                      type="submit"
+                      disabled={isUploading}
+                      className="flex-1 py-3 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                          <span>Processing...</span>
+                        </>
+                      ) : (editingResource ? 'Save' : 'Upload')}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
     );
   }
 

@@ -1,156 +1,143 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import Toast from "./Toast";
+
+// --- Form Patterns and Config ---
+
+const roles = [
+  { id: "student", label: "Student", idLabel: "Student ID", idPlaceholder: "ITXXXXXXXX" },
+  { id: "lecturer", label: "Lecturer", idLabel: "Lecturer ID", idPlaceholder: "LCXXXXXXXX" },
+  { id: "helper", label: "Helper", idLabel: "University ID", idPlaceholder: "ITXXXXXXXX" },
+];
+
+const registerSchema = z.object({
+  role: z.enum(["student", "lecturer", "helper"]),
+  id: z.string().min(1, "ID is required"),
+  name: z.string().optional(),
+  email: z.string().email("Invalid email address"),
+  year: z.string().optional(),
+  semester: z.string().optional(),
+  graduationYear: z.string().optional(),
+  skills: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+}).superRefine((data, ctx) => {
+  // Conditional Field Validation
+  if (data.role === "student") {
+    if (!/^IT\d{8}$/i.test(data.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid Student ID (e.g., ITXXXXXXXX)", path: ["id"] });
+    }
+    if (!data.year) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select a year", path: ["year"] });
+    if (!data.semester) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please select a semester", path: ["semester"] });
+    if (!data.email.toLowerCase().endsWith("@my.sliit.lk")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Must be a valid SLIIT email (@my.sliit.lk)", path: ["email"] });
+    } else {
+      const expectedEmail = `${data.id.toLowerCase()}@my.sliit.lk`;
+      if (data.id && /^IT\d{8}$/i.test(data.id) && data.email.toLowerCase() !== expectedEmail) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Email must be ${expectedEmail}`, path: ["email"] });
+      }
+    }
+  } else if (data.role === "lecturer") {
+    if (!/^LC\d{8}$/i.test(data.id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid Lecturer ID (e.g., LCXXXXXXXX)", path: ["id"] });
+    }
+    if (!data.email.toLowerCase().endsWith("@my.sliit.lk")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Must be a valid SLIIT email (@my.sliit.lk)", path: ["email"] });
+    } else {
+      const expectedEmail = `${data.id.toLowerCase()}@my.sliit.lk`;
+      if (data.id && /^LC\d{8}$/i.test(data.id) && data.email.toLowerCase() !== expectedEmail) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Email must be ${expectedEmail}`, path: ["email"] });
+      }
+    }
+  } else if (data.role === "helper") {
+    if (!data.name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Name is required", path: ["name"] });
+    if (!data.graduationYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation year is required", path: ["graduationYear"] });
+    if (!data.skills) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Skills are required", path: ["skills"] });
+  }
+});
 
 export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
   const router = useRouter();
-  const [role, setRole] = useState("student");
-  const [id, setId] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [year, setYear] = useState("");
-  const [semester, setSemester] = useState("");
-  const [graduationYear, setGraduationYear] = useState("");
-  const [skills, setSkills] = useState("");
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  const validateField = (name, value) => {
-    let error = "";
-    if (name === "id") {
-      if (!value) {
-        error = "ID is required";
-      } else if (role === "student") {
-        if (!/^IT\d{8}$/i.test(value)) error = "Invalid Student ID (e.g., IT12345678)";
-      } else if (role === "lecturer") {
-        if (!/^LC\d{8}$/i.test(value)) error = "Invalid Lecturer ID (e.g., LC12345678)";
-      } else if (role === "helper") {
-        if (!value) error = "Student ID is required";
-      }
-    } else if (name === "email") {
-      if (!value) {
-        error = "Email is required";
-      } else if (role === "helper") {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Invalid email format";
-      } else {
-        const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
-        if (id && idPattern.test(id)) {
-          const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
-          if (value.toLowerCase() !== expectedEmail) {
-            error = `Email must be ${expectedEmail}`;
-          }
-        } else if (!/@my\.sliit\.lk$/i.test(value)) {
-          error = "Must be a valid SLIIT email (@my.sliit.lk)";
-        }
-      }
-    } else if (name === "password") {
-      if (!value) error = "Password is required";
-      else if (value.length < 6) error = "Password must be at least 6 characters";
-    } else if (name === "confirmPassword") {
-      if (value !== password) error = "Passwords do not match";
-    } else if (name === "name" && role === "helper") {
-      if (!value) error = "Name is required";
-    } else if (name === "year" && role === "student") {
-      if (!value) error = "Please select a year";
-    } else if (name === "semester" && role === "student") {
-      if (!value) error = "Please select a semester";
-    } else if (name === "graduationYear" && role === "helper") {
-      if (!value) error = "Graduation year is required";
-    } else if (name === "skills" && role === "helper") {
-      if (!value) error = "Skills are required";
-    }
-    
-    setErrors((prev) => ({ ...prev, [name]: error }));
-    return error;
-  };
+  const {
+    register,
+    handleSubmit,
+    watch,
+    resetField,
+    unregister,
+    formState: { errors, isValid, isDirty },
+    setValue,
+    trigger,
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+    defaultValues: {
+      role: "student",
+      id: "",
+      name: "",
+      email: "",
+      year: "",
+      semester: "",
+      graduationYear: "",
+      skills: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setToast({ ...toast, message: "" });
-    
-    // Validate all fields
-    const newErrors = {};
-    
-    if (!id) newErrors.id = "ID is required";
-    else if (role === "student" && !/^IT\d{8}$/i.test(id)) newErrors.id = "Invalid Student ID (e.g., IT12345678)";
-    else if (role === "lecturer" && !/^LC\d{8}$/i.test(id)) newErrors.id = "Invalid Lecturer ID (e.g., LC12345678)";
+  const selectedRole = watch("role");
 
-    if (role === "helper" && !name) newErrors.name = "Name is required";
+  // Clear role-specific fields when role changes
+  useEffect(() => {
+    const fieldsToClear = ["id", "name", "year", "semester", "graduationYear", "skills"];
+    fieldsToClear.forEach(field => {
+      resetField(field, { defaultValue: "" });
+    });
+    // Trigger validation to clear errors of irrelevant fields
+    trigger();
+  }, [selectedRole, resetField, trigger]);
 
-    if (!email) newErrors.email = "Email is required";
-    else if (role === "helper") {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Invalid email format";
-    } else {
-      const idPattern = role === "student" ? /^IT\d{8}$/i : /^LC\d{8}$/i;
-      if (id && idPattern.test(id)) {
-        const expectedEmail = `${id.toLowerCase()}@my.sliit.lk`;
-        if (email.toLowerCase() !== expectedEmail) {
-          newErrors.email = `Email must be ${expectedEmail}`;
-        }
-      } else if (!/@my\.sliit\.lk$/i.test(email)) {
-        newErrors.email = "Must be a valid SLIIT email (@my.sliit.lk)";
-      }
-    }
-
-    if (!password) newErrors.password = "Password is required";
-    else if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
-
-    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
-
-    if (role === "student") {
-      if (!year) newErrors.year = "Please select a year";
-      if (!semester) newErrors.semester = "Please select a semester";
-    }
-
-    if (role === "helper") {
-      if (!graduationYear) newErrors.graduationYear = "Graduation year is required";
-      if (!skills) newErrors.skills = "Skills are required";
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) return;
-
+  const onSubmit = async (data) => {
     setIsLoading(true);
+    setToast({ message: "", type: "success" });
 
     try {
-      const skillsArray = role === "helper" ? skills.split(",").map(skill => skill.trim()).filter(skill => skill !== "") : [];
-      
+      const skillsArray = data.role === "helper"
+        ? data.skills.split(",").map(skill => skill.trim()).filter(Boolean)
+        : [];
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          role, 
-          id, 
-          email, 
-          password, 
-          year, 
-          semester,
-          name,
-          graduationYear: graduationYear ? parseInt(graduationYear) : undefined,
-          skills: role === "helper" ? skillsArray : undefined
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          graduationYear: data.graduationYear ? parseInt(data.graduationYear) : undefined,
+          skills: data.role === "helper" ? skillsArray : undefined,
         }),
       });
 
-      const data = await res.json();
-      
+      const result = await res.json();
+
       if (res.ok) {
-        setToast({ message: data.message || "Registration successful! Redirecting...", type: "success" });
+        setToast({ message: result.message || "Registration successful! Redirecting...", type: "success" });
         setTimeout(() => {
           if (onSuccess) onSuccess();
           onSwitchToLogin();
         }, 1500);
       } else {
-        setToast({ message: data.message || "Registration failed.", type: "error" });
+        setToast({ message: result.message || "Registration failed.", type: "error" });
       }
     } catch (error) {
       setToast({ message: "An error occurred. Please try again.", type: "error" });
@@ -159,298 +146,186 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     }
   };
 
-  return (
-    <div className="w-full bg-white p-6 sm:p-8">
-      <div className="text-center mb-5">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Create Account</h1>
-        <p className="text-gray-500 text-sm">Join the community</p>
-      </div>
+  const currentRoleConfig = roles.find(r => r.id === selectedRole) || roles[0];
 
-      <div className="mb-5 flex p-1 bg-gray-100 rounded-lg">
-        <button
-          type="button"
-          onClick={() => {
-            setRole("student");
-            setErrors({});
-            setToast({ ...toast, message: "" });
-          }}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-            role === "student"
-              ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Student
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setRole("lecturer");
-            setErrors({});
-            setToast({ ...toast, message: "" });
-          }}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-            role === "lecturer"
-              ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Lecturer
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setRole("helper");
-            setErrors({});
-            setToast({ ...toast, message: "" });
-          }}
-          className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-            role === "helper"
-              ? "bg-white text-[#002147] shadow-sm ring-1 ring-gray-200"
-              : "text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Helper
-        </button>
-      </div>
+  const InputField = ({ label, name, placeholder, type = "text", options = null }) => {
+    const error = errors[name];
+    const isInvalid = !!error;
 
-      <form onSubmit={handleRegister} className="space-y-4">
-        {role === "helper" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
+    return (
+      <div className="w-full">
+        <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">
+          {label}
+        </label>
+        <div className="relative">
+          {options ? (
+            <select
+              {...register(name)}
+              className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                } bg-gray-50 text-sm text-gray-900 outline-none transition-all appearance-none cursor-pointer pr-10`}
+            >
+              <option value="">{placeholder}</option>
+              {options.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
             <input
-              type="text"
-              name="name"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({ ...errors, name: "" });
-              }}
-              onBlur={(e) => validateField("name", e.target.value)}
-              className={`w-full px-4 py-2 rounded-lg border ${
-                errors.name ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-              } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+              type={type}
+              placeholder={placeholder}
+              {...register(name)}
+              className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                } bg-gray-50 text-sm text-gray-900 outline-none transition-all`}
             />
-            {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+          )}
+          {options && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <ChevronDown size={18} />
+            </div>
+          )}
+        </div>
+        {isInvalid && <p className="text-xs text-red-500 mt-1 font-medium">{error.message}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full bg-white p-5 sm:p-6 rounded-3xl">
+      <div className="text-center mb-3">
+        <h1 className="text-xl font-bold text-[#002147] mb-0.5 tracking-tight">Create Account</h1>
+        <p className="text-gray-500 text-xs font-medium">Join our community today</p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        {/* Role Selection Dropdown */}
+        <div className="w-full">
+          <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">I am a...</label>
+          <div className="relative">
+            <select
+              {...register("role")}
+              className="w-full px-3.5 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-[#002147] focus:ring-4 focus:ring-[#002147]/5 outline-none transition-all appearance-none cursor-pointer font-medium"
+            >
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.label}</option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#002147]">
+              <ChevronDown size={20} />
+            </div>
           </div>
+        </div>
+
+        {/* Dynamic Fields */}
+        {selectedRole === "helper" && (
+          <InputField label="Full Name" name="name" placeholder="John Doe" />
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {role === "student" ? "Student ID" : role === "lecturer" ? "Lecturer ID" : "University ID"}
-          </label>
-          <input
-            type="text"
+        <div className="grid grid-cols-1 gap-3">
+          <InputField
+            label={currentRoleConfig.idLabel}
             name="id"
-            placeholder={role === "student" ? "ITXXXXXXXX" : role === "lecturer" ? "LCXXXXXXXX" : "ITXXXXXXXX"}
-            value={id}
-            onChange={(e) => {
-              setId(e.target.value);
-              if (errors.id) setErrors({ ...errors, id: "" });
-            }}
-            onBlur={(e) => validateField("id", e.target.value)}
-            className={`w-full px-4 py-2 rounded-lg border ${
-              errors.id ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-            } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+            placeholder={currentRoleConfig.idPlaceholder}
           />
-          {errors.id && <p className="text-xs text-red-600 mt-1">{errors.id}</p>}
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email Address
-          </label>
-          <input
-            type="email"
+          <InputField
+            label="Email Address"
             name="email"
-            placeholder={role === "helper" ? "yourname@example.com" : `${role === "student" ? "IT" : "LC"}XXXXXXXX@my.sliit.lk`}
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (errors.email) setErrors({ ...errors, email: "" });
-            }}
-            onBlur={(e) => validateField("email", e.target.value)}
-            className={`w-full px-4 py-2 rounded-lg border ${
-              errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-            } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
+            type="email"
+            placeholder={selectedRole === "helper" ? "name@example.com" : `${currentRoleConfig.idPlaceholder}@my.sliit.lk`}
           />
-          {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
         </div>
 
-        {role === "helper" && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Grad Year
-              </label>
-              <input
-                type="number"
-                name="graduationYear"
-                placeholder="2024"
-                value={graduationYear}
-                onChange={(e) => {
-                  setGraduationYear(e.target.value);
-                  if (errors.graduationYear) setErrors({ ...errors, graduationYear: "" });
-                }}
-                onBlur={(e) => validateField("graduationYear", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.graduationYear ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
-              />
-              {errors.graduationYear && <p className="text-xs text-red-600 mt-1">{errors.graduationYear}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Skills
-              </label>
-              <input
-                type="text"
-                name="skills"
-                placeholder="Java, React"
-                value={skills}
-                onChange={(e) => {
-                  setSkills(e.target.value);
-                  if (errors.skills) setErrors({ ...errors, skills: "" });
-                }}
-                onBlur={(e) => validateField("skills", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.skills ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all`}
-              />
-              {errors.skills && <p className="text-xs text-red-600 mt-1">{errors.skills}</p>}
-            </div>
+        {selectedRole === "student" && (
+          <div className="grid grid-cols-2 gap-3">
+            <InputField
+              label="Year"
+              name="year"
+              placeholder="Select Year"
+              options={["Year 1", "Year 2", "Year 3", "Year 4"]}
+            />
+            <InputField
+              label="Semester"
+              name="semester"
+              placeholder="Select Semester"
+              options={["Semester 1", "Semester 2"]}
+            />
           </div>
         )}
 
-        {role === "student" && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Year
-              </label>
-              <select
-                name="year"
-                value={year}
-                onChange={(e) => {
-                  setYear(e.target.value);
-                  if (errors.year) setErrors({ ...errors, year: "" });
-                }}
-                onBlur={(e) => validateField("year", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.year ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all appearance-none cursor-pointer`}
-              >
-                <option value="">Select Year</option>
-                <option value="Year 1">Year 1</option>
-                <option value="Year 2">Year 2</option>
-                <option value="Year 3">Year 3</option>
-                <option value="Year 4">Year 4</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Semester
-              </label>
-              <select
-                name="semester"
-                value={semester}
-                onChange={(e) => {
-                  setSemester(e.target.value);
-                  if (errors.semester) setErrors({ ...errors, semester: "" });
-                }}
-                onBlur={(e) => validateField("semester", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.semester ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all appearance-none cursor-pointer`}
-              >
-                <option value="">Select Semester</option>
-                <option value="Semester 1">Semester 1</option>
-                <option value="Semester 2">Semester 2</option>
-              </select>
-            </div>
+        {selectedRole === "helper" && (
+          <div className="grid grid-cols-2 gap-3">
+            <InputField label="Grad Year" name="graduationYear" placeholder="2024" type="number" />
+            <InputField label="Skills" name="skills" placeholder="Java, React, Node" />
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
+        {/* Shared Password Fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="relative">
+            <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                name="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors({ ...errors, password: "" });
-                }}
-                onBlur={(e) => validateField("password", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all pr-11`}
+                {...register("password")}
+                className={`w-full px-3.5 py-2 rounded-xl border ${errors.password ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                  } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-12`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1 hover:text-[#002147] transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-xs text-red-500 mt-1 font-medium">{errors.password.message}</p>}
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: "" });
-                }}
-                onBlur={(e) => validateField("confirmPassword", e.target.value)}
-                className={`w-full px-4 py-2 rounded-lg border ${
-                  errors.confirmPassword ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#002147]"
-                } bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all pr-11`}
-              />
-            </div>
-            {errors.confirmPassword && <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>}
+            <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Confirm</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              {...register("confirmPassword")}
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.confirmPassword ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                } bg-gray-50 text-sm text-gray-900 outline-none transition-all`}
+            />
+            {errors.confirmPassword && <p className="text-[10px] text-red-500 mt-0.5 font-medium">{errors.confirmPassword.message}</p>}
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={isLoading}
-          className="w-full py-3 px-4 bg-[#002147] hover:bg-blue-950 text-white font-semibold rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+          disabled={!isValid || isLoading}
+          className="w-full py-2.5 px-6 bg-[#002147] hover:bg-[#002147]/90 text-white font-bold rounded-2xl shadow-xl shadow-[#002147]/20 hover:shadow-[#002147]/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
         >
-          {isLoading ? "Creating Account..." : "Register"}
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Creating Account...
+            </span>
+          ) : "Register"}
         </button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-gray-500">
-        Already have an account?{" "}
-        <button 
-          onClick={onSwitchToLogin}
-          className="text-[#4DA8DA] hover:text-blue-600 font-medium cursor-pointer"
-        >
-          Sign in
-        </button>
+      <div className="mt-4 text-center">
+        <p className="text-gray-500 text-xs font-medium">
+          Already have an account?{" "}
+          <button
+            onClick={onSwitchToLogin}
+            className="text-[#4DA8DA] hover:text-[#002147] font-bold underline decoration-2 underline-offset-4 transition-all"
+          >
+            Sign in
+          </button>
+        </p>
       </div>
 
-      <Toast 
-        message={toast.message} 
-        type={toast.type} 
-        onClose={() => setToast({ ...toast, message: "" })} 
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, message: "" })}
       />
     </div>
   );
