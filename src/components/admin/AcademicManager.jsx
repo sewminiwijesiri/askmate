@@ -27,6 +27,10 @@ export default function AcademicManager() {
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newModule, setNewModule] = useState({ moduleName: "", moduleCode: "", description: "" });
   const [editingId, setEditingId] = useState(null);
+  const [editingModule, setEditingModule] = useState(null);
+  const [moduleErrors, setModuleErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
 
   // Resource Management States
   const [selectedModule, setSelectedModule] = useState(null);
@@ -80,8 +84,47 @@ export default function AcademicManager() {
     }
   };
 
+  const startEditModule = (e, module) => {
+    e.stopPropagation();
+    setEditingModule(module);
+    setNewModule({
+      moduleName: module.moduleName,
+      moduleCode: module.moduleCode,
+      description: module.description || ""
+    });
+    setModuleErrors({});
+    setTouched({});
+    setIsAddingMode(true);
+  };
+
+  const validateModuleForm = () => {
+    const errors = {};
+    if (!newModule.moduleName || !newModule.moduleName.trim()) {
+      errors.moduleName = "Module name is required";
+    }
+    if (!newModule.moduleCode || !newModule.moduleCode.trim()) {
+      errors.moduleCode = "Reference code is required";
+    } else if (!newModule.moduleCode.trim().startsWith("IT")) {
+      errors.moduleCode = "Reference code must start with IT";
+    }
+    return errors;
+  };
+
+  const handleModuleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const errors = validateModuleForm();
+    setModuleErrors(errors);
+  };
+
   const handleAddModule = async (e) => {
     e.preventDefault();
+    const errors = validateModuleForm();
+    if (Object.keys(errors).length > 0) {
+      setModuleErrors(errors);
+      setTouched({ moduleName: true, moduleCode: true });
+      return;
+    }
+
     try {
       const res = await fetch("/api/admin/academic", {
         method: "POST",
@@ -91,10 +134,40 @@ export default function AcademicManager() {
       if (res.ok) {
         fetchModules();
         setNewModule({ moduleName: "", moduleCode: "", description: "" });
+        setModuleErrors({});
+        setTouched({});
         setIsAddingMode(false);
       }
     } catch (error) {
       console.error("Error adding module:", error);
+    }
+  };
+
+  const handleUpdateModule = async (e) => {
+    e.preventDefault();
+    const errors = validateModuleForm();
+    if (Object.keys(errors).length > 0) {
+      setModuleErrors(errors);
+      setTouched({ moduleName: true, moduleCode: true });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/academic/${editingModule._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newModule),
+      });
+      if (res.ok) {
+        fetchModules();
+        setNewModule({ moduleName: "", moduleCode: "", description: "" });
+        setEditingModule(null);
+        setModuleErrors({});
+        setTouched({});
+        setIsAddingMode(false);
+      }
+    } catch (error) {
+      console.error("Error updating module:", error);
     }
   };
 
@@ -107,6 +180,7 @@ export default function AcademicManager() {
       console.error("Error deleting module:", error);
     }
   };
+
 
   const handleResourceSubmit = async (e) => {
     e.preventDefault();
@@ -205,49 +279,48 @@ export default function AcademicManager() {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row gap-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Navigation Sidebar for Years/Semesters */}
         {!selectedModule && (
-          <div className="w-full lg:w-72 space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <GraduationCap size={16} className="text-blue-500" />
+          <div className="w-full lg:w-64 space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <GraduationCap size={14} className="text-indigo-500" />
                 Academic Year
               </h3>
-              <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-2">
                 {[1, 2, 3, 4].map((year) => (
                   <button
                     key={year}
                     onClick={() => setSelectedYear(year)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${selectedYear === year
-                      ? "bg-[#002147] text-white shadow-lg shadow-blue-900/10"
-                      : "text-slate-500 hover:bg-slate-50"
+                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${selectedYear === year
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                      : "text-slate-500 border-slate-100 hover:bg-slate-50"
                       }`}
                   >
-                    <span>Year {year}</span>
-                    {selectedYear === year && <ChevronRight size={16} />}
+                    Y{year}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <Calendar size={16} className="text-orange-500" />
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Calendar size={14} className="text-amber-500" />
                 Semester
               </h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-2">
                 {[1, 2].map((sem) => (
                   <button
                     key={sem}
                     onClick={() => setSelectedSemester(sem)}
-                    className={`py-3.5 rounded-xl font-bold transition-all text-center ${selectedSemester === sem
-                      ? "bg-orange-50 text-orange-700 border border-orange-100"
-                      : "text-slate-500 hover:bg-slate-50"
+                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border text-left ${selectedSemester === sem
+                      ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                      : "text-slate-500 border-slate-100 hover:bg-slate-50"
                       }`}
                   >
-                    Sem {sem}
+                    Semester {sem}
                   </button>
                 ))}
               </div>
@@ -258,38 +331,38 @@ export default function AcademicManager() {
         {/* Dynamic Display Area */}
         <div className="flex-1 space-y-6">
           {!selectedModule ? (
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm min-h-[500px]">
-              <div className="flex justify-between items-center mb-10">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm min-h-[500px]">
+              <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-[#002147]">
-                    Year {selectedYear}, Semester {selectedSemester}
+                  <h2 className="text-xl font-bold text-rose-600">
+                    Year {selectedYear} / Sem {selectedSemester}
                   </h2>
-                  <p className="text-slate-500 font-medium mt-1">
-                    Manage modules for this academic period.
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Managing {filteredModules.length} core subject modules
                   </p>
                 </div>
                 <button
                   onClick={() => setIsAddingMode(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#002147] text-white rounded-2xl font-black text-sm hover:bg-[#003d82] transition-all shadow-lg shadow-blue-900/10 active:scale-95 translate-y-0 hover:-translate-y-1"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95"
                 >
-                  <Plus size={18} />
-                  New Module
+                  <Plus size={16} />
+                  Add Module
                 </button>
               </div>
 
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-[300px]">
-                  <div className="w-10 h-10 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Synchronizing Modules...</p>
+                  <div className="w-8 h-8 border-3 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
+                  <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Syncing modules...</p>
                 </div>
               ) : filteredModules.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[300px] text-center bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-[2.5rem]">
-                  <div className="w-20 h-20 bg-white shadow-sm rounded-full flex items-center justify-center text-slate-200 mb-6">
-                    <BookOpen size={40} />
+                <div className="flex flex-col items-center justify-center h-[300px] text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
+                  <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center text-slate-300 mb-4">
+                    <BookOpen size={30} />
                   </div>
-                  <h3 className="text-xl font-extrabold text-[#002147] mb-2">Academic Void</h3>
-                  <p className="text-slate-500 font-medium max-w-xs mx-auto">
-                    Start building the curriculum by adding the first module.
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">No modules found</h3>
+                  <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto">
+                    Start defining the curriculum for this period.
                   </p>
                 </div>
               ) : (
@@ -298,65 +371,71 @@ export default function AcademicManager() {
                     <div
                       key={module._id}
                       onClick={() => setSelectedModule(module)}
-                      className="group bg-slate-50 border border-slate-100 p-6 rounded-[2rem] hover:bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 cursor-pointer relative overflow-hidden"
+                      className="group bg-white border border-slate-100 p-6 rounded-xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 cursor-pointer relative"
                     >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-blue-600 font-black text-sm shadow-sm group-hover:scale-110 transition-transform">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-black uppercase tracking-wider">
                           {module.moduleCode}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => startEditModule(e, module)}
+                            className="p-2.5 text-slate-300 hover:text-indigo-600 transition-colors rounded-lg hover:bg-indigo-50"
+                            title="Edit Module"
+                          >
+                            <Edit2 size={16} />
+                          </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteModule(module._id); }}
-                            className="p-3 text-slate-300 hover:text-rose-500 transition-colors bg-white rounded-xl shadow-sm hover:shadow-md"
+                            className="p-2.5 text-slate-300 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50"
+                            title="Delete Module"
                           >
                             <Trash2 size={16} />
                           </button>
                         </div>
+
                       </div>
-                      <h4 className="text-lg font-black text-[#002147] mb-2 group-hover:text-blue-600 transition-colors">
+                      <h4 className="text-md font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
                         {module.moduleName}
                       </h4>
-                      <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed font-medium">
-                        {module.description || "Comprehensive curriculum details for this specialized module."}
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-medium">
+                        {module.description || "In-depth study and practical applications for this module segment."}
                       </p>
-                      <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Manage Resources →</span>
-                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm min-h-[600px] animate-in slide-in-from-right-4 duration-500">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm min-h-[600px] animate-in slide-in-from-right-2 duration-500">
               <button
                 onClick={() => setSelectedModule(null)}
-                className="flex items-center gap-2 text-slate-400 hover:text-[#002147] font-black text-xs uppercase tracking-widest mb-10 transition-all hover:-translate-x-1"
+                className="flex items-center gap-1 text-slate-400 hover:text-indigo-600 font-bold text-[11px] uppercase tracking-widest mb-8 transition-all"
               >
-                <ChevronLeft size={16} /> Back to Modules
+                <ChevronLeft size={14} /> Back to Modules
               </button>
 
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-[1.75rem] bg-[#002147] flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-blue-900/20">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-indigo-100">
                     {selectedModule.moduleCode}
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-[#002147] tracking-tight mb-2">{selectedModule.moduleName}</h2>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedModule.moduleName}</h2>
+                    <div className="flex items-center gap-2.5 mt-1">
+                      <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">
                         {selectedModule.moduleCode}
                       </span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                      <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">Resources Repository</p>
+                      <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                      <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Global Repository</p>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsResModalOpen(true)}
-                  className="flex items-center gap-2 px-8 py-4 bg-[#002147] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10 active:scale-95 translate-y-0 hover:-translate-y-1"
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-md active:scale-95"
                 >
-                  <Plus size={18} />
+                  <Plus size={16} />
                   Add Resource
                 </button>
               </div>
@@ -378,24 +457,24 @@ export default function AcademicManager() {
               ) : (
                 <div className="flex flex-col gap-8">
                   {/* Category Filter & Search for Admin */}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-slate-100">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pb-8 border-b border-slate-100">
+                    <div className="flex flex-wrap gap-1.5">
                       <button
                         onClick={() => setResourceCategory("All")}
-                        className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${resourceCategory === "All"
-                          ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10"
-                          : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                        className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === "All"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
                           }`}
                       >
-                        All Artifacts
+                        All
                       </button>
                       {["Short Note", "Lecture Note", "YouTube Link", "Past Paper", "Tutorial", "Other"].map(cat => (
                         <button
                           key={cat}
                           onClick={() => setResourceCategory(cat)}
-                          className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${resourceCategory === cat
-                            ? "bg-[#002147] text-white shadow-xl shadow-blue-900/10"
-                            : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                          className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === cat
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
                             }`}
                         >
                           {cat}
@@ -403,14 +482,14 @@ export default function AcademicManager() {
                       ))}
                     </div>
 
-                    <div className="relative w-full md:w-72 group">
-                      <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                    <div className="relative w-full xl:w-80 group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={14} strokeWidth={2.5} />
                       <input
                         type="text"
-                        placeholder="Search by title or info..."
+                        placeholder="Search for materials..."
                         value={resourceSearchQuery}
                         onChange={(e) => setResourceSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border border-slate-100 rounded-[1.25rem] text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
                       />
                     </div>
                   </div>
@@ -420,16 +499,16 @@ export default function AcademicManager() {
                       .filter(r => resourceCategory === "All" || r.category === resourceCategory)
                       .filter(r => r.title.toLowerCase().includes(resourceSearchQuery.toLowerCase()) || (r.description && r.description.toLowerCase().includes(resourceSearchQuery.toLowerCase())))
                       .map((res) => (
-                        <div key={res._id} className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-300 group">
+                        <div key={res._id} className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group relative">
                           <div className="flex justify-between items-start mb-6">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-500' :
-                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-500' :
-                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-500' :
-                                  'bg-blue-50 text-blue-500'
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600' :
+                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600' :
+                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600' :
+                                  'bg-indigo-50 text-indigo-600'
                               }`}>
-                              {res.resourceType === 'link' ? <LinkIcon size={24} /> : <FileIcon size={24} />}
+                              {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               {res.resourceType !== 'link' && (
                                 <button
                                   onClick={() => {
@@ -440,77 +519,70 @@ export default function AcademicManager() {
                                     link.click();
                                     document.body.removeChild(link);
                                   }}
-                                  className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-orange-500 transition-colors border border-slate-50"
+                                  className="p-2 text-slate-400 hover:text-amber-500 transition-colors rounded-lg hover:bg-amber-50"
                                   title="Download"
                                 >
-                                  <Download size={18} />
+                                  <Download size={16} />
                                 </button>
                               )}
-                              <button onClick={() => startEditResource(res)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-emerald-500 transition-colors border border-slate-50">
-                                <Edit2 size={18} />
+                              <button onClick={() => startEditResource(res)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors rounded-lg hover:bg-indigo-50">
+                                <Edit2 size={16} />
                               </button>
-                              <button onClick={() => handleDeleteResource(res._id)} className="p-3 text-slate-400 bg-white rounded-xl shadow-sm hover:text-rose-500 transition-colors border border-slate-50">
-                                <Trash2 size={18} />
+                              <button onClick={() => handleDeleteResource(res._id)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50">
+                                <Trash2 size={16} />
                               </button>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 mb-4">
-                            <h4 className="text-xl font-black text-[#002147] group-hover:text-blue-600 transition-colors leading-tight">{res.title}</h4>
-                            {res.status === "pending" && (
-                              <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-amber-200">Pending</span>
-                            )}
-                            {res.status === "rejected" && (
-                              <span className="px-2 py-0.5 bg-rose-100 text-rose-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-rose-200">Rejected</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-500 font-medium mb-8 line-clamp-2 leading-relaxed">{res.description || "Administrative documentation for this module."}</p>
+                          <h4 className="text-lg font-bold text-slate-900 leading-snug mb-2 flex items-center gap-2">
+                            {res.title}
+                            {res.status === "pending" && <span className="bg-amber-500 w-2 h-2 rounded-full animate-pulse"></span>}
+                          </h4>
 
-                          <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[12px] font-black text-[#002147] shadow-sm uppercase border border-slate-100">
+                          <p className="text-xs text-slate-500 font-medium mb-6 line-clamp-2 leading-relaxed h-8">
+                            {res.description || "Core reference material for structural analysis."}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200">
                                 {(res.uploaderName || "U")[0].toUpperCase()}
                               </div>
-                              <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Uploaded By</p>
-                                <p className="text-xs font-black text-slate-700 leading-none">
-                                  {res.uploaderRole === 'admin' ? (res.uploaderName === 'Admin' || !res.uploaderName || /^IT\d{8}$/i.test(res.uploaderName) ? 'Administrator' : res.uploaderName) : res.uploaderName}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                  res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                                    'bg-blue-50 text-blue-600 border border-blue-100'
-                                }`}>
-                                {res.category || "General"}
+                              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">
+                                {res.uploaderName || 'Admin'}
                               </span>
                             </div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                  'bg-indigo-50 text-indigo-600 border-indigo-100'
+                              }`}>
+                              {res.category || "General"}
+                            </span>
                           </div>
 
-                          <div className="mt-8 flex gap-3">
+                          <div className="mt-6 flex gap-2">
                             <a
                               href={res.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-white text-[#002147] rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 hover:bg-[#002147] hover:text-white transition-all shadow-sm"
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-600 rounded-lg font-bold text-[11px] uppercase tracking-wider hover:bg-indigo-600 hover:text-white transition-all"
                             >
-                              Open Resource <ExternalLink size={14} />
+                              Access <ExternalLink size={12} />
                             </a>
                             {res.status === "pending" && (
-                              <div className="flex gap-2 flex-[1.5]">
+                              <div className="flex gap-2 flex-1">
                                 <button
                                   onClick={() => handleApproveResource(res._id, "approved")}
-                                  className="flex-1 py-3.5 bg-emerald-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-900/10"
+                                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-[11px] uppercase tracking-wider hover:bg-indigo-700 shadow-sm"
                                 >
-                                  Approve
+                                  OK
                                 </button>
                                 <button
                                   onClick={() => handleApproveResource(res._id, "rejected")}
-                                  className="flex-1 py-3.5 bg-rose-50 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all border border-rose-100"
+                                  className="p-2.5 bg-white border border-rose-200 text-rose-500 rounded-lg hover:bg-rose-50"
                                 >
-                                  Reject
+                                  <X size={14} />
                                 </button>
                               </div>
                             )}
@@ -528,65 +600,88 @@ export default function AcademicManager() {
       {/* Add Module Modal */}
       {
         isAddingMode && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-              <div className="p-10 border-b border-slate-100 flex justify-between items-center">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-black text-[#002147]">New Academic Module</h2>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Year {selectedYear} • Semester {selectedSemester}</p>
+                  <h2 className="text-lg font-bold text-slate-900">{editingModule ? "Update Academic Module" : "New Academic Module"}</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Year {selectedYear} • Semester {selectedSemester}</p>
                 </div>
-                <button onClick={() => setIsAddingMode(false)} className="p-3 rounded-2xl hover:bg-slate-50 text-slate-400 transition-all">
-                  <X size={24} />
+                <button onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 transition-all">
+                  <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleAddModule} className="p-10 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Name</label>
+              <form onSubmit={editingModule ? handleUpdateModule : handleAddModule} className="p-8 space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Name</label>
                   <input
                     type="text"
-                    required
                     value={newModule.moduleName}
-                    onChange={(e) => setNewModule({ ...newModule, moduleName: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
-                    placeholder="e.g., Quantum Computing Fundamentals"
+                    onBlur={() => handleModuleBlur("moduleName")}
+                    onChange={(e) => {
+                      setNewModule({ ...newModule, moduleName: e.target.value });
+                      if (touched.moduleName) {
+                        const errors = validateModuleForm();
+                        setModuleErrors(errors);
+                      }
+                    }}
+                    className={`w-full bg-slate-50 border ${touched.moduleName && moduleErrors.moduleName ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
+                    placeholder="Enter module name"
                   />
+                  {touched.moduleName && moduleErrors.moduleName && (
+                    <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleName}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Module Code</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Reference Code</label>
                   <input
                     type="text"
-                    required
                     value={newModule.moduleCode}
-                    onChange={(e) => setNewModule({ ...newModule, moduleCode: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
-                    placeholder="e.g., CS-Q402"
+                    onBlur={() => handleModuleBlur("moduleCode")}
+                    onChange={(e) => {
+                      setNewModule({ ...newModule, moduleCode: e.target.value });
+                      if (touched.moduleCode) {
+                        const errors = validateModuleForm();
+                        setModuleErrors(errors);
+                      }
+                    }}
+                    className={`w-full bg-slate-50 border ${touched.moduleCode && moduleErrors.moduleCode ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
+                    placeholder="e.g. IT-3050"
                   />
+                  {touched.moduleCode && moduleErrors.moduleCode && (
+                    <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleCode}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Abstract (Optional)</label>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center mr-1">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Brief Overview</label>
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Optional</span>
+                  </div>
                   <textarea
                     value={newModule.description}
                     onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 focus:bg-white transition-all h-32 resize-none placeholder:text-slate-300"
-                    placeholder="The primary focus of this unit is..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all h-24 resize-none placeholder:text-slate-300"
+                    placeholder="Describe the module focus..."
                   />
                 </div>
-                <div className="flex gap-4 pt-6">
+                <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setIsAddingMode(false)}
-                    className="flex-1 px-8 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                    onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }}
+                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-8 py-4 bg-[#002147] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-900/10"
+                    disabled={!newModule.moduleName?.trim() || !newModule.moduleCode?.trim().startsWith("IT")}
+                    className="flex-1 px-4 py-2.5 bg-indigo-600 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md active:scale-95"
                   >
-                    Confirm Module
+                    {editingModule ? "Save Changes" : "Create Module"}
                   </button>
                 </div>
               </form>
+
             </div>
           </div>
         )
@@ -595,49 +690,51 @@ export default function AcademicManager() {
       {/* Resource Modal */}
       {
         isResModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#002147]/40 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden">
-              <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <div>
-                  <h2 className="text-2xl font-black text-[#002147]">{editingResource ? 'Modify Resource' : 'Archive Resource'}</h2>
-                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                    Global repository update for {selectedModule.moduleCode}
+                  <h2 className="text-lg font-bold text-slate-900">{editingResource ? 'Update resource' : 'Catalog New Resource'}</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    Modifying repository for {selectedModule.moduleCode}
                   </p>
                 </div>
-                <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-3 rounded-2xl hover:bg-white text-slate-400 transition-all shadow-sm">
-                  <X size={24} />
+                <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-white text-slate-400 transition-all shadow-sm">
+                  <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleResourceSubmit} className="p-10 space-y-6">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Title</label>
+              <form onSubmit={handleResourceSubmit} className="p-8 space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Resource Name</label>
                   <input
                     type="text"
                     required
                     value={resData.title}
                     onChange={(e) => setResData({ ...resData, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="Material identification"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
+                    placeholder="Title for this material"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Media Format</label>
-                    <select
-                      value={resData.resourceType}
-                      onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-black focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="link">Hyperlink</option>
-                      <option value="pdf">PDF Document</option>
-                      <option value="word">MS Word Document</option>
-                      <option value="text">Raw Text File</option>
-                    </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Media Type</label>
+                    <div className="relative">
+                      <select
+                        value={resData.resourceType}
+                        onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer pr-10"
+                      >
+                        <option value="link">Public URL</option>
+                        <option value="pdf">PDF File</option>
+                        <option value="word">Word Doc</option>
+                        <option value="text">Text File</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {resData.resourceType === 'link' ? 'Access URL' : 'Document File'}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">
+                      {resData.resourceType === 'link' ? 'Source URL' : 'Upload File'}
                     </label>
                     {resData.resourceType === 'link' ? (
                       <input
@@ -645,8 +742,8 @@ export default function AcademicManager() {
                         required
                         value={resData.url}
                         onChange={(e) => setResData({ ...resData, url: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:outline-none focus:border-blue-500 transition-all"
-                        placeholder="https://cloud.storage/res"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
+                        placeholder="https://..."
                       />
                     ) : (
                       <div className="relative group">
@@ -667,21 +764,21 @@ export default function AcademicManager() {
                                 resData.resourceType === 'text' ? '.txt' : '*'
                           }
                         />
-                        <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold flex items-center gap-3 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
-                          <FileIcon size={18} className="text-blue-500 flex-shrink-0" />
-                          <span className="truncate">{selectedFile ? selectedFile.name : (editingResource ? 'Change document...' : 'Browse documents...')}</span>
+                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold flex items-center gap-2 text-slate-500 border-dashed group-hover:border-indigo-500 transition-all overflow-hidden whitespace-nowrap">
+                          <FileIcon size={14} className="text-indigo-500 flex-shrink-0" />
+                          <span className="truncate">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Category</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Tag Category</label>
                   <select
                     value={resData.category}
                     onChange={(e) => setResData({ ...resData, category: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-black focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                   >
                     <option value="Short Note">Short Note</option>
                     <option value="Lecture Note">Lecture Note</option>
@@ -692,29 +789,26 @@ export default function AcademicManager() {
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Administrative Note</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Description</label>
                   <textarea
                     value={resData.description}
                     onChange={(e) => setResData({ ...resData, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold h-32 resize-none focus:outline-none focus:border-blue-500 transition-all"
-                    placeholder="Contextual information for students..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold h-24 resize-none focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300"
+                    placeholder="Short description for students..."
                   />
                 </div>
 
-                <div className="flex gap-4 pt-6">
-                  <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-4 bg-slate-100 text-[#002147] rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Discard</button>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all">Cancel</button>
                   <button
                     type="submit"
                     disabled={isUploading}
-                    className="flex-1 py-4 bg-[#002147] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {isUploading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                        Syncing...
-                      </>
-                    ) : (editingResource ? 'Save Changes' : 'Upload Resource')}
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    ) : (editingResource ? 'Save' : 'Upload')}
                   </button>
                 </div>
               </form>
