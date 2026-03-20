@@ -50,6 +50,9 @@ const ResourceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Assuming there's a User model, if not use String for name/id
     },
+    textContent: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
