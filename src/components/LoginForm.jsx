@@ -82,6 +82,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
           if (result.user) {
             localStorage.setItem("user", JSON.stringify(result.user));
           }
+          window.dispatchEvent(new Event("loginStateChange"));
         }
         setTimeout(() => {
           if (onSuccess) onSuccess();
