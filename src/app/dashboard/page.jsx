@@ -62,10 +62,10 @@ export default function StudentDashboard() {
       const res = await fetch("/api/admin/academic");
       if (res.ok) {
         const data = await res.json();
-        // Filter by user's year and semester, slice to 2
+        const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;
         const filtered = data.filter(m =>
-          Number(m.year) === Number(user.year || 1) &&
-          Number(m.semester) === Number(user.semester || 1)
+          Number(m.year) === getNum(user.year) &&
+          Number(m.semester) === getNum(user.semester)
         ).slice(0, 2);
         setModules(filtered);
       }
@@ -79,6 +79,7 @@ export default function StudentDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("loginStateChange"));
     router.push("/");
   };
 
@@ -119,8 +120,10 @@ export default function StudentDashboard() {
               </h1>
               <p className="text-slate-500 font-medium">
                 {user.role === "student"
-                  ? `Continue your ${user.year || 1}${user.year == 1 ? "st" : user.year == 2 ? "nd" : user.year == 3 ? "rd" : "th"
-                  } year studies`
+                  ? (() => {
+                    const yr = parseInt(String(user.year).replace(/\D/g, "")) || 1;
+                    return `Continue your ${yr}${yr === 1 ? "st" : yr === 2 ? "nd" : yr === 3 ? "rd" : "th"} year studies`;
+                  })()
                   : `Manage your ${user.role} workspace`}
               </p>
             </div>
@@ -421,7 +424,7 @@ export default function StudentDashboard() {
             <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
               {user.role === 'helper'
                 ? "We're curating the best questions for you to help other students build your reputation."
-                : `We're preparing a space for you to ask questions and get expert advice for your Year ${user.year || 1} studies.`}
+                : `We're preparing a space for you to ask questions and get expert advice for your Year ${parseInt(String(user.year).replace(/\D/g, "")) || 1} studies.`}
             </p>
             <button
               onClick={() => setActiveTab(user.role === 'helper' ? 'dashboard' : 'academic')}
