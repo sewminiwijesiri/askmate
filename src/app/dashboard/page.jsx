@@ -6,6 +6,7 @@ import StudentSidebar from "@/components/student/StudentSidebar";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
 import ProfileSection from "@/components/student/ProfileSection";
 import MyResources from "@/components/student/MyResources";
+import LecturerDashboard from "@/components/lecturer/LecturerDashboard";
 import {
   Bell,
   Search,
@@ -92,6 +93,10 @@ export default function StudentDashboard() {
         </div>
       </div>
     );
+  }
+
+  if (user.role === "lecturer") {
+    return <LecturerDashboard user={user} onLogout={handleLogout} />;
   }
 
   return (
