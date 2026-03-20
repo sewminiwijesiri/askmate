@@ -16,6 +16,8 @@ export const metadata = {
   description: "AskMate is a platform for students and lecturers to ask and answer questions.",
 };
 
+import AiFloatingButton from "@/components/AiFloatingButton";
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -23,6 +25,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <AiFloatingButton />
       </body>
     </html>
   );

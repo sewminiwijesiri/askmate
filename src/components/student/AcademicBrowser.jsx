@@ -29,8 +29,9 @@ import {
 export default function AcademicBrowser({ defaultYear, defaultSemester, user }) {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(defaultYear || 1);
-  const [selectedSemester, setSelectedSemester] = useState(defaultSemester || 1);
+  const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;
+  const [selectedYear, setSelectedYear] = useState(() => getNum(defaultYear));
+  const [selectedSemester, setSelectedSemester] = useState(() => getNum(defaultSemester));
   const [selectedModule, setSelectedModule] = useState(null);
   const [activeView, setActiveView] = useState("modules"); // modules, resources, qa
   const [searchQuery, setSearchQuery] = useState("");

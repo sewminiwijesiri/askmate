@@ -138,6 +138,7 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("loginStateChange"));
     router.push("/");
   };
 

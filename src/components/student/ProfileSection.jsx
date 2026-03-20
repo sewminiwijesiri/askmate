@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  User, 
-  Mail, 
-  Calendar, 
-  BookOpen, 
-  Save, 
-  Trash2, 
+import {
+  User,
+  Mail,
+  Calendar,
+  BookOpen,
+  Save,
+  Trash2,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -83,7 +83,7 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
 
     try {
       const token = localStorage.getItem("token");
-      
+
       // Prepare data for update (clean up skills if helper)
       const dataToSubmit = { ...formData };
       if (user.role === 'helper' && dataToSubmit.skills) {
@@ -104,11 +104,11 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
       if (res.ok) {
         setSuccess("Profile updated successfully!");
         setProfileData(data.user);
-        
+
         // Update localStorage user data
         const updatedLocalUser = { ...user, ...data.user };
         localStorage.setItem("user", JSON.stringify(updatedLocalUser));
-        
+
         if (onUpdate) onUpdate(updatedLocalUser);
       } else {
         setError(data.message || "Failed to update profile");
@@ -197,7 +197,7 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
               <p className="text-sm text-slate-400 font-bold uppercase tracking-wider mb-4">
                 {profileData.role || user.role}
               </p>
-              
+
               <div className="space-y-3 pt-4 border-t border-slate-50 text-left">
                 <div className="flex items-center gap-3 text-slate-500">
                   <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
@@ -210,7 +210,7 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
                       <Calendar size={14} />
                     </div>
-                    <span className="text-sm font-medium">Year {profileData.year}, Semester {profileData.semester}</span>
+                    <span className="text-sm font-medium">Year {parseInt(String(profileData.year).replace(/\D/g, "")) || 1}, Semester {parseInt(String(profileData.semester).replace(/\D/g, "")) || 1}</span>
                   </div>
                 )}
                 {profileData.studentId && (
