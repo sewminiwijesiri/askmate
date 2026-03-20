@@ -5,7 +5,7 @@ const QuestionSchema = new mongoose.Schema(
         // Student who asked
         student: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "Student",
             required: true,
         },
 
