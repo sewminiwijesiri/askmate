@@ -39,27 +39,24 @@ const RelevantResources = ({ citations, selectedModule }) => {
     return (
         <div className="flex flex-col gap-6">
             {/* Citations / Resources */}
-            <div className="p-7 bg-white border border-slate-200 rounded-[2rem] shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-[#002147] tracking-tight">Citations</h3>
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                    <h3 className="text-[11px] font-black text-[#002147] uppercase tracking-[0.15em]">Citations</h3>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                     {citations.length === 0 ? (
-                        <div className="text-center py-8 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-relaxed">No resources cited yet. Ask a question to see references.</p>
+                        <div className="text-center py-4 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
+                             <p className="text-slate-400 text-[9px] font-bold uppercase tracking-tight">No references yet</p>
                         </div>
                     ) : (
-                        citations.map((cit, idx) => (
-                            <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-orange-200 transition-all cursor-default shadow-sm shadow-slate-200/20">
-                                <p className="text-[#002147] text-sm font-bold leading-snug mb-2 line-clamp-2">{cit.title}</p>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {cit.page && <span className="text-[10px] bg-white text-orange-600 font-black px-2 py-1 rounded-md border border-orange-100 shadow-sm uppercase tracking-tighter">Page {cit.page}</span>}
-                                    {cit.slide && <span className="text-[10px] bg-white text-indigo-600 font-black px-2 py-1 rounded-md border border-indigo-100 shadow-sm uppercase tracking-tighter">Slide {cit.slide}</span>}
-                                    {cit.section && <span className="text-[10px] bg-slate-200 text-slate-600 font-black px-2 py-1 rounded-md border border-slate-300 shadow-sm uppercase tracking-tighter overflow-hidden text-ellipsis max-w-[120px] whitespace-nowrap">{cit.section}</span>}
+                        citations.slice(0, 5).map((cit, idx) => (
+                            <div key={idx} className="p-2.5 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-orange-200 transition-all">
+                                <p className="text-[#002147] text-[11px] font-bold leading-tight mb-1 line-clamp-1">{cit.title}</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {cit.page && <span className="text-[8px] bg-orange-50 text-orange-600 font-bold px-1 py-0.5 rounded border border-orange-100 uppercase">P.{cit.page}</span>}
+                                    {cit.slide && <span className="text-[8px] bg-indigo-50 text-indigo-600 font-bold px-1 py-0.5 rounded border border-indigo-100 uppercase">S.{cit.slide}</span>}
                                 </div>
                             </div>
                         ))
@@ -67,42 +64,30 @@ const RelevantResources = ({ citations, selectedModule }) => {
                 </div>
             </div>
 
-            {/* Escalation */}
-            <div className="p-8 bg-gradient-to-br from-indigo-50/50 to-white border border-indigo-100/50 rounded-[2rem] shadow-sm relative overflow-hidden group">
-                {/* Decorative Pattern / Accent */}
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors" />
-
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center">
-                            <HelpCircle className="w-5 h-5 text-indigo-700" />
-                        </div>
-                        <h3 className="text-xl font-bold text-[#002147] tracking-tight">Still Unclear?</h3>
-                    </div>
-                    <p className="text-sm text-slate-500 font-medium mb-6 leading-relaxed">
-                        If the AI couldn't fully answer your question, you can send it to our human Helpers.
+            {/* Escalation Area */}
+            <div className="pt-4 border-t border-slate-100 space-y-2">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
+                    <h3 className="text-[11px] font-black text-indigo-700 uppercase tracking-[0.15em]">Help Center</h3>
+                </div>
+                
+                <div className="bg-indigo-50/30 border border-indigo-100/50 p-3 rounded-xl">
+                    <p className="text-[10px] text-slate-500 font-bold mb-3 italic">
+                        Stuck on a concept? Connect with a human.
                     </p>
 
                     <button
                         onClick={handleEscalate}
                         disabled={!selectedModule || escalating || success}
-                        className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-widest transition-all ${success
-                                ? "bg-emerald-500 text-white cursor-default shadow-lg shadow-emerald-500/20"
-                                : "bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-lg shadow-orange-500/20 active:scale-[0.98] disabled:bg-slate-200 disabled:opacity-50 disabled:shadow-none"
+                        className={`w-full py-2.5 rounded-lg flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-[0.12em] transition-all shadow-sm ${success
+                                ? "bg-emerald-500 text-white"
+                                : "bg-[#002147] hover:bg-[#002147]/90 text-white active:scale-95 disabled:bg-slate-100 disabled:text-slate-300"
                             }`}
                     >
                         {escalating ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : success ? (
-                            <>
-                                <CheckCircle2 className="w-5 h-5" />
-                                Sent to Helpers!
-                            </>
-                        ) : (
-                            "Send to Helpers"
-                        )}
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : success ? "Request Sent" : "Escalate Issue"}
                     </button>
-                    {!selectedModule && <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-4 text-center">Select a module first</p>}
                 </div>
             </div>
         </div>

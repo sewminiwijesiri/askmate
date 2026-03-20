@@ -34,12 +34,15 @@ const ModulePicker = ({ onModuleChange }) => {
     };
 
     return (
-        <div className="flex flex-col gap-5 p-7 bg-white border border-slate-200 rounded-[2rem] shadow-sm transition-all hover:shadow-md">
-            <h3 className="text-xl font-bold text-[#002147] tracking-tight">Select Module</h3>
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                <h3 className="text-[11px] font-black text-[#002147] uppercase tracking-[0.15em]">Module Scope</h3>
+            </div>
 
-            <div className="space-y-4">
-                <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#002147]/60 ml-1">Year</label>
+            <div className="grid grid-cols-1 gap-2">
+                {/* Year & Semester Row */}
+                <div className="flex gap-2">
                     <select
                         value={selectedYear}
                         onChange={(e) => {
@@ -47,17 +50,14 @@ const ModulePicker = ({ onModuleChange }) => {
                             setSelectedSemester("");
                             setSelectedModule("");
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all appearance-none cursor-pointer"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer"
                     >
-                        <option value="">Select Year</option>
+                        <option value="">Year</option>
                         {years.map((y) => (
-                            <option key={y} value={y}>Year {y}</option>
+                            <option key={y} value={y}>{y}</option>
                         ))}
                     </select>
-                </div>
 
-                <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#002147]/60 ml-1">Semester</label>
                     <select
                         value={selectedSemester}
                         disabled={!selectedYear}
@@ -65,38 +65,30 @@ const ModulePicker = ({ onModuleChange }) => {
                             setSelectedSemester(e.target.value);
                             setSelectedModule("");
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all appearance-none cursor-pointer disabled:opacity-40"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer disabled:opacity-30"
                     >
-                        <option value="">Select Semester</option>
+                        <option value="">Sem</option>
                         {filteredSemesters.map((s) => (
-                            <option key={s} value={s}>Semester {s}</option>
+                            <option key={s} value={s}>{s}</option>
                         ))}
                     </select>
                 </div>
 
-                <div className="space-y-1.5">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#002147]/60 ml-1">Module</label>
-                    <select
-                        value={selectedModule}
-                        disabled={!selectedSemester}
-                        onChange={(e) => handleModuleSelect(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all appearance-none cursor-pointer disabled:opacity-40"
-                    >
-                        <option value="">Select Module</option>
-                        {filteredModules.map((m) => (
-                            <option key={m._id} value={m._id}>
-                                {m.moduleCode} - {m.moduleName}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                {/* Module Dropdown */}
+                <select
+                    value={selectedModule}
+                    disabled={!selectedSemester}
+                    onChange={(e) => handleModuleSelect(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer disabled:opacity-30"
+                >
+                    <option value="">Select Course Module</option>
+                    {filteredModules.map((m) => (
+                        <option key={m._id} value={m._id}>
+                            {m.moduleCode} - {m.moduleName}
+                        </option>
+                    ))}
+                </select>
             </div>
-            
-            {!selectedModule && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-[11px] text-blue-600 font-medium leading-relaxed">
-                    Please select a year and semester to view available course modules.
-                </div>
-            )}
         </div>
     );
 };

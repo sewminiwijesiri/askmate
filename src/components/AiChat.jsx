@@ -74,7 +74,7 @@ const AiChat = ({ selectedModule, onCitationsFound }) => {
     };
 
     return (
-        <div className="flex flex-col h-[600px] bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-slate-200/50">
+        <div className="flex flex-col h-full bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-slate-200/50">
             {/* Header / Module Indicator */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">

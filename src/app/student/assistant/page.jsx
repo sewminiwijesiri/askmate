@@ -1,65 +1,66 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import ModulePicker from "@/components/ModulePicker";
 import AiChat from "@/components/AiChat";
 import RelevantResources from "@/components/RelevantResources";
-import { ShieldAlert, Sparkles } from "lucide-react";
+import { ShieldAlert, Sparkles, ArrowLeft } from "lucide-react";
 
 export default function AiAssistantPage() {
     const [selectedModule, setSelectedModule] = useState(null);
     const [citations, setCitations] = useState([]);
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8 font-sans">
-            {/* Header Area */}
-            <div className="max-w-7xl mx-auto mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-slate-200 pb-8">
-                <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100 mb-2">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Powered by Gemini</span>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-[#002147] tracking-tight">
-                        AI Student <span className="text-orange-500 underline decoration-4 decoration-orange-500/20 underline-offset-4">Assistant</span>
-                    </h1>
-                    <p className="text-slate-500 font-medium text-lg">Your dedicated academic tutor for every module.</p>
-                </div>
-
-                {/* Academic Integrity Banner - Premium Style */}
-                <div className="flex items-start gap-4 px-6 py-5 bg-white border border-slate-200 rounded-3xl shadow-sm max-w-lg lg:mb-1 hover:border-orange-200 transition-colors group">
-                    <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
-                        <ShieldAlert className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-[#002147] uppercase tracking-wider">Academic Integrity First</h4>
-                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                            I provide guidance, conceptual explanations and hints. I do not provide direct assignment solutions.
-                        </p>
+        <div className="h-screen flex flex-col bg-slate-50 text-slate-900 font-sans overflow-hidden">
+            {/* Minimal Header / Top Nav */}
+            <header className="px-8 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm z-10">
+                <div className="flex items-center gap-6">
+                    <Link 
+                        href="/dashboard"
+                        className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:text-orange-600 hover:border-orange-200 transition-all active:scale-95"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div>
+                        <h1 className="text-xl font-black text-[#002147] tracking-tight leading-none">
+                            AI Student <span className="text-orange-500">Assistant</span>
+                        </h1>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Your Academic Tutor</p>
                     </div>
                 </div>
-            </div>
 
-            <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left Side: Module Configuration */}
-                <aside className="lg:col-span-3 space-y-6">
+                {/* Compact Integrity Banner */}
+                <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <ShieldAlert className="w-4 h-4 text-orange-500" />
+                    <p className="text-[10px] text-slate-500 font-bold max-w-[280px] leading-tight italic">
+                        Guidance and hints only. No direct solutions.
+                    </p>
+                </div>
+            </header>
+
+            <main className="flex-1 flex overflow-hidden">
+                {/* Left Drawer: Configuration */}
+                <aside className="w-80 h-full bg-white border-r border-slate-200 overflow-y-auto p-6 space-y-8 scrollbar-hide shrink-0">
                     <ModulePicker onModuleChange={(mod) => setSelectedModule(mod)} />
+                    
+                    <div className="pt-2 border-t border-slate-100">
+                        <RelevantResources
+                            citations={citations}
+                            selectedModule={selectedModule}
+                        />
+                    </div>
                 </aside>
 
-                {/* Center: Main Interaction Hub */}
-                <section className="lg:col-span-6 min-h-[600px]">
-                    <AiChat
-                        selectedModule={selectedModule}
-                        onCitationsFound={(cits) => setCitations(cits)}
-                    />
+                {/* Primary Interaction Area: Chat */}
+                <section className="flex-1 h-full bg-slate-50/50 relative overflow-hidden flex flex-col p-6">
+                    <div className="flex-1 max-w-4xl mx-auto w-full flex flex-col shadow-2xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden">
+                        <AiChat
+                            selectedModule={selectedModule}
+                            onCitationsFound={(cits) => setCitations(cits)}
+                        />
+                    </div>
                 </section>
-
-                {/* Right Side: Augmented Context */}
-                <aside className="lg:col-span-3 space-y-6">
-                    <RelevantResources
-                        citations={citations}
-                        selectedModule={selectedModule}
-                    />
-                </aside>
             </main>
         </div>
     );
