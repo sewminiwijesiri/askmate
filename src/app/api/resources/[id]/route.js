@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import Resource from "@/models/Resource";
 import jwt from "jsonwebtoken";
 import cloudinary from "@/lib/cloudinary";
+import pdf from "@/lib/ai/pdf-parser";
+import { ingestResource, deleteResourceChunks } from "@/lib/ai/ingestion";
 
 const verifyAdminOrOwner = async (req, resource) => {
   const authHeader = req.headers.get("authorization");
@@ -52,6 +54,16 @@ export async function PATCH(req, { params }) {
       if (file && typeof file !== "string") {
         const buffer = Buffer.from(await file.arrayBuffer());
         
+        // Extract text if it's a PDF
+        if (file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf")) {
+           try {
+              const pdfData = await pdf(buffer);
+              data.textContent = pdfData.text;
+           } catch (pdfError) {
+              console.error("PDF extraction error:", pdfError);
+           }
+        }
+
         try {
           const uploadResponse = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -88,6 +100,15 @@ export async function PATCH(req, { params }) {
     }
 
     const updatedResource = await Resource.findByIdAndUpdate(id, data, { new: true });
+    
+    // Trigger re-ingestion if status or content changed
+    if (data.status === "approved" || (updatedResource.status === "approved" && data.textContent)) {
+       await ingestResource(updatedResource);
+    } else if (data.status && data.status !== "approved") {
+       // If set to something else, remove chunks
+       await deleteResourceChunks(id);
+    }
+
     return NextResponse.json(updatedResource);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -114,6 +135,7 @@ export async function DELETE(req, { params }) {
     }
 
     await Resource.findByIdAndDelete(id);
+    await deleteResourceChunks(id);
     return NextResponse.json({ message: "Resource deleted successfully" });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

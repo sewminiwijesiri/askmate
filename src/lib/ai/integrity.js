@@ -5,7 +5,6 @@ export function isSolutionSeeking(question) {
     /write (complete |entire )?code/i,
     /final essay/i,
     /entire solution/i,
-    /solve this for me/i,
     /can you do my/i,
     /complete the/i,
   ];

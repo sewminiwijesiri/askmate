@@ -1,14 +1,60 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, AlertCircle, Loader2 } from "lucide-react";
+import { Send, User, Bot, AlertCircle, Loader2, Trash2 } from "lucide-react";
 
 const AiChat = ({ selectedModule, onCitationsFound }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [chatId, setChatId] = useState(null);
+    const [isLoaded, setIsLoaded] = useState(false);
     const chatEndRef = useRef(null);
+
+    // Persist chat history
+    useEffect(() => {
+        const savedMessages = localStorage.getItem("ai_chat_messages");
+        const savedChatId = localStorage.getItem("ai_chat_id");
+
+        if (savedMessages) {
+            try {
+                const parsed = JSON.parse(savedMessages);
+                setMessages(parsed);
+
+                // Re-trigger citations for the latest assistant message if present
+                const lastAssistantMsg = [...parsed]
+                    .reverse()
+                    .find((m) => m.role === "assistant" && m.citations?.length > 0);
+                
+                if (lastAssistantMsg && onCitationsFound) {
+                    onCitationsFound(lastAssistantMsg.citations);
+                }
+            } catch (err) {
+                console.error("Failed to parse saved chat messages:", err);
+            }
+        }
+
+        if (savedChatId) {
+            setChatId(savedChatId);
+        }
+        setIsLoaded(true);
+    }, [onCitationsFound]);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        if (messages.length > 0) {
+            localStorage.setItem("ai_chat_messages", JSON.stringify(messages));
+        } else {
+            localStorage.removeItem("ai_chat_messages");
+        }
+
+        if (chatId) {
+            localStorage.setItem("ai_chat_id", chatId);
+        } else {
+            localStorage.removeItem("ai_chat_id");
+        }
+    }, [messages, chatId, isLoaded]);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,77 +119,139 @@ const AiChat = ({ selectedModule, onCitationsFound }) => {
         }
     };
 
+    const handleClearChat = () => {
+        if (messages.length === 0) return;
+        if (window.confirm("Are you sure you want to clear this chat session?")) {
+            setMessages([]);
+            setChatId(null);
+            localStorage.removeItem("ai_chat_messages");
+            localStorage.removeItem("ai_chat_id");
+            if (onCitationsFound) onCitationsFound([]);
+        }
+    };
+
     return (
-        <div className="flex flex-col h-[600px] bg-white/5 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex flex-col h-full bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-slate-200/50">
+            {/* Header / Module Indicator */}
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#002147] flex items-center justify-center">
+                        <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-[#002147] uppercase tracking-widest">Assistant</h4>
+                        <p className="text-[10px] text-slate-500 font-bold">
+                            {selectedModule ? `Active: ${selectedModule.moduleCode}` : "Select a module to begin"}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleClearChat}
+                        disabled={messages.length === 0}
+                        title="Clear Chat"
+                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90 disabled:opacity-0 disabled:pointer-events-none"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-100">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Online</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white scrollbar-hide">
                 {messages.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
-                        <Bot className="w-12 h-12 opacity-20" />
-                        <p className="text-sm">Ask me anything about your module resources!</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4 max-w-xs mx-auto">
+                        <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-300">
+                           <Bot className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                            <h5 className="text-sm font-bold text-[#002147]">How can I help you today?</h5>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                Choose a module from the sidebar and ask me anything about its content.
+                            </p>
+                        </div>
                     </div>
                 )}
                 {messages.map((msg, idx) => (
                     <div
                         key={idx}
-                        className={`flex ${msg.role === "student" ? "justify-end" : "justify-start"
-                            }`}
+                        className={`flex gap-3 ${msg.role === "student" ? "flex-row-reverse" : "flex-row"}`}
                     >
+                        <div className={`w-8 h-8 rounded-2xl shrink-0 flex items-center justify-center ${
+                            msg.role === "student" ? "bg-orange-500" : "bg-[#002147]"
+                        }`}>
+                            {msg.role === "student" ? (
+                                <User className="w-4 h-4 text-white" />
+                            ) : (
+                                <Bot className="w-4 h-4 text-white" />
+                            )}
+                        </div>
+
                         <div
-                            className={`max-w-[80%] p-4 rounded-2xl ${msg.role === "student"
-                                ? "bg-cyan-600/60 text-white rounded-tr-none"
+                            className={`max-w-[85%] p-4 rounded-3xl shadow-sm ${msg.role === "student"
+                                ? "bg-orange-50 text-orange-950 rounded-tr-none border border-orange-100"
                                 : msg.role === "system"
-                                    ? "bg-amber-500/20 text-amber-200 border border-amber-500/30 text-center w-full"
-                                    : "bg-white/10 text-gray-100 border border-white/10 rounded-tl-none"
+                                    ? "bg-amber-50 text-amber-900 border border-amber-200 text-center w-full mx-8"
+                                    : "bg-slate-50 text-[#002147] border border-slate-100 rounded-tl-none font-medium text-[13px]"
                                 }`}
                         >
-                            <div className="flex items-center gap-2 mb-1">
-                                {msg.role === "student" ? (
-                                    <User className="w-3 h-3 text-cyan-200" />
-                                ) : msg.role === "assistant" ? (
-                                    <Bot className="w-3 h-3 text-purple-300" />
-                                ) : (
-                                    <AlertCircle className="w-3 h-3 text-amber-300" />
-                                )}
-                                <span className="text-[10px] uppercase tracking-wider opacity-60">
-                                    {msg.role === "student" ? "You" : msg.role === "assistant" ? "Assistant" : "System"}
-                                </span>
-                            </div>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed">
                                 {msg.content}
                             </div>
+                            
+                            {msg.role === "assistant" && msg.citations && msg.citations.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-slate-200/60 flex flex-wrap gap-2">
+                                    {msg.citations.map((c, ci) => (
+                                        <span key={ci} className="inline-flex items-center px-2 py-0.5 rounded bg-white border border-slate-200 text-[9px] font-bold text-slate-500">
+                                            Ref: {c.title.split(' ')[0]}...
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
                 {loading && (
-                    <div className="flex justify-start">
-                        <div className="bg-white/10 p-4 rounded-2xl rounded-tl-none border border-white/10">
-                            <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                    <div className="flex justify-start gap-3">
+                        <div className="w-8 h-8 rounded-2xl shrink-0 flex items-center justify-center bg-[#002147] animate-pulse">
+                            <Bot className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-3xl rounded-tl-none border border-slate-100">
+                            <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
                         </div>
                     </div>
                 )}
                 <div ref={chatEndRef} />
             </div>
 
-            {/* Input */}
+            {/* Input Action Area */}
             <form
                 onSubmit={handleSend}
-                className="p-4 bg-white/5 border-t border-white/10 flex gap-2"
+                className="p-6 bg-slate-50 border-t border-slate-200"
             >
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={selectedModule ? `Ask about ${selectedModule.moduleCode}...` : "Ask a question..."}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                />
-                <button
-                    type="submit"
-                    disabled={loading || !input.trim()}
-                    className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:hover:bg-cyan-600 text-white p-2 rounded-xl transition-colors"
-                >
-                    <Send className="w-5 h-5" />
-                </button>
+                <div className="relative group">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder={selectedModule ? `Ask about ${selectedModule.moduleCode}...` : "Welcome! Please select a module."}
+                        className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-14 py-3.5 text-sm font-semibold text-[#002147] placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+                    />
+                    <button
+                        type="submit"
+                        disabled={loading || !input.trim() || !selectedModule}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:opacity-50 text-white p-2.5 rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-95"
+                    >
+                        <Send className="w-4 h-4" />
+                    </button>
+                </div>
+                <p className="text-center text-[10px] text-slate-400 font-bold mt-4 uppercase tracking-tighter">
+                    Always cross-check information with your lecture notes
+                </p>
             </form>
         </div>
     );

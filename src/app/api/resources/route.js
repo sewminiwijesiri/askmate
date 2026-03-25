@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import Resource from "@/models/Resource";
 import Module from "@/models/Module";
 import cloudinary from "@/lib/cloudinary";
+import pdf from "@/lib/ai/pdf-parser";
+import ResourceChunk from "@/models/ResourceChunk";
+
+import { ingestResource } from "@/lib/ai/ingestion";
 
 export async function GET(req) {
   try {
@@ -57,6 +61,17 @@ export async function POST(req) {
       if (file && typeof file !== "string") {
         const buffer = Buffer.from(await file.arrayBuffer());
         
+        // Extract text if it's a PDF
+        if (file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf")) {
+           try {
+              const pdfData = await pdf(buffer);
+              data.textContent = pdfData.text;
+           } catch (pdfError) {
+              console.error("PDF extraction error:", pdfError);
+              // Continue anyway, but note it
+           }
+        }
+
         try {
           const uploadResponse = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -90,11 +105,19 @@ export async function POST(req) {
       data.status = "pending";
     }
     
-    // In a real app, we'd verify the user token here
+    // Create resource
     const newResource = await Resource.create(data);
+
+    // Auto-ingest if approved
+    if (newResource.status === "approved" && newResource.textContent) {
+       await ingestResource(newResource);
+    }
+
     return NextResponse.json(newResource, { status: 201 });
   } catch (error) {
     console.error("Error creating resource:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+
