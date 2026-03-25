@@ -7,6 +7,7 @@ const ModulePicker = ({ onModuleChange }) => {
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedSemester, setSelectedSemester] = useState("");
     const [selectedModule, setSelectedModule] = useState("");
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         const fetchModules = async () => {
@@ -14,12 +15,33 @@ const ModulePicker = ({ onModuleChange }) => {
                 const res = await fetch("/api/admin/academic");
                 const data = await res.json();
                 setModules(data);
+
+                // Load saved selection
+                const savedYear = localStorage.getItem("selected_year");
+                const savedSemester = localStorage.getItem("selected_semester");
+                const savedModuleId = localStorage.getItem("selected_module_id");
+
+                if (savedYear) setSelectedYear(savedYear);
+                if (savedSemester) setSelectedSemester(savedSemester);
+                if (savedModuleId) {
+                    setSelectedModule(savedModuleId);
+                    const mod = data.find((m) => m._id === savedModuleId);
+                    if (mod) onModuleChange(mod);
+                }
+                setIsLoaded(true);
             } catch (err) {
                 console.error("Failed to fetch modules", err);
             }
         };
         fetchModules();
-    }, []);
+    }, [onModuleChange]);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+        localStorage.setItem("selected_year", selectedYear);
+        localStorage.setItem("selected_semester", selectedSemester);
+        localStorage.setItem("selected_module_id", selectedModule);
+    }, [selectedYear, selectedSemester, selectedModule, isLoaded]);
 
     const years = [...new Set(modules.map((m) => m.year))].sort();
     const filteredSemesters = [...new Set(modules.filter((m) => m.year == selectedYear).map((m) => m.semester))].sort();
@@ -29,61 +51,62 @@ const ModulePicker = ({ onModuleChange }) => {
 
     const handleModuleSelect = (moduleId) => {
         setSelectedModule(moduleId);
+        localStorage.setItem("selected_module_id", moduleId);
         const mod = modules.find((m) => m._id === moduleId);
         onModuleChange(mod);
     };
 
     return (
-        <div className="flex flex-col gap-4 p-6 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl transition-all hover:bg-white/15">
-            <h3 className="text-xl font-bold text-white mb-2">Select Module</h3>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Year</label>
-                <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                        setSelectedYear(e.target.value);
-                        setSelectedSemester("");
-                        setSelectedModule("");
-                    }}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                >
-                    <option value="" className="bg-gray-800">Select Year</option>
-                    {years.map((y) => (
-                        <option key={y} value={y} className="bg-gray-800">Year {y}</option>
-                    ))}
-                </select>
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                <h3 className="text-[11px] font-black text-[#002147] uppercase tracking-[0.15em]">Module Scope</h3>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Semester</label>
-                <select
-                    value={selectedSemester}
-                    disabled={!selectedYear}
-                    onChange={(e) => {
-                        setSelectedSemester(e.target.value);
-                        setSelectedModule("");
-                    }}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
-                >
-                    <option value="" className="bg-gray-800">Select Semester</option>
-                    {filteredSemesters.map((s) => (
-                        <option key={s} value={s} className="bg-gray-800">Semester {s}</option>
-                    ))}
-                </select>
-            </div>
+            <div className="grid grid-cols-1 gap-2">
+                {/* Year & Semester Row */}
+                <div className="flex gap-2">
+                    <select
+                        value={selectedYear}
+                        onChange={(e) => {
+                            setSelectedYear(e.target.value);
+                            setSelectedSemester("");
+                            setSelectedModule("");
+                        }}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer"
+                    >
+                        <option value="">Year</option>
+                        {years.map((y) => (
+                            <option key={y} value={y}>{y}</option>
+                        ))}
+                    </select>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Module</label>
+                    <select
+                        value={selectedSemester}
+                        disabled={!selectedYear}
+                        onChange={(e) => {
+                            setSelectedSemester(e.target.value);
+                            setSelectedModule("");
+                        }}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer disabled:opacity-30"
+                    >
+                        <option value="">Sem</option>
+                        {filteredSemesters.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Module Dropdown */}
                 <select
                     value={selectedModule}
                     disabled={!selectedSemester}
                     onChange={(e) => handleModuleSelect(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-50"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all appearance-none cursor-pointer disabled:opacity-30"
                 >
-                    <option value="" className="bg-gray-800">Select Module</option>
+                    <option value="">Select Course Module</option>
                     {filteredModules.map((m) => (
-                        <option key={m._id} value={m._id} className="bg-gray-800">
+                        <option key={m._id} value={m._id}>
                             {m.moduleCode} - {m.moduleName}
                         </option>
                     ))}

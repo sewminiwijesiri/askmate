@@ -23,7 +23,8 @@ async function getAuthUser(req) {
 export async function POST(req) {
   try {
     const user = await getAuthUser(req);
-    if (!user || !["student", "helper"].includes(user.role)) {
+    if (!user || !["student", "helper", "lecturer", "admin"].includes(user.role)) {
+      console.log("Unauthorized AI attempt:", user ? `Role: ${user.role}` : "No User");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -108,9 +109,16 @@ export async function POST(req) {
     // If no text search results, fallback to simple regex
     let contextChunks = chunks;
     if (contextChunks.length === 0) {
+      // Extract keywords: words > 3 chars, removing basic punctuation
+      const keywords = question.split(/\s+/)
+        .map(w => w.replace(/[^\w]/g, '').toLowerCase())
+        .filter(w => w.length > 3);
+      
+      const regexPattern = keywords.length > 0 ? keywords.join("|") : question.split(" ").slice(0, 3).join("|");
+
       contextChunks = await ResourceChunk.find({
         moduleId: moduleId,
-        chunkText: { $regex: question.split(" ").slice(0, 3).join("|"), $options: "i" },
+        chunkText: { $regex: regexPattern, $options: "i" },
       })
         .limit(8)
         .lean();

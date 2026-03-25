@@ -352,7 +352,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {resources
-                      .filter(r => (r.status === "approved" || r.uploadedBy === user.userId))
+                      .filter(r => r.status === "approved")
                       .filter(r => resourceCategory === "All" || r.category === resourceCategory)
                       .filter(r => r.title.toLowerCase().includes(resourceSearchQuery.toLowerCase()) || (r.description && r.description.toLowerCase().includes(resourceSearchQuery.toLowerCase())))
                       .map((res) => (
