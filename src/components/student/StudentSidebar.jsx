@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   Home,
   BookOpen,
   MessageSquare,
@@ -21,6 +22,7 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
     { id: "dashboard", label: "Overview", icon: LayoutDashboard },
     { id: "academic", label: "Academic Hub", icon: GraduationCap },
     { id: "resources", label: "Resources", icon: FileText },
+    { id: "reminders", label: "Reminders", icon: Bell },
     { id: "qa", label: user.role === "helper" ? "Recommended" : "Ask & Answer", icon: user.role === "helper" ? Brain : MessageSquare },
     { id: "profile", label: "My Profile", icon: User },
   ];

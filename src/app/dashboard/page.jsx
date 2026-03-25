@@ -6,6 +6,7 @@ import StudentSidebar from "@/components/student/StudentSidebar";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
 import ProfileSection from "@/components/student/ProfileSection";
 import MyResources from "@/components/student/MyResources";
+import RemindersSection from "@/components/student/RemindersSection";
 import LecturerDashboard from "@/components/lecturer/LecturerDashboard";
 import {
   Bell,
@@ -137,12 +138,14 @@ export default function StudentDashboard() {
               <h1 className="text-3xl font-bold text-[#4DA8DA] capitalize">
                 {activeTab === "academic" ? "Academic Hub" :
                   activeTab === "resources" ? "My Resources" :
+                  activeTab === "reminders" ? "Reminders" :
                     activeTab === "profile" ? "Student Profile" :
                       activeTab === "qa" ? (user.role === "helper" ? "Recommend Questions" : "Consultation Hub") : activeTab}
               </h1>
               <p className="text-slate-500 font-medium">
                 Student Portal • {activeTab === "academic" ? "Browse Knowledge" :
                   activeTab === "resources" ? "Manage Contributions" :
+                  activeTab === "reminders" ? "Academic Deadlines" :
                     activeTab === "profile" ? "Account Settings" :
                       activeTab === "qa" ? (user.role === "helper" ? "Share Your Expertise" : "Expert Help") : "Workspace"}
               </p>
@@ -408,6 +411,12 @@ export default function StudentDashboard() {
               onUpdate={(updatedUser) => setUser(updatedUser)}
               onDelete={handleLogout}
             />
+          </div>
+        )}
+
+        {activeTab === "reminders" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <RemindersSection user={user} />
           </div>
         )}
 
