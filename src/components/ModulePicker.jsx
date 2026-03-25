@@ -7,6 +7,7 @@ const ModulePicker = ({ onModuleChange }) => {
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedSemester, setSelectedSemester] = useState("");
     const [selectedModule, setSelectedModule] = useState("");
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         const fetchModules = async () => {
@@ -14,12 +15,33 @@ const ModulePicker = ({ onModuleChange }) => {
                 const res = await fetch("/api/admin/academic");
                 const data = await res.json();
                 setModules(data);
+
+                // Load saved selection
+                const savedYear = localStorage.getItem("selected_year");
+                const savedSemester = localStorage.getItem("selected_semester");
+                const savedModuleId = localStorage.getItem("selected_module_id");
+
+                if (savedYear) setSelectedYear(savedYear);
+                if (savedSemester) setSelectedSemester(savedSemester);
+                if (savedModuleId) {
+                    setSelectedModule(savedModuleId);
+                    const mod = data.find((m) => m._id === savedModuleId);
+                    if (mod) onModuleChange(mod);
+                }
+                setIsLoaded(true);
             } catch (err) {
                 console.error("Failed to fetch modules", err);
             }
         };
         fetchModules();
-    }, []);
+    }, [onModuleChange]);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+        localStorage.setItem("selected_year", selectedYear);
+        localStorage.setItem("selected_semester", selectedSemester);
+        localStorage.setItem("selected_module_id", selectedModule);
+    }, [selectedYear, selectedSemester, selectedModule, isLoaded]);
 
     const years = [...new Set(modules.map((m) => m.year))].sort();
     const filteredSemesters = [...new Set(modules.filter((m) => m.year == selectedYear).map((m) => m.semester))].sort();
@@ -29,6 +51,7 @@ const ModulePicker = ({ onModuleChange }) => {
 
     const handleModuleSelect = (moduleId) => {
         setSelectedModule(moduleId);
+        localStorage.setItem("selected_module_id", moduleId);
         const mod = modules.find((m) => m._id === moduleId);
         onModuleChange(mod);
     };

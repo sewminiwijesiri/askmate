@@ -23,7 +23,8 @@ async function getAuthUser(req) {
 export async function POST(req) {
   try {
     const user = await getAuthUser(req);
-    if (!user || !["student", "helper"].includes(user.role)) {
+    if (!user || !["student", "helper", "lecturer", "admin"].includes(user.role)) {
+      console.log("Unauthorized AI attempt:", user ? `Role: ${user.role}` : "No User");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 

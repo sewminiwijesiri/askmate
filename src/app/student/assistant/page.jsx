@@ -1,15 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ModulePicker from "@/components/ModulePicker";
 import AiChat from "@/components/AiChat";
 import RelevantResources from "@/components/RelevantResources";
 import { ShieldAlert, Sparkles, ArrowLeft } from "lucide-react";
 
 export default function AiAssistantPage() {
+    const router = useRouter();
     const [selectedModule, setSelectedModule] = useState(null);
     const [citations, setCitations] = useState([]);
+
+    const handleCitationsFound = useCallback((cits) => {
+        setCitations(cits);
+    }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        
+        if (!token || !["student", "helper", "lecturer", "admin"].includes(user.role)) {
+            router.push("/");
+        }
+    }, [router]);
 
     return (
         <div className="h-screen flex flex-col bg-slate-50 text-slate-900 font-sans overflow-hidden">
@@ -57,7 +72,7 @@ export default function AiAssistantPage() {
                     <div className="flex-1 max-w-4xl mx-auto w-full flex flex-col shadow-2xl shadow-slate-200/50 rounded-[2.5rem] overflow-hidden">
                         <AiChat
                             selectedModule={selectedModule}
-                            onCitationsFound={(cits) => setCitations(cits)}
+                            onCitationsFound={handleCitationsFound}
                         />
                     </div>
                 </section>

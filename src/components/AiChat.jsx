@@ -1,14 +1,60 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, AlertCircle, Loader2 } from "lucide-react";
+import { Send, User, Bot, AlertCircle, Loader2, Trash2 } from "lucide-react";
 
 const AiChat = ({ selectedModule, onCitationsFound }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [chatId, setChatId] = useState(null);
+    const [isLoaded, setIsLoaded] = useState(false);
     const chatEndRef = useRef(null);
+
+    // Persist chat history
+    useEffect(() => {
+        const savedMessages = localStorage.getItem("ai_chat_messages");
+        const savedChatId = localStorage.getItem("ai_chat_id");
+
+        if (savedMessages) {
+            try {
+                const parsed = JSON.parse(savedMessages);
+                setMessages(parsed);
+
+                // Re-trigger citations for the latest assistant message if present
+                const lastAssistantMsg = [...parsed]
+                    .reverse()
+                    .find((m) => m.role === "assistant" && m.citations?.length > 0);
+                
+                if (lastAssistantMsg && onCitationsFound) {
+                    onCitationsFound(lastAssistantMsg.citations);
+                }
+            } catch (err) {
+                console.error("Failed to parse saved chat messages:", err);
+            }
+        }
+
+        if (savedChatId) {
+            setChatId(savedChatId);
+        }
+        setIsLoaded(true);
+    }, [onCitationsFound]);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        if (messages.length > 0) {
+            localStorage.setItem("ai_chat_messages", JSON.stringify(messages));
+        } else {
+            localStorage.removeItem("ai_chat_messages");
+        }
+
+        if (chatId) {
+            localStorage.setItem("ai_chat_id", chatId);
+        } else {
+            localStorage.removeItem("ai_chat_id");
+        }
+    }, [messages, chatId, isLoaded]);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,6 +119,17 @@ const AiChat = ({ selectedModule, onCitationsFound }) => {
         }
     };
 
+    const handleClearChat = () => {
+        if (messages.length === 0) return;
+        if (window.confirm("Are you sure you want to clear this chat session?")) {
+            setMessages([]);
+            setChatId(null);
+            localStorage.removeItem("ai_chat_messages");
+            localStorage.removeItem("ai_chat_id");
+            if (onCitationsFound) onCitationsFound([]);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-slate-200/50">
             {/* Header / Module Indicator */}
@@ -88,9 +145,19 @@ const AiChat = ({ selectedModule, onCitationsFound }) => {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Online</span>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleClearChat}
+                        disabled={messages.length === 0}
+                        title="Clear Chat"
+                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90 disabled:opacity-0 disabled:pointer-events-none"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-100">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Online</span>
+                    </div>
                 </div>
             </div>
 
