@@ -240,8 +240,8 @@ export default function AdminDashboard() {
             <h1 className="text-xl font-bold text-slate-900 leading-tight">
               {activeTab === 'stats' ? 'Metrics & Logs' :
                 activeTab === 'academic' ? 'Academic Hub' :
-                  (activeTab === 'helpers' || activeTab === 'students' || activeTab === 'lecturers') ? 'Users & Roles' :
-                    'System Overview'}
+                    (activeTab === 'helpers' || activeTab === 'students' || activeTab === 'lecturers') ? 'Users & Roles' :
+                      'System Overview'}
             </h1>
             <p className="text-xs text-slate-500 font-medium whitespace-nowrap">Welcome back, {admin.userId}</p>
           </div>
@@ -481,6 +481,7 @@ export default function AdminDashboard() {
               <AcademicManager />
             </div>
           )}
+
 
           {/* stats Tab Placeholder */}
           {activeTab === "stats" && (

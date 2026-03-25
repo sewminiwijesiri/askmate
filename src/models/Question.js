@@ -104,13 +104,6 @@ const QuestionSchema = new mongoose.Schema(
             default: null,
         },
 
-        // Heatmap Fields
-        keywords: [
-            {
-                type: String,
-                index: true,
-            },
-        ],
 
         isResolved: {
             type: Boolean,

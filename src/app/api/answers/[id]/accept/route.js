@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 export async function PATCH(req, { params }) {
     try {
         await connectDB();
-        const { id } = params; // Answer ID
+        const { id } = await params; // Answer ID
 
         const answer = await Answer.findById(id);
         if (!answer) {

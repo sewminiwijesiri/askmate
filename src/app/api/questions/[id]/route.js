@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
     try {
         await connectDB();
-        const { id } = params;
+        const { id } = await params;
 
         const question = await Question.findById(id)
             .populate("student", "email studentId")
@@ -35,7 +35,7 @@ export async function GET(req, { params }) {
 export async function PATCH(req, { params }) {
     try {
         await connectDB();
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json();
 
         const updatedQuestion = await Question.findByIdAndUpdate(id, body, { new: true });
@@ -55,7 +55,7 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
     try {
         await connectDB();
-        const { id } = params;
+        const { id } = await params;
 
         const deletedQuestion = await Question.findByIdAndDelete(id);
 

@@ -62,11 +62,6 @@ export async function POST(req) {
             }, { status: 409 });
         }
 
-        // 3. Keyword Extraction for Heatmap (Basic version)
-        const keywords = [...new Set([
-            ...title.toLowerCase().split(/\W+/).filter(w => w.length > 3),
-            ...(tags || [])
-        ])];
 
         // 4. Create Question
         const newQuestion = await Question.create({
@@ -80,7 +75,6 @@ export async function POST(req) {
             difficultyLevel: difficultyLevel || "Medium",
             urgencyLevel: urgencyLevel || "Normal",
             tags: tags || [],
-            keywords,
             isVoiceQuestion: !!isVoiceQuestion,
             originalLanguage: originalLanguage || "English"
         });
