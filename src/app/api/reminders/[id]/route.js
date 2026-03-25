@@ -45,6 +45,14 @@ export const PATCH = withErrorHandler(async (req, { params }) => {
     updates.deadlineDate = new Date(updates.deadlineDate);
   }
 
+  // If time or date is changed, reset the notification flag so it can be re-triggered
+  const isTimeRescheduled = updates.deadlineDate || updates.deadlineTime || updates.notificationTime;
+  if (isTimeRescheduled) {
+    updates.notificationSent = false;
+    // Also reset status to 'pending' if it was previously marked 'completed'
+    updates.status = "pending";
+  }
+
   const updatedReminder = await Reminder.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
 
   return apiResponse.success("Reminder updated successfully", updatedReminder);

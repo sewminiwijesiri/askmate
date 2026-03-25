@@ -16,21 +16,21 @@ function getReminderTriggerTime(deadlineDate, deadlineTime, notificationTime) {
     const [hours, minutes] = deadlineTime.split(":").map(Number);
     deadline.setHours(hours, minutes, 0, 0);
 
-    // Default offset is 0ms (deliver at the deadline)
+    // If no notification is requested, return null safely
+    if (!notificationTime || notificationTime === "none" || notificationTime === "No notification") {
+      return null;
+    }
     let offsetMs = 0;
-
-    if (notificationTime && notificationTime !== "none") {
-      const match = notificationTime.match(/(\d+)\s+(minute|hour|day)s?\s+before/i);
-      if (match) {
-        const val = parseInt(match[1]);
-        const unit = match[2].toLowerCase();
-        const multipliers = {
-          minute: 60 * 1000,
-          hour: 60 * 60 * 1000,
-          day: 24 * 60 * 60 * 1000,
-        };
-        offsetMs = val * (multipliers[unit] || 0);
-      }
+    const match = notificationTime.match(/(\d+)\s+(minute|hour|day)s?\s+before/i);
+    if (match) {
+      const val = parseInt(match[1]);
+      const unit = match[2].toLowerCase();
+      const multipliers = {
+        minute: 60 * 1000,
+        hour: 60 * 60 * 1000,
+        day: 24 * 60 * 60 * 1000,
+      };
+      offsetMs = val * (multipliers[unit] || 0);
     }
 
     return new Date(deadline.getTime() - offsetMs);

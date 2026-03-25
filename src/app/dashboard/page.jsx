@@ -29,9 +29,10 @@ import {
   Brain,
   Trophy,
   Hourglass,
-  Activity,
-  MessageCircle
+  MessageCircle,
+  Activity
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -153,10 +154,7 @@ export default function StudentDashboard() {
           )}
 
           <div className="flex items-center gap-4">
-            <button className="relative w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full"></span>
-            </button>
+            <NotificationBell user={user} />
 
             <div className="flex items-center gap-3 bg-white pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200 shadow-sm">
               <div className="w-8 h-8 rounded-lg bg-[#002147] flex items-center justify-center text-white font-bold text-sm">

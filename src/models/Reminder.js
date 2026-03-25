@@ -14,7 +14,8 @@ const ReminderSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
     },
     deadlineDate: {
       type: Date,

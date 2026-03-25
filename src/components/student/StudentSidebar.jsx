@@ -47,19 +47,19 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id
-                ? (user.role === "helper" ? "bg-white text-[#002147] shadow-sm" : "bg-[#002147]/5 text-[#002147]")
+                ? (user.role === "helper" ? "bg-white text-[#FF9F1C] shadow-sm" : "bg-[#FF9F1C]/10 text-[#FF9F1C]")
                 : (user.role === "helper" ? "text-slate-500 hover:bg-white/50 hover:text-slate-800" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800")
                 }`}
             >
               <div className="w-5 flex items-center justify-center">
                 <item.icon
                   size={18}
-                  className={activeTab === item.id ? "text-[#002147]" : "text-slate-400 group-hover:text-slate-600 transition-colors"}
+                  className={activeTab === item.id ? "text-[#FF9F1C]" : "text-slate-400 group-hover:text-slate-600 transition-colors"}
                 />
               </div>
               <span className="text-[13px] flex-1 text-left leading-tight">{item.label}</span>
               {activeTab === item.id && (
-                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#FF9F1C]"></div>
+                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#FF9F1C] shadow-[0_0_8px_rgba(255,159,28,0.5)]"></div>
               )}
             </button>
           ))}
