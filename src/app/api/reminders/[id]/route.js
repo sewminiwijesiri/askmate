@@ -45,7 +45,7 @@ export const PATCH = withErrorHandler(async (req, { params }) => {
     updates.deadlineDate = new Date(updates.deadlineDate);
   }
 
-  const updatedReminder = await Reminder.findByIdAndUpdate(id, updates, { new: true });
+  const updatedReminder = await Reminder.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
 
   return apiResponse.success("Reminder updated successfully", updatedReminder);
 });
