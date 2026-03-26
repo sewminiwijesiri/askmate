@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BookOpen,
   ChevronRight,
@@ -23,17 +23,24 @@ import {
   Link as LinkIcon,
   File as FileIcon,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Send,
+  Clock,
+  Eye,
+  ThumbsUp,
+  Tag,
+  Zap,
 } from "lucide-react";
 
-export default function AcademicBrowser({ defaultYear, defaultSemester, user }) {
+export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView }) {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;
   const [selectedYear, setSelectedYear] = useState(() => getNum(defaultYear));
   const [selectedSemester, setSelectedSemester] = useState(() => getNum(defaultSemester));
   const [selectedModule, setSelectedModule] = useState(null);
-  const [activeView, setActiveView] = useState("modules"); // modules, resources, qa
+  const [activeView, setActiveView] = useState(initialView || "modules"); // modules, resources, qa
   const [searchQuery, setSearchQuery] = useState("");
 
   // Resource States
@@ -47,6 +54,62 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   const [resourceCategory, setResourceCategory] = useState("All");
   const [resourceSearchQuery, setResourceSearchQuery] = useState("");
 
+  // Q&A States
+  const [questions, setQuestions] = useState([]);
+  const [qaLoading, setQaLoading] = useState(false);
+  const [isAskOpen, setIsAskOpen] = useState(false);
+  const [askStep, setAskStep] = useState(1);
+  const [askData, setAskData] = useState({ 
+    title: "", 
+    description: "", 
+    topic: "", 
+    urgencyLevel: "Normal",
+    difficultyLevel: "Medium",
+    whatIveTried: "",
+    assignmentContext: "",
+    codeSnippet: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [ansLoading, setAnsLoading] = useState(false);
+  const [answerContent, setAnswerContent] = useState("");
+  const [isPostingAnswer, setIsPostingAnswer] = useState(false);
+  const [qaSearch, setQaSearch] = useState("");
+  const [qaFilter, setQaFilter] = useState("all"); // all | open | resolved
+  const [submitError, setSubmitError] = useState("");
+
+  // Enhanced Answer States (for Helpers/Lecturers)
+  const [ansConcept, setAnsConcept] = useState("");
+  const [ansHints, setAnsHints] = useState([""]);
+  const [ansExamples, setAnsExamples] = useState([""]);
+  const [ansResources, setAnsResources] = useState([{ title: "", url: "" }]);
+  const [showExpertMode, setShowExpertMode] = useState(true);
+
+  const addHint = () => setAnsHints([...ansHints, ""]);
+  const updateHint = (idx, val) => {
+    const newHints = [...ansHints];
+    newHints[idx] = val;
+    setAnsHints(newHints);
+  };
+  const removeHint = (idx) => setAnsHints(ansHints.filter((_, i) => i !== idx));
+
+  const addExample = () => setAnsExamples([...ansExamples, ""]);
+  const updateExample = (idx, val) => {
+    const newExamples = [...ansExamples];
+    newExamples[idx] = val;
+    setAnsExamples(newExamples);
+  };
+  const removeExample = (idx) => setAnsExamples(ansExamples.filter((_, i) => i !== idx));
+
+  const addAnsResource = () => setAnsResources([...ansResources, { title: "", url: "" }]);
+  const updateAnsResource = (idx, field, val) => {
+    const newResources = [...ansResources];
+    newResources[idx] = { ...newResources[idx], [field]: val };
+    setAnsResources(newResources);
+  };
+  const removeAnsResource = (idx) => setAnsResources(ansResources.filter((_, i) => i !== idx));
+
   useEffect(() => {
     fetchModules();
   }, []);
@@ -54,6 +117,9 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
   useEffect(() => {
     if (selectedModule && activeView === "resources") {
       fetchResources();
+    }
+    if (selectedModule && activeView === "qa") {
+      fetchQuestions();
     }
   }, [selectedModule, activeView]);
 
@@ -85,6 +151,203 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
     } finally {
       setResLoading(false);
     }
+  };
+
+  const fetchQuestions = async () => {
+    if (!selectedModule) return;
+    try {
+      setQaLoading(true);
+      const res = await fetch(`/api/questions?module=${encodeURIComponent(selectedModule.moduleName)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setQuestions(data);
+      }
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+    } finally {
+      setQaLoading(false);
+    }
+  };
+
+  const fetchAnswers = async (questionId) => {
+    try {
+      setAnsLoading(true);
+      const res = await fetch(`/api/answers?questionId=${questionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAnswers(data);
+      }
+    } catch (error) {
+      console.error("Error fetching answers:", error);
+    } finally {
+      setAnsLoading(false);
+    }
+  };
+
+  const handleAskQuestion = async (e) => {
+    e.preventDefault();
+    setSubmitError("");
+    try {
+      setIsSubmitting(true);
+      const res = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: askData.title.trim(),
+          description: askData.description.trim(),
+          topic: askData.topic.trim(),
+          urgencyLevel: askData.urgencyLevel,
+          difficultyLevel: askData.difficultyLevel,
+          whatIveTried: askData.whatIveTried.trim(),
+          assignmentContext: askData.assignmentContext.trim(),
+          codeSnippet: askData.codeSnippet.trim(),
+          module: selectedModule.moduleName,
+          year: String(selectedYear),
+          semester: String(selectedSemester),
+          student: user?.id || user?.userId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitError(data.error || "Failed to submit question.");
+        return;
+      }
+      setIsAskOpen(false);
+      setAskStep(1);
+      setAskData({ 
+        title: "", description: "", topic: "", urgencyLevel: "Normal",
+        difficultyLevel: "Medium", whatIveTried: "", assignmentContext: "",
+        codeSnippet: ""
+      });
+      fetchQuestions();
+    } catch (error) {
+      setSubmitError("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteQuestion = async (e, id) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this question?")) return;
+    try {
+      const res = await fetch(`/api/questions?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        if (selectedQuestion?._id === id) setSelectedQuestion(null);
+        fetchQuestions();
+      }
+    } catch (error) {
+      console.error("Error deleting question:", error);
+    }
+  };
+
+  const handleNextStep = () => {
+    setSubmitError("");
+    if (askStep === 1 && !askData.topic.trim()) {
+      setSubmitError("Please enter a topic.");
+      return;
+    }
+    if (askStep === 2 && (!askData.title.trim() || !askData.description.trim())) {
+      setSubmitError("Title and description are required.");
+      return;
+    }
+    setAskStep(s => Math.min(s + 1, 2));
+  };
+
+  const handlePostAnswer = async (e) => {
+    e.preventDefault();
+    if (!answerContent.trim()) return;
+    try {
+      setIsPostingAnswer(true);
+      const res = await fetch("/api/answers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: selectedQuestion._id,
+          author: user?.id || user?.userId,
+          authorType: user?.role === "lecturer" ? "Lecturer" : user?.role === "helper" ? "Helper" : "Student",
+          content: answerContent.trim(),
+          concept: (user?.role === "helper" || user?.role === "lecturer") ? ansConcept.trim() : "",
+          hints: (user?.role === "helper" || user?.role === "lecturer") ? ansHints.filter(h => h.trim()) : [],
+          examples: (user?.role === "helper" || user?.role === "lecturer") ? ansExamples.filter(ex => ex.trim()) : [],
+          supportingResources: (user?.role === "helper" || user?.role === "lecturer") ? ansResources.filter(r => r.title.trim() && r.url.trim()) : [],
+        }),
+      });
+      if (res.ok) {
+        setAnswerContent("");
+        setAnsConcept("");
+        setAnsHints([""]);
+        setAnsExamples([""]);
+        setAnsResources([{ title: "", url: "" }]);
+        fetchAnswers(selectedQuestion._id);
+        // update local answer count
+        setSelectedQuestion((q) => ({ ...q, answersCount: (q.answersCount || 0) + 1 }));
+      }
+    } catch (error) {
+      console.error("Error posting answer:", error);
+    } finally {
+      setIsPostingAnswer(false);
+    }
+  };
+
+  const handleUpvote = async (answerId) => {
+    try {
+      const res = await fetch("/api/answers/upvote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answerId, userId: user?.id || user?.userId }),
+      });
+      if (res.ok) {
+        // Refresh answers or update local state
+        fetchAnswers(selectedQuestion._id);
+      }
+    } catch (error) {
+      console.error("Error upvoting:", error);
+    }
+  };
+
+  const handleMarkResolved = async (questionId) => {
+    try {
+      const res = await fetch(`/api/questions/${questionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isResolved: true }),
+      });
+      if (res.ok) {
+        setSelectedQuestion((q) => ({ ...q, isResolved: true }));
+        fetchQuestions();
+      }
+    } catch (error) {
+      console.error("Error marking resolved:", error);
+    }
+  };
+
+  const openQuestion = (q) => {
+    setSelectedQuestion(q);
+    setAnswerContent("");
+    setAnsConcept("");
+    setAnsHints([""]);
+    setAnsExamples([""]);
+    setAnsResources([{ title: "", url: "" }]);
+    fetchAnswers(q._id);
+    // update view count locally
+    setSelectedQuestion(prev => ({ ...prev, views: (prev.views || 0) + 1 }));
+  };
+
+  const closeQuestion = () => {
+    setSelectedQuestion(null);
+    setAnswers([]);
+    setAnswerContent("");
+  };
+
+  const timeSince = (dateStr) => {
+    const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (seconds < 60) return "just now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   };
 
   const handleUploadResource = async (e) => {
@@ -202,7 +465,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
   const resetSelection = () => {
     setSelectedModule(null);
-    setActiveView("modules");
+    setActiveView(initialView || "modules");
   };
 
   if (selectedModule) {
@@ -457,18 +720,125 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
 
           {activeView === "qa" && (
             <div className="space-y-6 animate-in fade-in duration-500">
-              <div className="flex justify-between items-center">
+              {/* Q&A Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="text-xl font-bold text-[#002147]">Q&A Discussion</h3>
-                  <p className="text-slate-500 text-sm mt-1">Get help from the community.</p>
+                  <h3 className="text-xl font-bold text-[#002147]">Q&amp;A Discussion</h3>
+                  <p className="text-slate-500 text-sm mt-1">Ask questions, help peers, get answers.</p>
                 </div>
-                <button className="px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md">
-                  Ask Question
+                <button
+                  onClick={() => { setIsAskOpen(true); setSubmitError(""); }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md active:scale-95"
+                >
+                  <Plus size={16} /> Ask Question
                 </button>
               </div>
-              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                <p className="text-slate-400 font-bold text-sm">No discussions started yet.</p>
+
+              {/* Filter & Search */}
+              <div className="flex flex-col sm:flex-row gap-3 pb-4 border-b border-slate-100">
+                <div className="flex gap-2">
+                  {["all", "open", "resolved"].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setQaFilter(f)}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
+                        qaFilter === f
+                          ? "bg-[#002147] text-white shadow-lg"
+                          : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input
+                    type="text"
+                    placeholder="Search questions..."
+                    value={qaSearch}
+                    onChange={(e) => setQaSearch(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[12px] font-bold focus:outline-none focus:border-blue-400 focus:bg-white transition-all"
+                  />
+                </div>
               </div>
+
+              {/* Questions List */}
+              {qaLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="w-8 h-8 border-3 border-blue-50/10 border-t-[#FF9F1C] rounded-full animate-spin" />
+                </div>
+              ) : (() => {
+                const filtered = questions
+                  .filter((q) => qaFilter === "all" ? true : qaFilter === "resolved" ? q.isResolved : !q.isResolved)
+                  .filter((q) => !qaSearch || q.title.toLowerCase().includes(qaSearch.toLowerCase()) || q.description.toLowerCase().includes(qaSearch.toLowerCase()));
+                return filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                    <HelpCircle size={36} className="text-slate-200 mb-3" />
+                    <p className="text-slate-400 font-bold text-sm">No questions yet.</p>
+                    <button onClick={() => { setIsAskOpen(true); setSubmitError(""); }} className="mt-2 text-[#FF9F1C] font-bold text-sm hover:underline">Be the first to ask!</button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {filtered.map((q) => (
+                      <div
+                        key={q._id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openQuestion(q)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openQuestion(q);
+                          }
+                        }}
+                        className="w-full text-left p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white hover:shadow-lg hover:shadow-blue-900/5 transition-all group cursor-pointer focus:outline-none focus:border-blue-400"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              {q.isResolved ? (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                  <CheckCircle size={10} /> Resolved
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-orange-100">
+                                  <Clock size={10} /> Open
+                                </span>
+                              )}
+                              {q.urgencyLevel === "Urgent" && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-red-100">
+                                  <Zap size={10} /> Urgent
+                                </span>
+                              )}
+                              <span className="text-[10px] text-slate-400 font-medium">{timeSince(q.createdAt)}</span>
+                            </div>
+                            <h4 className="font-bold text-[#002147] text-sm group-hover:text-blue-600 transition-colors leading-snug truncate">{q.title}</h4>
+                            <p className="text-[12px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{q.description}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {(String(q.student?._id) === String(user?.id) || String(q.student?.studentId) === String(user?.userId)) && (
+                              <button
+                                onClick={(e) => handleDeleteQuestion(e, q._id)}
+                                className="p-1.5 text-slate-300 hover:text-red-500 bg-white border border-slate-100 rounded-lg shadow-sm transition-all mb-1 hover:bg-red-50"
+                                title="Delete Question"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
+                              <MessageCircle size={12} /> {q.answersCount || 0}
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
+                              <Eye size={12} /> {q.views || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -597,6 +967,516 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user }) 
             </div>
           )
         }
+
+        {/* ── Ask Question Modal ── */}
+        {/* ── Ask Question Multi-Step Modal ── */}
+        {isAskOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 shrink-0 bg-[#002147] relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent"></div>
+                <div className="relative z-10 flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1">Ask a Question</h2>
+                    <p className="text-[12px] text-blue-200 flex items-center gap-1.5 font-medium">
+                      Step {askStep} of 2 <span className="w-1 h-1 bg-blue-400 rounded-full"></span> {selectedModule?.moduleName}
+                    </p>
+                  </div>
+                  <button onClick={() => setIsAskOpen(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/70 transition-all">
+                    <X size={18} />
+                  </button>
+                </div>
+                {/* Progress Bar */}
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#001730]">
+                  <div className="h-full bg-[#FF9F1C] transition-all duration-300" style={{ width: `${(askStep / 2) * 100}%` }}></div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto w-full flex-1">
+                {submitError && (
+                  <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[12px] font-bold">
+                    <AlertCircle size={14} className="shrink-0" /> {submitError}
+                  </div>
+                )}
+
+                {askStep === 1 && (
+                  <div className="space-y-5 animate-in slide-in-from-right-2 duration-300">
+                    <div>
+                      <h3 className="text-[#002147] font-bold mb-1">Academic Structure</h3>
+                      <p className="text-xs text-slate-500 mb-4">Confirm your academic context before asking.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Year</span>
+                        <p className="text-sm font-bold text-[#002147]">{selectedYear}</p>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Semester</span>
+                        <p className="text-sm font-bold text-[#002147]">{selectedSemester}</p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Module</span>
+                      <p className="text-sm font-bold text-[#002147]">{selectedModule?.moduleCode} - {selectedModule?.moduleName}</p>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Topic / Sub-topic <span className="text-red-400">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={askData.topic}
+                        onChange={(e) => setAskData({ ...askData, topic: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        placeholder="e.g. Networking Fundamentals"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {askStep === 2 && (
+                  <div className="space-y-5 animate-in slide-in-from-right-2 duration-300">
+                    <div>
+                      <h3 className="text-[#002147] font-bold mb-1">Enter the Question</h3>
+                      <p className="text-xs text-slate-500 mb-4">Provide a clear title and description of your problem.</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Question Title <span className="text-red-400">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={askData.title}
+                        onChange={(e) => setAskData({ ...askData, title: e.target.value })}
+                        maxLength={200}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        placeholder="e.g. What is the difference between TCP and UDP?"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Problem Description <span className="text-red-400">*</span></label>
+                      <textarea
+                        required
+                        value={askData.description}
+                        onChange={(e) => setAskData({ ...askData, description: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        placeholder="Describe your question in detail..."
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Where are you stuck?</label>
+                      <textarea
+                        value={askData.whatIveTried}
+                        onChange={(e) => setAskData({ ...askData, whatIveTried: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium h-20 resize-none focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        placeholder="Optional: Explain what you've already tried..."
+                      />
+                    </div>
+
+                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Urgency Level</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {["Normal", "Urgent"].map(urgency => (
+                          <label key={urgency} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${askData.urgencyLevel === urgency ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300'}`}>
+                            <input 
+                              type="radio" 
+                              name="urgencyLevel" 
+                              className="hidden" 
+                              value={urgency} 
+                              checked={askData.urgencyLevel === urgency} 
+                              onChange={(e) => setAskData({ ...askData, urgencyLevel: e.target.value })} 
+                            />
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${askData.urgencyLevel === urgency ? 'border-amber-600' : 'border-slate-300'}`}>
+                              {askData.urgencyLevel === urgency && <div className="w-2 h-2 rounded-full bg-amber-600"></div>}
+                            </div>
+                            <span className={`text-sm font-bold ${askData.urgencyLevel === urgency ? 'text-amber-700' : 'text-slate-600'}`}>{urgency}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Controls */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => askStep > 1 ? setAskStep(s => s - 1) : setIsAskOpen(false)}
+                  className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all shadow-sm"
+                >
+                  {askStep > 1 ? "Back" : "Cancel"}
+                </button>
+                
+                {askStep < 2 ? (
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="px-8 py-2.5 bg-[#002147] text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-900 transition-all flex items-center gap-2"
+                  >
+                    Next Step <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAskQuestion}
+                    disabled={isSubmitting}
+                    className="px-8 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-600 transition-all flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /><span>Submitting...</span></>
+                    ) : (
+                      <><Send size={14} /> Submit Question</>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Question Detail Slide-over ── */}
+        {selectedQuestion && (
+          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 shrink-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {selectedQuestion.isResolved ? (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100">
+                          <CheckCircle size={10} /> Resolved
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded-lg text-[9px] font-black uppercase border border-orange-100">
+                          <Clock size={10} /> Open
+                        </span>
+                      )}
+                      {selectedQuestion.urgencyLevel === "Urgent" && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-500 rounded-lg text-[9px] font-black uppercase border border-red-100">
+                          <Zap size={10} /> Urgent
+                        </span>
+                      )}
+                      <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-[#002147] leading-snug">{selectedQuestion.title}</h3>
+                    {selectedQuestion.topic && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-400 font-bold"><Tag size={10} />{selectedQuestion.topic}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(String(selectedQuestion.student?._id) === String(user?.id) || String(selectedQuestion.student?.studentId) === String(user?.userId)) && (
+                      <button
+                        onClick={(e) => handleDeleteQuestion(e, selectedQuestion._id)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-[11px] border border-red-100 hover:bg-red-100 transition-all"
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    )}
+                    {!selectedQuestion.isResolved && (String(selectedQuestion.student?._id) === String(user?.id) || String(selectedQuestion.student?.studentId) === String(user?.userId)) && (
+                      <button
+                        onClick={() => handleMarkResolved(selectedQuestion._id)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[11px] border border-emerald-100 hover:bg-emerald-100 transition-all"
+                      >
+                        <CheckCircle size={12} /> Mark Resolved
+                      </button>
+                    )}
+                    <button onClick={closeQuestion} className="p-2 rounded-xl hover:bg-slate-50 text-slate-400 transition-all">
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="mt-4 text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  {selectedQuestion.description}
+                </p>
+
+                <div className="flex items-center gap-4 mt-3 text-[11px] text-slate-400 font-bold">
+                  <span className="flex items-center gap-1"><Eye size={12} /> {selectedQuestion.views || 0} views</span>
+                  <span className="flex items-center gap-1"><MessageCircle size={12} /> {selectedQuestion.answersCount || 0} answers</span>
+                </div>
+              </div>
+
+              {/* Answers */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{answers.length} Answer{answers.length !== 1 ? "s" : ""}</h4>
+                {ansLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-blue-100 border-t-[#FF9F1C] rounded-full animate-spin" />
+                  </div>
+                ) : answers.length === 0 ? (
+                  <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                    <p className="text-slate-400 font-bold text-sm">No answers yet. Be the first to help!</p>
+                  </div>
+                ) : (
+                  answers.map((ans) => (
+                    <div key={ans._id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                      {/* Structured Content (if exists) */}
+                      {ans.concept && (
+                        <div className="flex items-center gap-3 p-3 bg-white/50 border border-blue-100 rounded-2xl">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                            <Zap size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Concept</p>
+                            <p className="text-sm font-bold text-[#002147]">{ans.concept}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Main Content */}
+                      <p className="text-sm text-slate-700 leading-relaxed font-medium">{ans.content}</p>
+
+                      {/* Hints & Examples Grid */}
+                      {(ans.hints?.length > 0 || ans.examples?.length > 0) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {ans.hints?.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Guidance Hints</p>
+                              <div className="space-y-1.5">
+                                {ans.hints.map((h, i) => (
+                                  <div key={i} className="flex gap-2 p-2 bg-white rounded-xl border border-slate-100 text-xs text-slate-600 font-medium">
+                                    <span className="text-blue-500 font-black">{i + 1}.</span>
+                                    {h}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {ans.examples?.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Examples</p>
+                              <div className="space-y-1.5">
+                                {ans.examples.map((ex, i) => (
+                                  <div key={i} className="p-3 bg-slate-100/50 rounded-xl border border-slate-200 text-xs text-slate-600 italic font-medium">
+                                    {ex}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Resources */}
+                      {ans.supportingResources?.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Supporting Resources</p>
+                          <div className="flex flex-wrap gap-2">
+                            {ans.supportingResources.map((res, i) => (
+                              <a
+                                key={i}
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-blue-600 hover:border-blue-300 transition-all shadow-sm"
+                              >
+                                <ExternalLink size={12} />
+                                {res.title}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3 mt-3 pt-4 border-t border-slate-200/50">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm ${
+                          ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' : 
+                          ans.student?.role === 'helper' ? 'bg-[#002147] text-white' : 
+                          'bg-slate-200 text-slate-600'
+                        }`}>
+                          {((ans.student?.name || ans.student?.studentId || "A")[0]).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-[#002147] leading-none mb-1">
+                            {ans.student?.name || ans.student?.studentId || "Anonymous"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${
+                              ans.student?.role === 'lecturer' ? 'text-orange-600' : 
+                              ans.student?.role === 'helper' ? 'text-blue-600' : 
+                              'text-slate-400'
+                            }`}>
+                              {ans.student?.role || 'User'}
+                            </span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                            <span className="text-[9px] text-slate-400 font-bold">{timeSince(ans.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        {/* Upvote Button */}
+                        <div className="ml-auto flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-400">{ans.upvotes || 0}</span>
+                          <button
+                            onClick={() => handleUpvote(ans._id)}
+                            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"
+                            title="Upvote Answer"
+                          >
+                            <ThumbsUp size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Post Answer */}
+              <div className="p-4 sm:p-6 border-t border-slate-100 shrink-0 bg-white">
+                <form onSubmit={handlePostAnswer} className="space-y-4">
+                  {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
+                    <div className="space-y-3">
+                      <button 
+                        type="button"
+                        onClick={() => setShowExpertMode(!showExpertMode)}
+                        className="w-full flex items-center justify-between p-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Zap size={14} className={showExpertMode ? "animate-pulse border border-white/30 rounded-full p-0.5" : ""} />
+                          {showExpertMode ? "Hide Guidance Builder" : "Open Expert Guidance Builder"}
+                        </div>
+                        <ChevronRight size={14} className={`transition-transform duration-300 ${showExpertMode ? "rotate-90" : ""}`} />
+                      </button>
+
+                      {showExpertMode && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 max-h-[200px] overflow-y-auto shadow-inner">
+                            <div className="flex items-center gap-2 text-[#002147] font-bold text-[11px] uppercase tracking-widest sticky top-0 bg-slate-50 pb-2 z-10 border-b border-slate-200">
+                              <GraduationCap size={14} className="text-blue-500" />
+                              Expert Guidance Content
+                            </div>
+
+                            {/* Concept */}
+                            <div className="space-y-1.5 pt-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Core Concept</label>
+                              <input
+                                type="text"
+                                value={ansConcept}
+                                onChange={(e) => setAnsConcept(e.target.value)}
+                                placeholder="The underlying principle"
+                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                              />
+                            </div>
+                            
+                            {/* Rest of the Expert Content remains the same but inside this new scrollable container */}
+                            {/* Hints */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                <span>Step-by-step Hints</span>
+                                <button type="button" onClick={addHint} className="text-blue-500 hover:underline text-[9px]">Add Hint</button>
+                              </label>
+                              {ansHints.map((hint, i) => (
+                                <div key={i} className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={hint}
+                                    onChange={(e) => updateHint(i, e.target.value)}
+                                    placeholder={`Hint ${i + 1}...`}
+                                    className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                                  />
+                                  {ansHints.length > 1 && (
+                                    <button type="button" onClick={() => removeHint(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Examples */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                <span>Practical Examples</span>
+                                <button type="button" onClick={addExample} className="text-blue-500 hover:underline text-[9px]">Add Example</button>
+                              </label>
+                              {ansExamples.map((ex, i) => (
+                                <div key={i} className="flex gap-2">
+                                  <textarea
+                                    value={ex}
+                                    onChange={(e) => updateExample(i, e.target.value)}
+                                    placeholder={`Example ${i + 1}...`}
+                                    rows={1}
+                                    className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all resize-none placeholder:text-slate-300"
+                                  />
+                                  {ansExamples.length > 1 && (
+                                    <button type="button" onClick={() => removeExample(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Resources */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                <span>Supporting Resources</span>
+                                <button type="button" onClick={addAnsResource} className="text-blue-500 hover:underline text-[9px]">Add Resource</button>
+                              </label>
+                              {ansResources.map((res, i) => (
+                                <div key={i} className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    value={res.title}
+                                    onChange={(e) => updateAnsResource(i, "title", e.target.value)}
+                                    placeholder="Title"
+                                    className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                                  />
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="url"
+                                      value={res.url}
+                                      onChange={(e) => updateAnsResource(i, "url", e.target.value)}
+                                      placeholder="URL"
+                                      className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                                    />
+                                    {ansResources.length > 1 && (
+                                      <button type="button" onClick={() => removeAnsResource(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-stretch gap-3">
+                    <textarea
+                      value={answerContent}
+                      onChange={(e) => setAnswerContent(e.target.value)}
+                      placeholder={user?.role === "student" ? "Write your answer here..." : "Write a summary or additional explanation for your guidance..."}
+                      rows={2}
+                      required
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium resize-none focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-400"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isPostingAnswer || !answerContent.trim()}
+                      className="px-6 bg-[#002147] text-white rounded-2xl font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition-all flex flex-col items-center justify-center gap-1 active:scale-95 shadow-md shadow-blue-900/10 min-w-[100px]"
+                    >
+                      {isPostingAnswer ? (
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>Submit</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div >
     );
   }

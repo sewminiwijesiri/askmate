@@ -16,6 +16,14 @@ const LecturerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    name: {
+      type: String,
+      required: true,
+    },
+    reputation: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
