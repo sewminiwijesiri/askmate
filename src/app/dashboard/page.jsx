@@ -426,24 +426,13 @@ export default function StudentDashboard() {
         )}
 
         {activeTab === "qa" && (
-          <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
-            <div className={`w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center ${user.role === 'helper' ? 'text-blue-400' : 'text-slate-300'} mx-auto mb-8`}>
-              {user.role === 'helper' ? <Brain size={32} /> : <Zap size={32} />}
-            </div>
-            <h3 className="text-2xl font-bold text-[#002147] mb-3">
-              {user.role === 'helper' ? 'Recommended Questions Hub' : 'Consultation Hub'}
-            </h3>
-            <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
-              {user.role === 'helper'
-                ? "We're curating the best questions for you to help other students build your reputation."
-                : `We're preparing a space for you to ask questions and get expert advice for your Year ${parseInt(String(user.year).replace(/\D/g, "")) || 1} studies.`}
-            </p>
-            <button
-              onClick={() => setActiveTab(user.role === 'helper' ? 'dashboard' : 'academic')}
-              className="px-8 py-3.5 bg-[#002147] text-white rounded-xl font-bold text-sm hover:translate-y-[-2px] transition-all shadow-md active:scale-95"
-            >
-              {user.role === 'helper' ? 'Dashboard' : 'Academic Hub'}
-            </button>
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <AcademicBrowser
+              defaultYear={user.year || 1}
+              defaultSemester={user.semester || 1}
+              user={user}
+              initialView="qa"
+            />
           </div>
         )}
       </main>

@@ -22,6 +22,24 @@ const QuestionSchema = new mongoose.Schema(
             required: true,
         },
 
+        whatIveTried: {
+            type: String,
+        },
+
+        assignmentContext: {
+            type: String,
+        },
+
+        codeSnippet: {
+            type: String,
+        },
+
+        attachments: [
+            {
+                type: String,
+            }
+        ],
+
         // Voice-based question support
         isVoiceQuestion: {
             type: Boolean,

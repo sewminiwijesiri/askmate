@@ -42,7 +42,7 @@ export async function POST(req) {
     try {
         await connectDB();
         const body = await req.json();
-        const { title, description, module, year, semester, topic, student, difficultyLevel, urgencyLevel, tags, isVoiceQuestion, originalLanguage } = body;
+        const { title, description, module, year, semester, topic, student, difficultyLevel, urgencyLevel, tags, isVoiceQuestion, originalLanguage, whatIveTried, assignmentContext, codeSnippet, attachments } = body;
 
         // 1. Basic Validation
         if (!title || !description || !module || !student) {
@@ -72,6 +72,10 @@ export async function POST(req) {
         const newQuestion = await Question.create({
             title,
             description,
+            whatIveTried,
+            assignmentContext,
+            codeSnippet,
+            attachments: attachments || [],
             module,
             year,
             semester,
@@ -89,5 +93,29 @@ export async function POST(req) {
     } catch (error) {
         console.error("Error creating question:", error);
         return NextResponse.json({ error: "Failed to create question" }, { status: 500 });
+    }
+}
+
+// DELETE: Delete a question by ID
+export async function DELETE(req) {
+    try {
+        await connectDB();
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ error: "Question ID is required" }, { status: 400 });
+        }
+
+        const deletedQuestion = await Question.findByIdAndDelete(id);
+
+        if (!deletedQuestion) {
+            return NextResponse.json({ error: "Question not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Question deleted successfully" }, { status: 200 });
+    } catch (error) {
+        console.error("Error deleting question:", error);
+        return NextResponse.json({ error: "Failed to delete question" }, { status: 500 });
     }
 }
