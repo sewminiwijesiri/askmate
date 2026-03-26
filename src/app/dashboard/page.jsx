@@ -6,6 +6,7 @@ import StudentSidebar from "@/components/student/StudentSidebar";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
 import ProfileSection from "@/components/student/ProfileSection";
 import MyResources from "@/components/student/MyResources";
+import RemindersSection from "@/components/student/RemindersSection";
 import LecturerDashboard from "@/components/lecturer/LecturerDashboard";
 import {
   Bell,
@@ -28,9 +29,10 @@ import {
   Brain,
   Trophy,
   Hourglass,
-  Activity,
-  MessageCircle
+  MessageCircle,
+  Activity
 } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -137,12 +139,14 @@ export default function StudentDashboard() {
               <h1 className="text-3xl font-bold text-[#4DA8DA] capitalize">
                 {activeTab === "academic" ? "Academic Hub" :
                   activeTab === "resources" ? "My Resources" :
+                  activeTab === "reminders" ? "Reminders" :
                     activeTab === "profile" ? "Student Profile" :
                       activeTab === "qa" ? (user.role === "helper" ? "Recommend Questions" : "Consultation Hub") : activeTab}
               </h1>
               <p className="text-slate-500 font-medium">
                 Student Portal • {activeTab === "academic" ? "Browse Knowledge" :
                   activeTab === "resources" ? "Manage Contributions" :
+                  activeTab === "reminders" ? "Academic Deadlines" :
                     activeTab === "profile" ? "Account Settings" :
                       activeTab === "qa" ? (user.role === "helper" ? "Share Your Expertise" : "Expert Help") : "Workspace"}
               </p>
@@ -150,10 +154,7 @@ export default function StudentDashboard() {
           )}
 
           <div className="flex items-center gap-4">
-            <button className="relative w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full"></span>
-            </button>
+            <NotificationBell user={user} />
 
             <div className="flex items-center gap-3 bg-white pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200 shadow-sm">
               <div className="w-8 h-8 rounded-lg bg-[#002147] flex items-center justify-center text-white font-bold text-sm">
@@ -408,6 +409,12 @@ export default function StudentDashboard() {
               onUpdate={(updatedUser) => setUser(updatedUser)}
               onDelete={handleLogout}
             />
+          </div>
+        )}
+
+        {activeTab === "reminders" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <RemindersSection user={user} />
           </div>
         )}
 
