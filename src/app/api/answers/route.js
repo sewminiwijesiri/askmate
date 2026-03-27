@@ -79,7 +79,7 @@ export async function GET(req) {
             if (ans.author) {
                 ans.student = {
                     _id: ans.author._id,
-                    name: ans.author.name,
+                    name: ans.author.name || "Student",
                     email: ans.author.email,
                     studentId: ans.author.studentId || ans.author.studentID || ans.author.lecturerId,
                     role: ans.authorType.toLowerCase()

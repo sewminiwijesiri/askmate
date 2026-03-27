@@ -812,6 +812,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                                 </span>
                               )}
                               <span className="text-[10px] text-slate-400 font-medium">{timeSince(q.createdAt)}</span>
+                              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                              <span className="text-[10px] text-blue-600/70 font-bold uppercase tracking-widest">{q.student?.studentId || "Student"}</span>
                             </div>
                             <h4 className="font-bold text-[#002147] text-sm group-hover:text-blue-600 transition-colors leading-snug truncate">{q.title}</h4>
                             <p className="text-[12px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{q.description}</p>
@@ -1166,6 +1168,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         </span>
                       )}
                       <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
+                      <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                      <span className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{selectedQuestion.student?.studentId || "Student"}</span>
                     </div>
                     <h3 className="text-lg font-bold text-[#002147] leading-snug">{selectedQuestion.title}</h3>
                     {selectedQuestion.topic && (
@@ -1298,7 +1302,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         </div>
                         <div>
                           <p className="text-[11px] font-bold text-[#002147] leading-none mb-1">
-                            {ans.student?.name || ans.student?.studentId || "Anonymous"}
+                            {ans.student?.name || ans.student?.studentId || "Anonymous"} 
+                            <span className="ml-1 text-[9px] text-slate-400 font-medium">({ans.student?.studentId})</span>
                           </p>
                           <div className="flex items-center gap-2">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${
