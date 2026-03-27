@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Modal from '../components/Modal';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
+import { Lock } from 'lucide-react';
 
 // Custom SVG Illustration Component mimicking the "graduate holding diploma" style
 const GraduateIllustration = () => (
@@ -57,9 +58,11 @@ const GraduateIllustration = () => (
 export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
 
-  const openLogin = (e) => {
+  const openLogin = (e, admin = false) => {
     if (e) e.preventDefault();
+    setIsAdminLogin(admin);
     setShowLogin(true);
     setShowRegister(false);
   };
@@ -96,7 +99,7 @@ export default function Home() {
 
           <div className="flex items-center space-x-4">
             <button 
-              onClick={openLogin}
+              onClick={(e) => openLogin(e)}
               className="text-sm font-semibold text-[#002147] hover:text-blue-950 transition-colors px-4 py-2 cursor-pointer"
             >
               Sign In
@@ -139,7 +142,7 @@ export default function Home() {
                     Start Learning Now
                   </button>
                   <button 
-                    onClick={openLogin}
+                    onClick={(e) => openLogin(e)}
                     className="w-full sm:w-auto px-8 py-4 text-base font-bold text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:shadow-md transition-all cursor-pointer"
                   >
                     View Demo
@@ -356,7 +359,14 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
              <p>© {new Date().getFullYear()} ASKmate. All rights reserved.</p>
-             <div className="flex space-x-8 mt-4 md:mt-0">
+             <div className="flex space-x-8 mt-4 md:mt-0 items-center">
+                <button 
+                  onClick={(e) => openLogin(e, true)}
+                  className="text-gray-400 hover:text-[#002147] transition-colors p-1"
+                  title="Admin Access"
+                >
+                  <Lock size={14} />
+                </button>
                 <a href="#" className="hover:text-[#002147]">Privacy Policy</a>
                 <a href="#" className="hover:text-[#002147]">Terms of Service</a>
                 <a href="#" className="hover:text-[#002147]">Cookie Settings</a>
@@ -369,6 +379,7 @@ export default function Home() {
         <LoginForm 
           onSuccess={() => setShowLogin(false)} 
           onSwitchToRegister={openRegister}
+          adminMode={isAdminLogin}
         />
       </Modal>
 

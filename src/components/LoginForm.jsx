@@ -24,10 +24,9 @@ const loginSchema = z.object({
   }
 });
 
-export default function LoginForm({ onSuccess, onSwitchToRegister }) {
+export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = false }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isAdminMode, setIsAdminMode] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,25 +41,22 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
     defaultValues: {
-      role: "student",
+      role: adminMode ? "admin" : "student",
       id: "",
       password: "",
     },
   });
 
-  const selectedRole = watch("role");
+  // Update role if adminMode changes
+  useEffect(() => {
+    if (adminMode) {
+      setValue("role", "admin");
+    } else {
+      setValue("role", "student");
+    }
+  }, [adminMode, setValue]);
 
-  // Handle Admin Mode toggle
-  const toggleAdminMode = () => {
-    const newMode = !isAdminMode;
-    setIsAdminMode(newMode);
-    reset({
-      role: newMode ? "admin" : "student",
-      id: "",
-      password: "",
-    });
-    setToast({ message: "", type: "success" });
-  };
+  const selectedRole = watch("role");
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -103,14 +99,14 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
   };
 
   const getIdLabel = () => {
-    if (isAdminMode) return "Username";
+    if (adminMode) return "Admin Username";
     if (selectedRole === "student") return "Student ID";
     if (selectedRole === "lecturer") return "Lecturer ID";
     return "University ID";
   };
 
   const getIdPlaceholder = () => {
-    if (isAdminMode) return "admin_user";
+    if (adminMode) return "admin_user";
     if (selectedRole === "student") return "ITXXXXXXXX";
     if (selectedRole === "lecturer") return "LCXXXXXXXX";
     return "ITXXXXXXXX";
@@ -120,16 +116,16 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
     <div className="w-full bg-white p-5 sm:p-6 rounded-3xl">
       <div className="text-center mb-3">
         <h1 className="text-xl font-bold text-[#002147] mb-0.5 tracking-tight">
-          {isAdminMode ? "Admin Portal" : "Welcome Back"}
+          {adminMode ? "Admin Portal" : "Welcome Back"}
         </h1>
         <p className="text-gray-500 text-xs font-medium">
-          {isAdminMode ? "Restricted access area" : "Sign in to continue"}
+          {adminMode ? "Restricted access area" : "Sign in to continue"}
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Role Selection (Only if not Admin) */}
-        {!isAdminMode && (
+        {!adminMode && (
           <div className="w-full">
             <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">Login as</label>
             <div className="relative">
@@ -160,7 +156,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-10`}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-              {isAdminMode ? <ShieldCheck size={16} /> : <User size={16} />}
+              {adminMode ? <ShieldCheck size={16} /> : <User size={16} />}
             </div>
           </div>
           {errors.id && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.id.message}</p>}
@@ -191,19 +187,20 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
         <button
           type="submit"
           disabled={!isValid || isLoading}
-          className={`w-full py-2.5 px-6 ${isAdminMode ? 'bg-gray-900 shadow-gray-200' : 'bg-[#002147] shadow-[#002147]/20'} hover:opacity-90 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm`}
+          className={`w-full py-2.5 px-6 ${adminMode ? 'bg-gray-900 shadow-gray-200' : 'bg-[#002147] shadow-[#002147]/20'} hover:opacity-90 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm`}
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Signing In...
             </span>
-          ) : (isAdminMode ? "Access Admin Dashboard" : "Sign In")}
+          ) : (adminMode ? "Access Admin Dashboard" : "Sign In")}
         </button>
       </form>
 
-      <div className="mt-6 text-center space-y-3">
-        {!isAdminMode && (
+      {/* Don't show register link if in admin mode */}
+      {!adminMode && (
+        <div className="mt-6 text-center">
           <p className="text-gray-500 text-xs font-medium">
             Don't have an account?{" "}
             <button
@@ -213,24 +210,8 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
               Register
             </button>
           </p>
-        )}
-
-        <div className={`${!isAdminMode ? 'pt-4 border-t border-gray-100' : ''}`}>
-          <button
-            onClick={toggleAdminMode}
-            className="flex items-center justify-center gap-2 mx-auto text-gray-500 hover:text-[#002147] font-semibold transition-colors text-xs"
-          >
-            {isAdminMode ? (
-              <>← Back to User Login</>
-            ) : (
-              <>
-                <ShieldCheck size={14} />
-                <span>Admin Login</span>
-              </>
-            )}
-          </button>
         </div>
-      </div>
+      )}
 
       <Toast
         message={toast.message}
