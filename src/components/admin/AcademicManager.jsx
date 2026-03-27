@@ -16,7 +16,13 @@ import {
   X,
   File as FileIcon,
   Search,
-  Download
+  Download,
+  Thermometer,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  CheckCircle,
+  MessageSquare
 } from "lucide-react";
 
 export default function AcademicManager() {
@@ -53,6 +59,13 @@ export default function AcademicManager() {
       fetchResources();
     }
   }, [selectedModule]);
+
+  useEffect(() => {
+    if (selectedModule) {
+      fetchResources();
+    }
+  }, [selectedModule]);
+
 
   const fetchModules = async () => {
     try {
@@ -325,6 +338,7 @@ export default function AcademicManager() {
                 ))}
               </div>
             </div>
+
           </div>
         )}
 
@@ -349,6 +363,7 @@ export default function AcademicManager() {
                   Add Module
                 </button>
               </div>
+
 
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-[300px]">
@@ -456,15 +471,11 @@ export default function AcademicManager() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-8">
-                  {/* Category Filter & Search for Admin */}
                   <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 pb-8 border-b border-slate-100">
                     <div className="flex flex-wrap gap-1.5">
                       <button
                         onClick={() => setResourceCategory("All")}
-                        className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === "All"
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
-                          }`}
+                        className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === "All" ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"}`}
                       >
                         All
                       </button>
@@ -472,10 +483,7 @@ export default function AcademicManager() {
                         <button
                           key={cat}
                           onClick={() => setResourceCategory(cat)}
-                          className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === cat
-                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                            : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
-                            }`}
+                          className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border ${resourceCategory === cat ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"}`}
                         >
                           {cat}
                         </button>
@@ -501,11 +509,7 @@ export default function AcademicManager() {
                       .map((res) => (
                         <div key={res._id} className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group relative">
                           <div className="flex justify-between items-start mb-6">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600' :
-                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600' :
-                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600' :
-                                  'bg-indigo-50 text-indigo-600'
-                              }`}>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600' : res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600' : res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600' : 'bg-indigo-50 text-indigo-600'}`}>
                               {res.resourceType === 'link' ? <LinkIcon size={20} /> : <FileIcon size={20} />}
                             </div>
                             <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -552,11 +556,7 @@ export default function AcademicManager() {
                                 {res.uploaderName || 'Admin'}
                               </span>
                             </div>
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                              res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                  'bg-indigo-50 text-indigo-600 border-indigo-100'
-                              }`}>
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-600 border-rose-100' : res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : res.category === 'Past Paper' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
                               {res.category || "General"}
                             </span>
                           </div>
@@ -598,224 +598,213 @@ export default function AcademicManager() {
       </div>
 
       {/* Add Module Modal */}
-      {
-        isAddingMode && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">{editingModule ? "Update Academic Module" : "New Academic Module"}</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Year {selectedYear} • Semester {selectedSemester}</p>
+      {isAddingMode && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{editingModule ? "Update Academic Module" : "New Academic Module"}</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Year {selectedYear} • Semester {selectedSemester}</p>
+              </div>
+              <button onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 transition-all">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={editingModule ? handleUpdateModule : handleAddModule} className="p-8 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Name</label>
+                <input
+                  type="text"
+                  value={newModule.moduleName}
+                  onBlur={() => handleModuleBlur("moduleName")}
+                  onChange={(e) => {
+                    setNewModule({ ...newModule, moduleName: e.target.value });
+                    if (touched.moduleName) {
+                      const errors = validateModuleForm();
+                      setModuleErrors(errors);
+                    }
+                  }}
+                  className={`w-full bg-slate-50 border ${touched.moduleName && moduleErrors.moduleName ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
+                  placeholder="Enter module name"
+                />
+                {touched.moduleName && moduleErrors.moduleName && (
+                  <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleName}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Reference Code</label>
+                <input
+                  type="text"
+                  value={newModule.moduleCode}
+                  onBlur={() => handleModuleBlur("moduleCode")}
+                  onChange={(e) => {
+                    setNewModule({ ...newModule, moduleCode: e.target.value });
+                    if (touched.moduleCode) {
+                      const errors = validateModuleForm();
+                      setModuleErrors(errors);
+                    }
+                  }}
+                  className={`w-full bg-slate-50 border ${touched.moduleCode && moduleErrors.moduleCode ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
+                  placeholder="e.g. IT-3050"
+                />
+                {touched.moduleCode && moduleErrors.moduleCode && (
+                  <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleCode}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center mr-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Brief Overview</label>
+                  <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Optional</span>
                 </div>
-                <button onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }} className="p-2 rounded-lg hover:bg-slate-50 text-slate-400 transition-all">
-                  <X size={20} />
+                <textarea
+                  value={newModule.description}
+                  onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all h-24 resize-none placeholder:text-slate-300"
+                  placeholder="Describe the module focus..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newModule.moduleName?.trim() || !newModule.moduleCode?.trim().startsWith("IT")}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                >
+                  {editingModule ? "Save Changes" : "Create Module"}
                 </button>
               </div>
-              <form onSubmit={editingModule ? handleUpdateModule : handleAddModule} className="p-8 space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Name</label>
-                  <input
-                    type="text"
-                    value={newModule.moduleName}
-                    onBlur={() => handleModuleBlur("moduleName")}
-                    onChange={(e) => {
-                      setNewModule({ ...newModule, moduleName: e.target.value });
-                      if (touched.moduleName) {
-                        const errors = validateModuleForm();
-                        setModuleErrors(errors);
-                      }
-                    }}
-                    className={`w-full bg-slate-50 border ${touched.moduleName && moduleErrors.moduleName ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
-                    placeholder="Enter module name"
-                  />
-                  {touched.moduleName && moduleErrors.moduleName && (
-                    <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleName}</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Reference Code</label>
-                  <input
-                    type="text"
-                    value={newModule.moduleCode}
-                    onBlur={() => handleModuleBlur("moduleCode")}
-                    onChange={(e) => {
-                      setNewModule({ ...newModule, moduleCode: e.target.value });
-                      if (touched.moduleCode) {
-                        const errors = validateModuleForm();
-                        setModuleErrors(errors);
-                      }
-                    }}
-                    className={`w-full bg-slate-50 border ${touched.moduleCode && moduleErrors.moduleCode ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
-                    placeholder="e.g. IT-3050"
-                  />
-                  {touched.moduleCode && moduleErrors.moduleCode && (
-                    <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleCode}</p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center mr-1">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Brief Overview</label>
-                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Optional</span>
-                  </div>
-                  <textarea
-                    value={newModule.description}
-                    onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all h-24 resize-none placeholder:text-slate-300"
-                    placeholder="Describe the module focus..."
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => { setIsAddingMode(false); setEditingModule(null); setNewModule({ moduleName: "", moduleCode: "", description: "" }); setModuleErrors({}); setTouched({}); }}
-                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!newModule.moduleName?.trim() || !newModule.moduleCode?.trim().startsWith("IT")}
-                    className="flex-1 px-4 py-2.5 bg-indigo-600 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-                  >
-                    {editingModule ? "Save Changes" : "Create Module"}
-                  </button>
-                </div>
-              </form>
-
-            </div>
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Resource Modal */}
-      {
-        isResModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">{editingResource ? 'Update resource' : 'Catalog New Resource'}</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                    Modifying repository for {selectedModule.moduleCode}
-                  </p>
+      {isResModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{editingResource ? 'Update resource' : 'Catalog New Resource'}</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                  Modifying repository for {selectedModule.moduleCode}
+                </p>
+              </div>
+              <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-white text-slate-400 transition-all shadow-sm">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleResourceSubmit} className="p-8 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Resource Name</label>
+                <input
+                  type="text"
+                  required
+                  value={resData.title}
+                  onChange={(e) => setResData({ ...resData, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
+                  placeholder="Title for this material"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Media Type</label>
+                  <div className="relative">
+                    <select
+                      value={resData.resourceType}
+                      onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer pr-10"
+                    >
+                      <option value="link">Public URL</option>
+                      <option value="pdf">PDF File</option>
+                      <option value="word">Word Doc</option>
+                      <option value="text">Text File</option>
+                    </select>
+                  </div>
                 </div>
-                <button onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="p-2 rounded-lg hover:bg-white text-slate-400 transition-all shadow-sm">
-                  <X size={20} />
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">{resData.resourceType === 'link' ? 'Source URL' : 'Upload File'}</label>
+                  {resData.resourceType === 'link' ? (
+                    <input
+                      type="url"
+                      required
+                      value={resData.url}
+                      onChange={(e) => setResData({ ...resData, url: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
+                      placeholder="https://..."
+                    />
+                  ) : (
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        required={!editingResource}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          setSelectedFile(file);
+                          if (file && !resData.title) {
+                            setResData({ ...resData, title: file.name.split('.')[0] });
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        accept={resData.resourceType === 'pdf' ? '.pdf' : resData.resourceType === 'word' ? '.doc,.docx' : resData.resourceType === 'text' ? '.txt' : '*'}
+                      />
+                      <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold flex items-center gap-2 text-slate-500 border-dashed group-hover:border-indigo-500 transition-all overflow-hidden whitespace-nowrap">
+                        <FileIcon size={14} className="text-indigo-500 flex-shrink-0" />
+                        <span className="truncate">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Tag Category</label>
+                <select
+                  value={resData.category}
+                  onChange={(e) => setResData({ ...resData, category: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                >
+                  <option value="Short Note">Short Note</option>
+                  <option value="Lecture Note">Lecture Note</option>
+                  <option value="YouTube Link">YouTube Link</option>
+                  <option value="Past Paper">Past Paper</option>
+                  <option value="Tutorial">Tutorial</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Description</label>
+                <textarea
+                  value={resData.description}
+                  onChange={(e) => setResData({ ...resData, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold h-24 resize-none focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300"
+                  placeholder="Short description for students..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all">Cancel</button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isUploading ? (
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  ) : (editingResource ? 'Save' : 'Upload')}
                 </button>
               </div>
-              <form onSubmit={handleResourceSubmit} className="p-8 space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Resource Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={resData.title}
-                    onChange={(e) => setResData({ ...resData, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
-                    placeholder="Title for this material"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Media Type</label>
-                    <div className="relative">
-                      <select
-                        value={resData.resourceType}
-                        onChange={(e) => setResData({ ...resData, resourceType: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer pr-10"
-                      >
-                        <option value="link">Public URL</option>
-                        <option value="pdf">PDF File</option>
-                        <option value="word">Word Doc</option>
-                        <option value="text">Text File</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">
-                      {resData.resourceType === 'link' ? 'Source URL' : 'Upload File'}
-                    </label>
-                    {resData.resourceType === 'link' ? (
-                      <input
-                        type="url"
-                        required
-                        value={resData.url}
-                        onChange={(e) => setResData({ ...resData, url: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 transition-all"
-                        placeholder="https://..."
-                      />
-                    ) : (
-                      <div className="relative group">
-                        <input
-                          type="file"
-                          required={!editingResource}
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            setSelectedFile(file);
-                            if (file && !resData.title) {
-                              setResData({ ...resData, title: file.name.split('.')[0] });
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          accept={
-                            resData.resourceType === 'pdf' ? '.pdf' :
-                              resData.resourceType === 'word' ? '.doc,.docx' :
-                                resData.resourceType === 'text' ? '.txt' : '*'
-                          }
-                        />
-                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold flex items-center gap-2 text-slate-500 border-dashed group-hover:border-indigo-500 transition-all overflow-hidden whitespace-nowrap">
-                          <FileIcon size={14} className="text-indigo-500 flex-shrink-0" />
-                          <span className="truncate">{selectedFile ? selectedFile.name : (editingResource ? 'Change...' : 'Browse...')}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Tag Category</label>
-                  <select
-                    value={resData.category}
-                    onChange={(e) => setResData({ ...resData, category: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="Short Note">Short Note</option>
-                    <option value="Lecture Note">Lecture Note</option>
-                    <option value="YouTube Link">YouTube Link</option>
-                    <option value="Past Paper">Past Paper</option>
-                    <option value="Tutorial">Tutorial</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Description</label>
-                  <textarea
-                    value={resData.description}
-                    onChange={(e) => setResData({ ...resData, description: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-semibold h-24 resize-none focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300"
-                    placeholder="Short description for students..."
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => { setIsResModalOpen(false); setEditingResource(null); setSelectedFile(null); }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all">Cancel</button>
-                  <button
-                    type="submit"
-                    disabled={isUploading}
-                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isUploading ? (
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    ) : (editingResource ? 'Save' : 'Upload')}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 }

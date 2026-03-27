@@ -49,7 +49,10 @@ export default function NotificationBell({ user }) {
         lastFetchedRef.current = newNotifications;
       }
     } catch (error) {
-      console.error("Failed to fetch notifications:", error);
+      // Only log full error if it's not a generic abort/silent error
+      if (error.name !== 'AbortError') {
+        process.env.NODE_ENV === 'development' && console.error("[NotificationBell] Fetch failed:", error);
+      }
     } finally {
       if (!silent) setLoading(false);
     }

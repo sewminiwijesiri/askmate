@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AcademicManager from "@/components/admin/AcademicManager";
+import ConfusionAnalytics from "@/components/admin/ConfusionAnalytics";
 import {
   Users,
   UserCheck,
@@ -24,9 +25,11 @@ import {
   Clock,
   Mail,
   Bell,
-  X,
-  User as UserIcon
+  User as UserIcon,
+  TrendingUp,
+  Thermometer
 } from "lucide-react";
+// import SemesterHeatmap from "@/components/analytics/SemesterHeatmap";
 
 const IconUsers = () => <Users size={20} />;
 const IconAdmin = () => <ShieldCheck size={20} />;
@@ -195,6 +198,7 @@ export default function AdminDashboard() {
                 { id: "stats", label: "Metrics & Logs", icon: LayoutDashboard },
                 { id: "helpers", label: "Users & Roles", icon: Users, isUsers: true },
                 { id: "academic", label: "Academic Hub", icon: BookOpen },
+                { id: "confusion", label: "Confusion Analytics", icon: Thermometer },
                 { id: "settings", label: "System Config", icon: MoreVertical },
               ].map((item) => {
                 const isActive = item.isUsers
@@ -241,6 +245,7 @@ export default function AdminDashboard() {
             <h1 className="text-xl font-bold text-slate-900 leading-tight">
               {activeTab === 'stats' ? 'Metrics & Logs' :
                 activeTab === 'academic' ? 'Academic Hub' :
+                activeTab === 'confusion' ? 'Confusion Analytics' :
                   (activeTab === 'helpers' || activeTab === 'students' || activeTab === 'lecturers') ? 'Users & Roles' :
                     'System Overview'}
             </h1>
@@ -483,14 +488,28 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === "confusion" && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <ConfusionAnalytics />
+            </div>
+          )}
+
+
           {/* stats Tab Placeholder */}
           {activeTab === "stats" && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600">
-                <LayoutDashboard size={40} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Platform Infrastructure Metrics</h3>
-              <p className="text-slate-500 font-medium max-w-sm mx-auto">Full system analytics and traffic distribution models are being synthesized from the core database nodes.</p>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+               <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                  <div className="flex items-center gap-4 mb-8">
+                     <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+                        <TrendingUp size={24} />
+                     </div>
+                     <div>
+                        <h3 className="text-xl font-black text-slate-900">Confusion Keywords Heatmap</h3>
+                        <p className="text-sm text-slate-500 font-medium">Top keywords identified from student questions across all modules.</p>
+                     </div>
+                  </div>
+                  <KeywordHeatmap />
+               </div>
             </div>
           )}
 
@@ -731,6 +750,47 @@ export default function AdminDashboard() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+    </div>
+  );
+}
+
+function KeywordHeatmap() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/questions/heatmap")
+      .then(res => res.json())
+      .then(data => {
+        setData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Heatmap fetch error:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="p-10 text-center text-slate-400 font-bold animate-pulse">Analyzing Keywords...</div>;
+  if (!data || data.length === 0) return <div className="p-10 text-center text-slate-400 font-bold">No confusion patterns detected yet.</div>;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {data.slice(0, 15).map((item, idx) => (
+        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-indigo-200 transition-all">
+          <div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.module}</span>
+            <h4 className="font-bold text-slate-800 tracking-tight">#{item.keyword}</h4>
+          </div>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
+            item.count > 5 ? 'bg-rose-100 text-rose-600' : 
+            item.count > 2 ? 'bg-amber-100 text-amber-600' : 
+            'bg-emerald-100 text-emerald-600'
+          }`}>
+            {item.count}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
