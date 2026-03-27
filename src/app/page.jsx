@@ -76,13 +76,16 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm">
         <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-[#002147]/5 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <svg className="w-6 h-6 text-[#002147]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            <div className="w-10 h-10 bg-gradient-to-br from-[#002147] to-indigo-900 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-3 transition-transform duration-300 overflow-hidden relative">
+              <div className="absolute inset-0 bg-[#FF9F1C] opacity-10 group-hover:opacity-20 transition-opacity"></div>
+              <svg className="w-6 h-6 text-[#FF9F1C]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-[#002147] tracking-tight">ASKmate</span>
+            <span className="text-2xl font-black text-[#002147] tracking-tighter uppercase">
+              ASK<span className="text-[#FF9F1C]">mate</span>
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-600">
@@ -156,17 +159,16 @@ export default function Home() {
               </div>
 
               {/* Illustration Content */}
-              <div className="flex-1 w-full max-w-lg lg:max-w-xl relative">
-                <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
-                    {/* USER: REPLACE THE URL BELOW WITH YOUR OWN IMAGE LINK */}
+              <div className="flex-1 w-full max-w-sm lg:max-w-md relative">
+                <div className="relative z-10 transform hover:scale-110 transition-transform duration-700">
                     <img 
                       src="https://plus.unsplash.com/premium_vector-1720897415281-b821cc189ed1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Z3JhZHVhdGlvbnxlbnwwfHwwfHx8MA%3D%3D" 
                       alt="Hero Illustration" 
-                      className="w-full h-auto rounded-3xl shadow-2xl border-4 border-white/10"
+                      className="w-full h-auto rounded-[3rem] shadow-2xl border-2 border-white/5 [mask-image:radial-gradient(circle_at_center,white_60%,transparent_100%)] grayscale-[20%] brightness-110"
                     />
                 </div>
                 {/* Decorative blobs */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-blue-100/50 to-orange-100/50 rounded-full filter blur-3xl -z-10 opacity-60 animate-pulse"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-gradient-to-tr from-blue-400/20 via-transparent to-orange-400/20 rounded-full filter blur-[100px] -z-10 animate-pulse"></div>
               </div>
 
             </div>
@@ -298,13 +300,15 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
              <div className="col-span-1 md:col-span-1">
-                <Link href="/" className="flex items-center space-x-2 mb-6">
-                   <div className="w-8 h-8 bg-[#FF9F1C] rounded-lg flex items-center justify-center">
-                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                <Link href="/" className="flex items-center space-x-2 mb-6 group">
+                   <div className="w-10 h-10 bg-gradient-to-br from-[#002147] to-indigo-900 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                     <svg className="w-6 h-6 text-[#FF9F1C]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
                      </svg>
                    </div>
-                   <span className="text-2xl font-bold tracking-tight text-[#002147]">ASKmate</span>
+                   <span className="text-2xl font-black text-[#002147] tracking-tighter uppercase">
+                     ASK<span className="text-[#FF9F1C]">mate</span>
+                   </span>
                 </Link>
                 <p className="text-gray-500 mb-6">Empowering students to achieve academic excellence through collaboration.</p>
                 <div className="flex space-x-4">
