@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AcademicManager from "@/components/admin/AcademicManager";
 import ConfusionAnalytics from "@/components/admin/ConfusionAnalytics";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
+import UserReports from "@/components/admin/UserReports";
 import {
   Users,
   UserCheck,
@@ -30,7 +31,9 @@ import {
   TrendingUp,
   Thermometer,
   BarChart,
-  MessageSquare
+  MessageSquare,
+  Flag,
+  X
 } from "lucide-react";
 // import SemesterHeatmap from "@/components/analytics/SemesterHeatmap";
 
@@ -201,6 +204,7 @@ export default function AdminDashboard() {
                 { id: "analytics", label: "Analytics", icon: BarChart },
                 { id: "stats", label: "Metrics & Logs", icon: LayoutDashboard },
                 { id: "helpers", label: "Users & Roles", icon: Users, isUsers: true },
+                { id: "reports", label: "User Reports", icon: Flag },
                 { id: "academic", label: "Academic Hub", icon: BookOpen },
                 { id: "confusion", label: "Confusion Analytics", icon: Thermometer },
               ].map((item) => {
@@ -249,6 +253,7 @@ export default function AdminDashboard() {
               {activeTab === 'stats' ? 'Metrics & Logs' :
                 activeTab === 'academic' ? 'Academic Hub' :
                 activeTab === 'confusion' ? 'Confusion Analytics' :
+                activeTab === 'reports' ? 'User Moderation' :
                 activeTab === 'analytics' ? 'Platform Analytics' :
                   (activeTab === 'helpers' || activeTab === 'students' || activeTab === 'lecturers') ? 'Users & Roles' :
                     'System Overview'}
@@ -500,6 +505,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {activeTab === "reports" && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <UserReports />
+            </div>
+          )}
 
           {/* stats Tab Placeholder */}
           {activeTab === "stats" && (
@@ -689,7 +699,7 @@ export default function AdminDashboard() {
                               <span className="text-[10px] font-bold uppercase tracking-widest">Verified Identity</span>
                             </div>
                             <p className="text-sm font-medium text-slate-300 leading-relaxed relative z-10">
-                              This member's information has been authenticated via the system directory.
+                              This member&apos;s information has been authenticated via the system directory.
                             </p>
                           </div>
                         </div>
