@@ -13,7 +13,8 @@ import {
     Users,
     Bell,
     Activity,
-    Award
+    Award,
+    Thermometer
 } from "lucide-react";
 
 export default function LecturerSidebar({ activeTab, setActiveTab, user, onLogout }) {
@@ -23,6 +24,7 @@ export default function LecturerSidebar({ activeTab, setActiveTab, user, onLogou
         { id: "resources", label: "Course Materials", icon: FileText },
         { id: "students", label: "Student Engagement", icon: Users },
         { id: "qa", label: "Q&A Consulting", icon: MessageSquare },
+        { id: "heatmap", label: "Confusion Heatmap", icon: Thermometer },
         { id: "profile", label: "My Profile", icon: User },
     ];
 
