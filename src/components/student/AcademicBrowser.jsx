@@ -32,6 +32,7 @@ import {
   Tag,
   Zap,
 } from "lucide-react";
+import UserProfileModal from "@/components/shared/UserProfileModal";
 
 export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView }) {
   const [modules, setModules] = useState([]);
@@ -42,6 +43,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [selectedModule, setSelectedModule] = useState(null);
   const [activeView, setActiveView] = useState(initialView || "modules"); // modules, resources, qa
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewingProfileId, setViewingProfileId] = useState(null);
 
   // Resource States
   const [resources, setResources] = useState([]);
@@ -692,9 +694,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Contributor</span>
-                                <span className="text-[11px] font-bold text-slate-700 leading-none">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setViewingProfileId(res.uploadedBy); }}
+                                  className="text-[11px] font-bold text-slate-700 leading-none text-left hover:text-blue-600 hover:underline transition-colors focus:outline-none"
+                                >
                                   {res.uploadedBy === user.userId ? "Me" : (res.uploaderRole === 'admin' ? 'Administrator' : res.uploaderName)}
-                                </span>
+                                </button>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -813,7 +818,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               )}
                               <span className="text-[10px] text-slate-400 font-medium">{timeSince(q.createdAt)}</span>
                               <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                              <span className="text-[10px] text-blue-600/70 font-bold uppercase tracking-widest">{q.student?.studentId || "Student"}</span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setViewingProfileId(q.student?._id || q.student?.studentId); }}
+                                className="text-[10px] text-blue-600/70 font-bold uppercase tracking-widest hover:text-blue-600 hover:underline transition-colors focus:outline-none"
+                              >
+                                {q.student?.studentId || "Student"}
+                              </button>
                             </div>
                             <h4 className="font-bold text-[#002147] text-sm group-hover:text-blue-600 transition-colors leading-snug truncate">{q.title}</h4>
                             <p className="text-[12px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{q.description}</p>
@@ -1169,7 +1179,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       )}
                       <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
                       <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                      <span className="text-[10px] text-blue-600 font-black uppercase tracking-widest">{selectedQuestion.student?.studentId || "Student"}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setViewingProfileId(selectedQuestion.student?._id || selectedQuestion.student?.studentId); }}
+                        className="text-[10px] text-blue-600 font-black uppercase tracking-widest hover:underline transition-colors focus:outline-none"
+                      >
+                        {selectedQuestion.student?.studentId || "Student"}
+                      </button>
                     </div>
                     <h3 className="text-lg font-bold text-[#002147] leading-snug">{selectedQuestion.title}</h3>
                     {selectedQuestion.topic && (
@@ -1293,18 +1308,23 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       )}
 
                       <div className="flex items-center gap-3 mt-3 pt-4 border-t border-slate-200/50">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm ${
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm transition-transform hover:scale-105 focus:outline-none ${
                           ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' : 
                           ans.student?.role === 'helper' ? 'bg-[#002147] text-white' : 
                           'bg-slate-200 text-slate-600'
                         }`}>
                           {((ans.student?.name || ans.student?.studentId || "A")[0]).toUpperCase()}
-                        </div>
+                        </button>
                         <div>
-                          <p className="text-[11px] font-bold text-[#002147] leading-none mb-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
+                            className="text-[11px] font-bold text-[#002147] leading-none mb-1 text-left hover:text-blue-600 hover:underline transition-colors focus:outline-none"
+                          >
                             {ans.student?.name || ans.student?.studentId || "Anonymous"} 
                             <span className="ml-1 text-[9px] text-slate-400 font-medium">({ans.student?.studentId})</span>
-                          </p>
+                          </button>
                           <div className="flex items-center gap-2">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${
                               ans.student?.role === 'lecturer' ? 'text-orange-600' : 
@@ -1482,6 +1502,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
             </div>
           </div>
         )}
+
+        {viewingProfileId && <UserProfileModal userId={viewingProfileId} currentUser={user} onClose={() => setViewingProfileId(null)} />}
       </div >
     );
   }
@@ -1591,6 +1613,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
           </div>
         </div>
       </div>
+      
+      {viewingProfileId && <UserProfileModal userId={viewingProfileId} currentUser={user} onClose={() => setViewingProfileId(null)} />}
     </div>
   );
 }
