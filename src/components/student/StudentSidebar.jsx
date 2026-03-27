@@ -28,7 +28,7 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
   ];
 
   return (
-    <aside className={`fixed left-0 top-0 h-full w-64 border-r border-slate-200 z-50 hidden lg:flex flex-col transition-colors duration-300 ${user.role === "helper" ? "bg-[#E2EEFF]" : "bg-white"
+    <aside className={`fixed left-0 top-0 h-full w-64 border-r border-slate-200/50 z-50 hidden lg:flex flex-col transition-colors duration-300 ${user.role === "helper" ? "bg-[#e0f2fe]/60 backdrop-blur-xl" : "bg-white/60 backdrop-blur-xl"
       }`}>
       <div className="p-6">
         <div className="flex items-center gap-3 mb-10 px-2 cursor-pointer">
@@ -47,8 +47,8 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id
-                ? (user.role === "helper" ? "bg-white text-[#FF9F1C] shadow-sm" : "bg-[#FF9F1C]/10 text-[#FF9F1C]")
-                : (user.role === "helper" ? "text-slate-500 hover:bg-white/50 hover:text-slate-800" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800")
+                ? (user.role === "helper" ? "bg-white/80 text-[#FF9F1C] shadow-sm" : "bg-[#FF9F1C]/10 text-[#FF9F1C]")
+                : (user.role === "helper" ? "text-slate-500 hover:bg-white/40 hover:text-slate-800" : "text-slate-500 hover:bg-white/40 hover:text-slate-800")
                 }`}
             >
               <div className="w-5 flex items-center justify-center">
@@ -67,7 +67,7 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
       </div>
 
       <div className="mt-auto p-6 space-y-4">
-        <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+        <div className="p-5 bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-100/50">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               {user.role === "helper" ? "Reputation Progress" : "Level Progress"}
