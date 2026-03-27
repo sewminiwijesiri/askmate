@@ -74,6 +74,13 @@ export async function POST(req) {
         );
 
     } else if (role === "lecturer") {
+        if (!name) {
+            return NextResponse.json(
+                { message: "Name is required for lecturers" },
+                { status: 400 }
+            );
+        }
+
         // Validate Lecturer ID (LC + 8 digits)
         const lecturerIdPattern = /^LC\d{8}$/;
         if (!lecturerIdPattern.test(formattedId)) {
@@ -103,6 +110,7 @@ export async function POST(req) {
             lecturerId: formattedId,
             email,
             password: hashedPassword,
+            name,
         });
 
         return NextResponse.json(
