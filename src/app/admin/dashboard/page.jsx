@@ -391,10 +391,12 @@ export default function AdminDashboard() {
                                   activeTab === 'lecturers' ? 'bg-indigo-100 text-indigo-600' :
                                     'bg-indigo-50 text-indigo-500'
                                   }`}>
-                                  {(user.name || user.username || "U")[0].toUpperCase()}
+                                  {(user.name || user.username || user.studentId || user.studentID || user.lecturerId || "M")[0].toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-semibold text-slate-900 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors">{user.name || user.username || "Anonymous Member"}</p>
+                                  <p className="text-sm font-semibold text-slate-900 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors">
+                                    {user.name || user.username || user.studentId || user.studentID || user.lecturerId || "Member"}
+                                  </p>
                                   <p className="text-xs text-slate-400 font-medium">{user.email}</p>
                                 </div>
                               </div>
