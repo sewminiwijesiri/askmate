@@ -52,7 +52,7 @@ export default function LecturerDashboard({ user, onLogout }) {
     }, [activeTab]);
 
     useEffect(() => {
-        if (activeTab === "dashboard") {
+        if (activeTab === "heatmap") {
             setLoadingConfusion(true);
             let url = `/api/analytics/confusion?year=${selectedYear}&semester=${selectedSemester}`;
             if (moduleFocus !== "All Modules") {
@@ -103,13 +103,15 @@ export default function LecturerDashboard({ user, onLogout }) {
                                     activeTab === "resources" ? "Course Materials" :
                                         activeTab === "students" ? "Student Engagement" :
                                             activeTab === "qa" ? "Consultation Hub" :
-                                                activeTab === "profile" ? "Lecturer Profile" : activeTab}
+                                                activeTab === "heatmap" ? "Confusion Analytics" :
+                                                    activeTab === "profile" ? "Lecturer Profile" : activeTab}
                             </h1>
                             <p className="text-slate-500 font-medium">
                                 Lecturer Portal • {activeTab === "modules" ? "View and edit classes" :
                                     activeTab === "resources" ? "Upload and manage materials" :
                                         activeTab === "students" ? "Track performance metrics" :
-                                            activeTab === "profile" ? "Account Settings" : "Workspace"}
+                                            activeTab === "heatmap" ? "Identify difficult academic areas" :
+                                                activeTab === "profile" ? "Account Settings" : "Workspace"}
                             </p>
                         </div>
                     )}
@@ -305,7 +307,11 @@ export default function LecturerDashboard({ user, onLogout }) {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
 
+                {activeTab === "heatmap" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                         {/* Confusion Heatmap Section */}
                         <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -392,7 +398,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                 )}
 
                 {/* Placeholder for other tabs */}
-                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && (
+                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && (
                     <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto mb-8">
                             {activeTab === "modules" ? <BookOpen size={32} /> :

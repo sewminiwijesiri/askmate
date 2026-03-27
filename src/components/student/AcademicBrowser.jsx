@@ -71,6 +71,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     assignmentContext: "",
     codeSnippet: ""
   });
+  const [askErrors, setAskErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -188,6 +189,16 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
   const handleAskQuestion = async (e) => {
     e.preventDefault();
+    const errors = {};
+    if (!askData.title.trim()) errors.title = "Question title is required.";
+    if (!askData.description.trim()) errors.description = "Problem description is required.";
+    
+    if (Object.keys(errors).length > 0) {
+      setAskErrors(errors);
+      return;
+    }
+    
+    setAskErrors({});
     setSubmitError("");
     try {
       setIsSubmitting(true);
@@ -221,6 +232,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
         difficultyLevel: "Medium", whatIveTried: "", assignmentContext: "",
         codeSnippet: ""
       });
+      setAskErrors({});
       fetchQuestions();
     } catch (error) {
       setSubmitError("Network error. Please try again.");
@@ -244,15 +256,18 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   };
 
   const handleNextStep = () => {
-    setSubmitError("");
+    const errors = {};
     if (askStep === 1 && !askData.topic.trim()) {
-      setSubmitError("Please enter a topic.");
+      errors.topic = "Topic is required.";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setAskErrors(errors);
       return;
     }
-    if (askStep === 2 && (!askData.title.trim() || !askData.description.trim())) {
-      setSubmitError("Title and description are required.");
-      return;
-    }
+    
+    setAskErrors({});
+    setSubmitError("");
     setAskStep(s => Math.min(s + 1, 2));
   };
 
@@ -732,7 +747,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                   <p className="text-slate-500 text-sm mt-1">Ask questions, help peers, get answers.</p>
                 </div>
                 <button
-                  onClick={() => { setIsAskOpen(true); setSubmitError(""); }}
+                  onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }}
                   className="flex items-center gap-2 px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md active:scale-95"
                 >
                   <Plus size={16} /> Ask Question
@@ -781,7 +796,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                   <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
                     <HelpCircle size={36} className="text-slate-200 mb-3" />
                     <p className="text-slate-400 font-bold text-sm">No questions yet.</p>
-                    <button onClick={() => { setIsAskOpen(true); setSubmitError(""); }} className="mt-2 text-[#FF9F1C] font-bold text-sm hover:underline">Be the first to ask!</button>
+                    <button onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }} className="mt-2 text-[#FF9F1C] font-bold text-sm hover:underline">Be the first to ask!</button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
@@ -1041,11 +1056,15 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         type="text"
                         required
                         value={askData.topic}
-                        onChange={(e) => setAskData({ ...askData, topic: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        onChange={(e) => {
+                          setAskData({ ...askData, topic: e.target.value });
+                          if (askErrors.topic) setAskErrors({ ...askErrors, topic: null });
+                        }}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${askErrors.topic ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
                         placeholder="e.g. Networking Fundamentals"
                         autoFocus
                       />
+                      {askErrors.topic && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.topic}</p>}
                     </div>
                   </div>
                 )}
@@ -1063,12 +1082,16 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         type="text"
                         required
                         value={askData.title}
-                        onChange={(e) => setAskData({ ...askData, title: e.target.value })}
+                        onChange={(e) => {
+                          setAskData({ ...askData, title: e.target.value });
+                          if (askErrors.title) setAskErrors({ ...askErrors, title: null });
+                        }}
                         maxLength={200}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${askErrors.title ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
                         placeholder="e.g. What is the difference between TCP and UDP?"
                         autoFocus
                       />
+                      {askErrors.title && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.title}</p>}
                     </div>
 
                     <div className="space-y-1.5">
@@ -1076,10 +1099,14 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       <textarea
                         required
                         value={askData.description}
-                        onChange={(e) => setAskData({ ...askData, description: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        onChange={(e) => {
+                          setAskData({ ...askData, description: e.target.value });
+                          if (askErrors.description) setAskErrors({ ...askErrors, description: null });
+                        }}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none transition-all focus:bg-white ${askErrors.description ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
                         placeholder="Describe your question in detail..."
                       />
+                      {askErrors.description && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.description}</p>}
                     </div>
 
                     <div className="space-y-1.5 pt-2">
@@ -1357,7 +1384,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
               {/* Post Answer */}
               <div className="p-4 sm:p-6 border-t border-slate-100 shrink-0 bg-white">
-                <form onSubmit={handlePostAnswer} className="space-y-4">
+                {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer") || user?.role?.toLowerCase()?.includes("admin")) ? (
+                  <form onSubmit={handlePostAnswer} className="space-y-4">
                   {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
                     <div className="space-y-3">
                       <button 
@@ -1498,6 +1526,11 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                     </button>
                   </div>
                 </form>
+                ) : (
+                  <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <p className="text-sm font-bold text-slate-500">Only lecturers and helpers can post answers.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
