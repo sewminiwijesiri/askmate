@@ -19,7 +19,7 @@ const roles = [
 const registerSchema = z.object({
   role: z.enum(["student", "lecturer", "helper"]),
   id: z.string().min(1, "ID is required"),
-  name: z.string().optional(),
+  name: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   year: z.string().optional(),
   semester: z.string().optional(),
@@ -59,7 +59,7 @@ const registerSchema = z.object({
       }
     }
   } else if (data.role === "helper") {
-    if (!data.name) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Name is required", path: ["name"] });
+    // Removed manual name check as it's now governed by the base schema
     if (!data.graduationYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Graduation year is required", path: ["graduationYear"] });
     if (!data.skills) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Skills are required", path: ["skills"] });
   }
@@ -216,9 +216,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         </div>
 
         {/* Dynamic Fields */}
-        {selectedRole === "helper" && (
-          <InputField label="Full Name" name="name" placeholder="John Doe" />
-        )}
+        <InputField label="Full Name" name="name" placeholder="John Doe" />
 
         <div className="grid grid-cols-1 gap-3">
           <InputField

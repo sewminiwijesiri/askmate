@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AcademicManager from "@/components/admin/AcademicManager";
 import ConfusionAnalytics from "@/components/admin/ConfusionAnalytics";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import {
   Users,
   UserCheck,
@@ -27,7 +28,9 @@ import {
   Bell,
   User as UserIcon,
   TrendingUp,
-  Thermometer
+  Thermometer,
+  BarChart,
+  MessageSquare
 } from "lucide-react";
 // import SemesterHeatmap from "@/components/analytics/SemesterHeatmap";
 
@@ -42,7 +45,7 @@ export default function AdminDashboard() {
   const [admin, setAdmin] = useState(null);
   const [users, setUsers] = useState({ students: [], helpers: [], lecturers: [] });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("stats");
+  const [activeTab, setActiveTab] = useState("analytics");
   const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({ total: 0, pending: 0 });
   const [selectedUser, setSelectedUser] = useState(null);
@@ -195,11 +198,11 @@ export default function AdminDashboard() {
               <p className="px-4 py-2 text-[10px] font-bold text-blue-300/40 uppercase tracking-[0.2em] mb-2">Main Navigation</p>
 
               {[
+                { id: "analytics", label: "Analytics", icon: BarChart },
                 { id: "stats", label: "Metrics & Logs", icon: LayoutDashboard },
                 { id: "helpers", label: "Users & Roles", icon: Users, isUsers: true },
                 { id: "academic", label: "Academic Hub", icon: BookOpen },
                 { id: "confusion", label: "Confusion Analytics", icon: Thermometer },
-                { id: "settings", label: "System Config", icon: MoreVertical },
               ].map((item) => {
                 const isActive = item.isUsers
                   ? (activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers")
@@ -246,6 +249,7 @@ export default function AdminDashboard() {
               {activeTab === 'stats' ? 'Metrics & Logs' :
                 activeTab === 'academic' ? 'Academic Hub' :
                 activeTab === 'confusion' ? 'Confusion Analytics' :
+                activeTab === 'analytics' ? 'Platform Analytics' :
                   (activeTab === 'helpers' || activeTab === 'students' || activeTab === 'lecturers') ? 'Users & Roles' :
                     'System Overview'}
             </h1>
@@ -391,10 +395,12 @@ export default function AdminDashboard() {
                                   activeTab === 'lecturers' ? 'bg-indigo-100 text-indigo-600' :
                                     'bg-indigo-50 text-indigo-500'
                                   }`}>
-                                  {(user.name || user.username || "U")[0].toUpperCase()}
+                                  {(user.name || user.username || user.studentId || user.studentID || user.lecturerId || "M")[0].toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-semibold text-slate-900 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors">{user.name || user.username || "Anonymous Member"}</p>
+                                  <p className="text-sm font-semibold text-slate-900 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors">
+                                    {user.name || user.username || user.studentId || user.studentID || user.lecturerId || "Member"}
+                                  </p>
                                   <p className="text-xs text-slate-400 font-medium">{user.email}</p>
                                 </div>
                               </div>
@@ -513,14 +519,12 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* settings Tab Placeholder */}
-          {activeTab === "settings" && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
-                <MoreVertical size={40} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Administrative Configuration</h3>
-              <p className="text-slate-500 font-medium max-w-sm mx-auto">Global system parameters and governance protocols can be refined from this secure terminal access point.</p>
+
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+               <AdminAnalytics />
             </div>
           )}
 

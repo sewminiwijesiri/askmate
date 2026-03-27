@@ -88,7 +88,7 @@ export default function StudentDashboard() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-100 via-[#f8fafc] to-orange-100">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-[#002147]/10 border-t-[#FF9F1C] rounded-full animate-spin mb-4"></div>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing Portal...</p>
@@ -102,7 +102,7 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-[#f8fafc] to-orange-100 text-slate-800 font-sans selection:bg-blue-100">
       <StudentSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -156,7 +156,7 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-4">
             <NotificationBell user={user} />
 
-            <div className="flex items-center gap-3 bg-white pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200/50 shadow-sm">
               <div className="w-8 h-8 rounded-lg bg-[#002147] flex items-center justify-center text-white font-bold text-sm">
                 {user.userId?.[0]?.toUpperCase()}
               </div>
@@ -438,7 +438,7 @@ export default function StudentDashboard() {
       </main>
 
       {/* Mobile Nav Placeholder */}
-      < div className="lg:hidden fixed bottom-0 left-0 w-full h-20 bg-white border-t border-slate-200 flex items-center justify-around px-6 z-[100]" >
+      < div className="lg:hidden fixed bottom-0 left-0 w-full h-20 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 flex items-center justify-around px-6 z-[100]" >
         {
           [LayoutDashboard, GraduationCap, MessageSquare, User].map((Icon, i) => (
             <button key={i} className="p-3 text-slate-400 hover:text-[#002147] transition-colors">
@@ -453,7 +453,7 @@ export default function StudentDashboard() {
         
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
-          background-color: #f8fafc;
+          background: linear-gradient(to bottom right, #e0f2fe, #f8fafc, #ffedd5);
           -webkit-font-smoothing: antialiased;
         }
 
