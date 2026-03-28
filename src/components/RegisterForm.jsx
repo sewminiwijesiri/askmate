@@ -8,6 +8,49 @@ import * as z from "zod";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import Toast from "./Toast";
 
+const InputField = ({ label, name, placeholder, type = "text", options = null, register, errors, touchedFields, isSubmitted }) => {
+  const error = errors[name];
+  const isTouched = touchedFields[name];
+  const shouldShowError = !!error && (isTouched || isSubmitted);
+  const isInvalid = shouldShowError;
+
+  return (
+    <div className="w-full">
+      <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">
+        {label}
+      </label>
+      <div className="relative">
+        {options ? (
+          <select
+            {...register(name)}
+            className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+              } bg-gray-50 text-sm text-gray-900 outline-none transition-all appearance-none cursor-pointer pr-10`}
+          >
+            <option value="">{placeholder}</option>
+            {options.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={type}
+            placeholder={placeholder}
+            {...register(name)}
+            className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+              } bg-gray-50 text-sm text-gray-900 outline-none transition-all`}
+          />
+        )}
+        {options && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <ChevronDown size={18} />
+          </div>
+        )}
+      </div>
+      {shouldShowError && <p className="text-xs text-red-500 mt-1 font-medium">{error.message}</p>}
+    </div>
+  );
+};
+
 // --- Form Patterns and Config ---
 
 const roles = [
@@ -114,7 +157,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     if (isDirty) {
       trigger();
     }
-  }, [selectedRole, resetField, trigger, isDirty]);
+  }, [selectedRole, resetField, trigger]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -155,49 +198,6 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
   const currentRoleConfig = roles.find(r => r.id === selectedRole) || roles[0];
 
-  const InputField = ({ label, name, placeholder, type = "text", options = null }) => {
-    const error = errors[name];
-    const isTouched = touchedFields[name];
-    const shouldShowError = !!error && (isTouched || isSubmitted);
-    const isInvalid = shouldShowError;
-
-    return (
-      <div className="w-full">
-        <label className="block text-xs font-semibold text-gray-700 mb-1 ml-1">
-          {label}
-        </label>
-        <div className="relative">
-          {options ? (
-            <select
-              {...register(name)}
-              className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
-                } bg-gray-50 text-sm text-gray-900 outline-none transition-all appearance-none cursor-pointer pr-10`}
-            >
-              <option value="">{placeholder}</option>
-              {options.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type={type}
-              placeholder={placeholder}
-              {...register(name)}
-              className={`w-full px-3.5 py-2 rounded-xl border ${isInvalid ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
-                } bg-gray-50 text-sm text-gray-900 outline-none transition-all`}
-            />
-          )}
-          {options && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <ChevronDown size={18} />
-            </div>
-          )}
-        </div>
-        {shouldShowError && <p className="text-xs text-red-500 mt-1 font-medium">{error.message}</p>}
-      </div>
-    );
-  };
-
   return (
     <div className="w-full bg-white p-5 sm:p-6 rounded-3xl">
       <div className="text-center mb-3">
@@ -225,13 +225,19 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
         </div>
 
         {/* Dynamic Fields */}
-        <InputField label="Full Name" name="name" placeholder="John Doe" />
+        <InputField 
+          label="Full Name" 
+          name="name" 
+          placeholder="John Doe" 
+          register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted} 
+        />
 
         <div className="grid grid-cols-1 gap-3">
           <InputField
             label={currentRoleConfig.idLabel}
             name="id"
             placeholder={currentRoleConfig.idPlaceholder}
+            register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted}
           />
 
           <InputField
@@ -239,6 +245,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
             name="email"
             type="email"
             placeholder={selectedRole === "helper" ? "name@example.com" : `${currentRoleConfig.idPlaceholder}@my.sliit.lk`}
+            register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted}
           />
         </div>
 
@@ -249,20 +256,22 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
               name="year"
               placeholder="Select Year"
               options={["Year 1", "Year 2", "Year 3", "Year 4"]}
+              register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted}
             />
             <InputField
               label="Semester"
               name="semester"
               placeholder="Select Semester"
               options={["Semester 1", "Semester 2"]}
+              register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted}
             />
           </div>
         )}
 
         {selectedRole === "helper" && (
           <div className="grid grid-cols-2 gap-3">
-            <InputField label="Grad Year" name="graduationYear" placeholder="2024" type="number" />
-            <InputField label="Skills" name="skills" placeholder="Java, React, Node" />
+            <InputField label="Grad Year" name="graduationYear" placeholder="2024" type="number" register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted} />
+            <InputField label="Skills" name="skills" placeholder="Java, React, Node" register={register} errors={errors} touchedFields={touchedFields} isSubmitted={isSubmitted} />
           </div>
         )}
 

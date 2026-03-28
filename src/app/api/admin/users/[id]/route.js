@@ -25,13 +25,13 @@ export async function PATCH(req, { params }) {
     await connectDB();
 
     if (role === 'helper' && action === 'approve') {
-        const helper = await Helper.findByIdAndUpdate(id, { adminApproved: true }, { new: true });
+        const helper = await Helper.findByIdAndUpdate(id, { adminApproved: true }, { returnDocument: 'after' });
         if (!helper) return NextResponse.json({ message: "Helper not found" }, { status: 404 });
         return NextResponse.json({ message: "Helper approved successfully", helper }, { status: 200 });
     }
 
     if (role === 'helper' && action === 'disapprove') {
-        const helper = await Helper.findByIdAndUpdate(id, { adminApproved: false }, { new: true });
+        const helper = await Helper.findByIdAndUpdate(id, { adminApproved: false }, { returnDocument: 'after' });
         if (!helper) return NextResponse.json({ message: "Helper not found" }, { status: 404 });
         return NextResponse.json({ message: "Helper disapproval successful", helper }, { status: 200 });
     }

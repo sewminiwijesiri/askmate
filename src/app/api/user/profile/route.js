@@ -4,6 +4,7 @@ import Lecturer from "@/models/Lecturer";
 import Helper from "@/models/Helper";
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export async function GET(req) {
     try {
@@ -82,9 +83,28 @@ export async function PUT(req) {
             if (data[field] !== undefined) {
                 // Don't allow clearing required fields with empty strings
                 if ((field === "name" || field === "email") && data[field] === "") return;
+                
+                // Don't include empty optional password
+                if (field === "password" && !data[field]) return;
+
                 filteredData[field] = data[field];
             }
         });
+
+        // 🔐 Handle Password Updates
+        if (filteredData.password) {
+            // Validate password strength
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+            if (!passwordRegex.test(filteredData.password)) {
+                return NextResponse.json({ 
+                    message: "Password must be at least 8 characters long and include uppercase, lowercase, number, and a special character (@$!%*?&#)." 
+                }, { status: 400 });
+            }
+
+            // Hash the password
+            const salt = await bcrypt.genSalt(10);
+            filteredData.password = await bcrypt.hash(filteredData.password, salt);
+        }
 
         if (currentUser.role === "student") userModel = Student;
         else if (currentUser.role === "lecturer") userModel = Lecturer;
