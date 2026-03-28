@@ -237,8 +237,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Roles / Community Section */}
-        <section className="py-24 bg-[#00152edd]">
+        {/* Roles / Community Section / Partners */}
+        <section id="partners" className="py-24 bg-[#00152edd]">
            <div className="container mx-auto px-4 md:px-6">
               <div className="bg-blue-50 rounded-[3rem] p-8 md:p-20 relative overflow-hidden text-[#002147]">
                  {/* Decorative background circles */}
@@ -295,8 +295,89 @@ export default function Home() {
               </div>
            </div>
         </section>
+        
+        {/* Resources Preview Section */}
+        <section id="resources" className="py-24 bg-[#001835] relative overflow-hidden">
+           <div className="container mx-auto px-4 md:px-6 relative z-10">
+              <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+                 
+                 {/* Text Content */}
+                 <div className="flex-1 text-center lg:text-left">
+                    <div className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-1.5 text-sm font-semibold text-blue-100 mb-8">
+                      <span className="flex h-2.5 w-2.5 rounded-full bg-[#FF9F1C] mr-3"></span>
+                      Resource Library
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-[1.1] tracking-tight">
+                       Everything You Need <br />
+                       To <span className="text-[#FF9F1C]">Ace Your Exams</span>
+                    </h2>
+                    <p className="text-xl text-blue-200 mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                       Access a massive collection of high-quality learning materials contributed by thousands of SLIIT students.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+                       {[
+                         { t: "Verified Content", d: "Reviewed by top students." },
+                         { t: "Easy Search", d: "Find by module code." }
+                       ].map((item, i) => (
+                          <div key={i} className="flex gap-4 items-start justify-center lg:justify-start">
+                             <div className="w-6 h-6 rounded-full bg-[#FF9F1C] flex items-center justify-center flex-shrink-0 mt-1">
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                                </svg>
+                             </div>
+                             <div className="text-left">
+                                <h4 className="font-bold text-white mb-1">{item.t}</h4>
+                                <p className="text-blue-200 text-sm leading-snug">{item.d}</p>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
 
-      </main>
+                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
+                       <button 
+                         onClick={openRegister}
+                         className="px-10 py-5 bg-[#FF9F1C] text-white font-black rounded-full hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 active:scale-95 cursor-pointer"
+                       >
+                          Explore Resources
+                       </button>
+                    </div>
+                 </div>
+
+                 {/* Visual Mockup of Resources */}
+                 <div className="flex-1 w-full max-w-xl mx-auto">
+                    <div className="grid grid-cols-2 gap-6 p-4">
+                       {[
+                         { title: "Past Papers", cat: "Exam Data", color: "bg-blue-100", icon: "📄", iconTextColor: "text-blue-600" },
+                         { title: "Module Notes", cat: "Study Material", color: "bg-orange-100", icon: "📓", iconTextColor: "text-orange-600" },
+                         { title: "Summaries", cat: "Revision", color: "bg-sky-100", icon: "🎴", iconTextColor: "text-sky-600" },
+                         { title: "Lab Reports", cat: "Practical", color: "bg-emerald-100", icon: "🧪", iconTextColor: "text-emerald-600" }
+                       ].map((res, i) => (
+                          <div key={i} className={`bg-white rounded-[2rem] p-8 shadow-2xl hover:scale-105 transition-all duration-500 cursor-pointer ${i % 2 === 1 ? 'mt-12' : ''}`}>
+                             <div className={`w-14 h-14 ${res.color} rounded-2xl flex items-center justify-center text-3xl mb-6 ${res.iconTextColor}`}>
+                                {res.icon}
+                             </div>
+                             <div className="text-[10px] uppercase tracking-widest font-black text-gray-400 mb-2">{res.cat}</div>
+                             <h4 className="text-xl font-bold text-[#002147]">{res.title}</h4>
+                             <div className="mt-4 flex items-center gap-2">
+                                <div className="h-1 w-12 bg-gray-100 rounded-full overflow-hidden">
+                                   <div className={`h-full ${res.color.replace('100', '500')} w-3/4`}></div>
+                                </div>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+
+              </div>
+           </div>
+           
+           {/* Decorative Background Elements */}
+           <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent opacity-50"></div>
+           <div className="absolute bottom-1/4 left-0 w-64 h-64 bg-[#FF9F1C]/5 rounded-full filter blur-3xl"></div>
+        </section>
+        
+     </main>
 
       {/* Footer */}
       <footer className="bg-white pt-20 pb-10 text-gray-600 border-t border-blue-100">
