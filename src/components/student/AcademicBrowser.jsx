@@ -61,10 +61,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [qaLoading, setQaLoading] = useState(false);
   const [isAskOpen, setIsAskOpen] = useState(false);
   const [askStep, setAskStep] = useState(1);
-  const [askData, setAskData] = useState({ 
-    title: "", 
-    description: "", 
-    topic: "", 
+  const [askData, setAskData] = useState({
+    title: "",
+    description: "",
+    topic: "",
     urgencyLevel: "Normal",
     difficultyLevel: "Medium",
     whatIveTried: "",
@@ -227,7 +227,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
       }
       setIsAskOpen(false);
       setAskStep(1);
-      setAskData({ 
+      setAskData({
         title: "", description: "", topic: "", urgencyLevel: "Normal",
         difficultyLevel: "Medium", whatIveTried: "", assignmentContext: "",
         codeSnippet: ""
@@ -709,7 +709,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Contributor</span>
-                                <button 
+                                <button
                                   onClick={(e) => { e.stopPropagation(); setViewingProfileId(res.uploadedBy); }}
                                   className="text-[11px] font-bold text-slate-700 leading-none text-left hover:text-blue-600 hover:underline transition-colors focus:outline-none"
                                 >
@@ -761,11 +761,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                     <button
                       key={f}
                       onClick={() => setQaFilter(f)}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${
-                        qaFilter === f
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${qaFilter === f
                           ? "bg-[#002147] text-white shadow-lg"
                           : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
-                      }`}
+                        }`}
                     >
                       {f}
                     </button>
@@ -790,7 +789,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                 </div>
               ) : (() => {
                 const filtered = questions
-                  .filter((q) => qaFilter === "all" ? true : qaFilter === "resolved" ? q.isResolved : !q.isResolved)
+                  .filter((q) => qaFilter === "all" ? true : qaFilter === "resolved" ? (q.answersCount || 0) > 0 : !q.isResolved)
                   .filter((q) => !qaSearch || q.title.toLowerCase().includes(qaSearch.toLowerCase()) || q.description.toLowerCase().includes(qaSearch.toLowerCase()));
                 return filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
@@ -833,7 +832,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               )}
                               <span className="text-[10px] text-slate-400 font-medium">{timeSince(q.createdAt)}</span>
                               <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                              <button 
+                              <button
                                 onClick={(e) => { e.stopPropagation(); setViewingProfileId(q.student?._id || q.student?.studentId); }}
                                 className="text-[10px] text-blue-600/70 font-bold uppercase tracking-widest hover:text-blue-600 hover:underline transition-colors focus:outline-none"
                               >
@@ -1034,7 +1033,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       <h3 className="text-[#002147] font-bold mb-1">Academic Structure</h3>
                       <p className="text-xs text-slate-500 mb-4">Confirm your academic context before asking.</p>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">Year</span>
@@ -1124,13 +1123,13 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       <div className="grid grid-cols-2 gap-4">
                         {["Normal", "Urgent"].map(urgency => (
                           <label key={urgency} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${askData.urgencyLevel === urgency ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300'}`}>
-                            <input 
-                              type="radio" 
-                              name="urgencyLevel" 
-                              className="hidden" 
-                              value={urgency} 
-                              checked={askData.urgencyLevel === urgency} 
-                              onChange={(e) => setAskData({ ...askData, urgencyLevel: e.target.value })} 
+                            <input
+                              type="radio"
+                              name="urgencyLevel"
+                              className="hidden"
+                              value={urgency}
+                              checked={askData.urgencyLevel === urgency}
+                              onChange={(e) => setAskData({ ...askData, urgencyLevel: e.target.value })}
                             />
                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${askData.urgencyLevel === urgency ? 'border-amber-600' : 'border-slate-300'}`}>
                               {askData.urgencyLevel === urgency && <div className="w-2 h-2 rounded-full bg-amber-600"></div>}
@@ -1153,7 +1152,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                 >
                   {askStep > 1 ? "Back" : "Cancel"}
                 </button>
-                
+
                 {askStep < 2 ? (
                   <button
                     type="button"
@@ -1206,7 +1205,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       )}
                       <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
                       <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); setViewingProfileId(selectedQuestion.student?._id || selectedQuestion.student?.studentId); }}
                         className="text-[10px] text-blue-600 font-black uppercase tracking-widest hover:underline transition-colors focus:outline-none"
                       >
@@ -1335,29 +1334,27 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       )}
 
                       <div className="flex items-center gap-3 mt-3 pt-4 border-t border-slate-200/50">
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm transition-transform hover:scale-105 focus:outline-none ${
-                          ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' : 
-                          ans.student?.role === 'helper' ? 'bg-[#002147] text-white' : 
-                          'bg-slate-200 text-slate-600'
-                        }`}>
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm transition-transform hover:scale-105 focus:outline-none ${ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' :
+                              ans.student?.role === 'helper' ? 'bg-[#002147] text-white' :
+                                'bg-slate-200 text-slate-600'
+                            }`}>
                           {((ans.student?.name || ans.student?.studentId || "A")[0]).toUpperCase()}
                         </button>
                         <div>
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
                             className="text-[11px] font-bold text-[#002147] leading-none mb-1 text-left hover:text-blue-600 hover:underline transition-colors focus:outline-none"
                           >
-                            {ans.student?.name || ans.student?.studentId || "Anonymous"} 
+                            {ans.student?.name || ans.student?.studentId || "Anonymous"}
                             <span className="ml-1 text-[9px] text-slate-400 font-medium">({ans.student?.studentId})</span>
                           </button>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${
-                              ans.student?.role === 'lecturer' ? 'text-orange-600' : 
-                              ans.student?.role === 'helper' ? 'text-blue-600' : 
-                              'text-slate-400'
-                            }`}>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${ans.student?.role === 'lecturer' ? 'text-orange-600' :
+                                ans.student?.role === 'helper' ? 'text-blue-600' :
+                                  'text-slate-400'
+                              }`}>
                               {ans.student?.role || 'User'}
                             </span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
@@ -1388,7 +1385,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                   <form onSubmit={handlePostAnswer} className="space-y-4">
                   {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
                     <div className="space-y-3">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowExpertMode(!showExpertMode)}
                         className="w-full flex items-center justify-between p-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
@@ -1419,7 +1416,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                                 className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
                               />
                             </div>
-                            
+
                             {/* Rest of the Expert Content remains the same but inside this new scrollable container */}
                             {/* Hints */}
                             <div className="space-y-2">
@@ -1646,7 +1643,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
           </div>
         </div>
       </div>
-      
+
       {viewingProfileId && <UserProfileModal userId={viewingProfileId} currentUser={user} onClose={() => setViewingProfileId(null)} />}
     </div>
   );
