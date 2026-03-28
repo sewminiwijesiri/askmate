@@ -47,14 +47,14 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
     },
   });
 
-  // Update role if adminMode changes
+  // Reset form when adminMode changes or component mounts to ensure a clean state and clear autofill
   useEffect(() => {
-    if (adminMode) {
-      setValue("role", "admin");
-    } else {
-      setValue("role", "student");
-    }
-  }, [adminMode, setValue]);
+    reset({
+      role: adminMode ? "admin" : "student",
+      id: "",
+      password: "",
+    });
+  }, [adminMode, reset]);
 
   const selectedRole = watch("role");
 
@@ -123,7 +123,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
         {/* Role Selection (Only if not Admin) */}
         {!adminMode && (
           <div className="w-full">
@@ -152,6 +152,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
               type="text"
               placeholder={getIdPlaceholder()}
               {...register("id")}
+              autoComplete="off"
               className={`w-full px-3.5 py-2 rounded-xl border ${errors.id && (touchedFields.id || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-10`}
             />
@@ -170,6 +171,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...register("password")}
+              autoComplete="new-password"
               className={`w-full px-3.5 py-2 rounded-xl border ${errors.password && (touchedFields.password || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-12`}
             />

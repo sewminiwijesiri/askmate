@@ -192,10 +192,10 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
                 </div>
               </div>
               <h3 className="text-xl font-bold text-[#002147] mb-1">
-                {profileData.name || profileData.studentId || profileData.lecturerId || profileData.username}
+                {profileData?.name || profileData?.studentId || profileData?.lecturerId || profileData?.username || user?.name || "User"}
               </h3>
               <p className="text-sm text-slate-400 font-bold uppercase tracking-wider mb-4">
-                {profileData.role || user.role}
+                {profileData?.role || user?.role}
               </p>
 
               <div className="space-y-3 pt-4 border-t border-slate-50 text-left">
@@ -203,22 +203,22 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
                   <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
                     <Mail size={14} />
                   </div>
-                  <span className="text-sm font-medium truncate">{profileData.email}</span>
+                  <span className="text-sm font-medium truncate">{profileData?.email || user?.email}</span>
                 </div>
-                {profileData.year && (
+                {profileData?.year && (
                   <div className="flex items-center gap-3 text-slate-500">
                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
                       <Calendar size={14} />
                     </div>
-                    <span className="text-sm font-medium">Year {parseInt(String(profileData.year).replace(/\D/g, "")) || 1}, Semester {parseInt(String(profileData.semester).replace(/\D/g, "")) || 1}</span>
+                    <span className="text-sm font-medium">Year {parseInt(String(profileData?.year).replace(/\D/g, "")) || 1}, Semester {parseInt(String(profileData?.semester).replace(/\D/g, "")) || 1}</span>
                   </div>
                 )}
-                {profileData.studentId && (
+                {profileData?.studentId && (
                   <div className="flex items-center gap-3 text-slate-500">
                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
                       <BookOpen size={14} />
                     </div>
-                    <span className="text-sm font-medium">ID: {profileData.studentId}</span>
+                    <span className="text-sm font-medium">ID: {profileData?.studentId}</span>
                   </div>
                 )}
               </div>
@@ -231,7 +231,7 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
           <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
             <form onSubmit={handleUpdate} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(user.role === 'helper' || user.role === 'admin') && (
+                {(user.role === 'lecturer' || user.role === 'helper' || user.role === 'admin') && (
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">Full Name</label>
                     <div className="relative">
