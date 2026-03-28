@@ -48,7 +48,7 @@ export async function PATCH(req) {
         await connectDB();
         const body = await req.json();
         const { id, status } = body;
-        const updatedReport = await Report.findByIdAndUpdate(id, { status }, { new: true });
+        const updatedReport = await Report.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
         return NextResponse.json(updatedReport);
     } catch (error) {
         return NextResponse.json({ error: "Failed to update report status" }, { status: 500 });

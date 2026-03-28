@@ -99,7 +99,7 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const updatedResource = await Resource.findByIdAndUpdate(id, data, { new: true });
+    const updatedResource = await Resource.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     
     // Trigger re-ingestion if status or content changed
     if (data.status === "approved" || (updatedResource.status === "approved" && data.textContent)) {

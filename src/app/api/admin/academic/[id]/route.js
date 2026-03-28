@@ -10,7 +10,7 @@ export async function PATCH(req, { params }) {
     moduleId = id;
     await connectDB();
     requestData = await req.json();
-    const updatedModule = await Module.findByIdAndUpdate(id, requestData, { new: true });
+    const updatedModule = await Module.findByIdAndUpdate(id, requestData, { returnDocument: 'after' });
     if (!updatedModule) return NextResponse.json({ error: "Module not found" }, { status: 404 });
     return NextResponse.json(updatedModule);
   } catch (error) {
