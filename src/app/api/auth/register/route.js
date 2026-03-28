@@ -16,6 +16,15 @@ export async function POST(req) {
       );
     }
 
+    // Strong password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return NextResponse.json(
+            { message: "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character." },
+            { status: 400 }
+        );
+    }
+
     await connectDB();
 
     const formattedId = id.toUpperCase();

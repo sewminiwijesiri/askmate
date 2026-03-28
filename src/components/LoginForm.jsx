@@ -36,7 +36,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
     watch,
     setValue,
     reset,
-    formState: { errors, isValid },
+    formState: { errors, isValid, touchedFields, isSubmitted },
   } = useForm({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
@@ -152,14 +152,14 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
               type="text"
               placeholder={getIdPlaceholder()}
               {...register("id")}
-              className={`w-full px-3.5 py-2 rounded-xl border ${errors.id ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.id && (touchedFields.id || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-10`}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
               {adminMode ? <ShieldCheck size={16} /> : <User size={16} />}
             </div>
           </div>
-          {errors.id && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.id.message}</p>}
+          {errors.id && (touchedFields.id || isSubmitted) && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.id.message}</p>}
         </div>
 
         {/* Password Field */}
@@ -170,7 +170,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...register("password")}
-              className={`w-full px-3.5 py-2 rounded-xl border ${errors.password ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.password && (touchedFields.password || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-12`}
             />
             <button
@@ -181,12 +181,12 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          {errors.password && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.password.message}</p>}
+          {errors.password && (touchedFields.password || isSubmitted) && <p className="text-xs text-red-500 mt-0.5 font-medium ml-1">{errors.password.message}</p>}
         </div>
 
         <button
           type="submit"
-          disabled={!isValid || isLoading}
+          disabled={isLoading}
           className={`w-full py-2.5 px-6 ${adminMode ? 'bg-gray-900 shadow-gray-200' : 'bg-[#002147] shadow-[#002147]/20'} hover:opacity-90 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm`}
         >
           {isLoading ? (
