@@ -146,15 +146,26 @@ export default function AcademicManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newModule, year: selectedYear, semester: selectedSemester }),
       });
+      
+      const data = await res.json();
+      
       if (res.ok) {
         fetchModules();
         setNewModule({ moduleName: "", moduleCode: "", description: "" });
         setModuleErrors({});
         setTouched({});
         setIsAddingMode(false);
+      } else {
+        // Set API error to the specific field if possible
+        if (data.error && data.error.toLowerCase().includes("module code")) {
+          setModuleErrors({ ...errors, moduleCode: data.error });
+        } else {
+          setModuleErrors({ ...errors, global: data.error || "Failed to add module" });
+        }
       }
     } catch (error) {
       console.error("Error adding module:", error);
+      setModuleErrors({ ...errors, global: "Connection error. Please try again." });
     }
   };
 
@@ -173,6 +184,9 @@ export default function AcademicManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newModule),
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         fetchModules();
         setNewModule({ moduleName: "", moduleCode: "", description: "" });
@@ -180,9 +194,17 @@ export default function AcademicManager() {
         setModuleErrors({});
         setTouched({});
         setIsAddingMode(false);
+      } else {
+        // Set API error to the specific field if possible
+        if (data.error && data.error.toLowerCase().includes("module code")) {
+          setModuleErrors({ ...errors, moduleCode: data.error });
+        } else {
+          setModuleErrors({ ...errors, global: data.error || "Failed to update module" });
+        }
       }
     } catch (error) {
       console.error("Error updating module:", error);
+      setModuleErrors({ ...errors, global: "Connection error. Please try again." });
     }
   };
 
@@ -613,6 +635,12 @@ export default function AcademicManager() {
               </button>
             </div>
             <form onSubmit={editingModule ? handleUpdateModule : handleAddModule} className="p-8 space-y-5">
+              {moduleErrors.global && (
+                <div className="bg-rose-50 border border-rose-100 p-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <AlertCircle className="text-rose-500 flex-shrink-0" size={18} />
+                  <p className="text-xs font-bold text-rose-600">{moduleErrors.global}</p>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-0.5">Module Name</label>
                 <input
