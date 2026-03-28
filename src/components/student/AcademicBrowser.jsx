@@ -72,7 +72,150 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     codeSnippet: ""
   });
   const [askErrors, setAskErrors] = useState({});
+  const [askTouched, setAskTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ── Inline Validation Utilities ──
+  const TOPIC_ALLOWED_PATTERN = /^[a-zA-Z0-9\s/,.\-&()]+$/;
+  const ONLY_NUMBERS = /^[0-9\s]+$/;
+  const ONLY_SYMBOLS = /^[^a-zA-Z0-9]+$/;
+  const HAS_LETTER = /[a-zA-Z]/;
+  const GIBBERISH_WORDS = [
+    'test', 'testing', 'asdf', 'asdfg', 'asdfgh', 'asdfghjk', 'qwerty', 'qwer',
+    'abcd', 'abcde', 'abc', 'aaa', 'bbb', 'ccc', 'xxx', 'zzz', 'hello',
+    'hi', 'help', 'pls', 'plz', 'lol', 'idk', 'na', 'none', 'nil', 'nothing',
+    'random', 'stuff', 'thing', 'things', 'something', 'anything', 'blah',
+    'foo', 'bar', 'baz', 'temp', 'tmp', 'sample', 'example', 'demo',
+  ];
+
+  const isGibberish = (text) => {
+    const t = text.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!t) return false;
+    // Exact match against known gibberish words
+    if (GIBBERISH_WORDS.includes(t)) return true;
+    // Only repeated chars: aaa, bbbbb, etc.
+    if (/^(.)\1+$/.test(t.replace(/\s/g, ''))) return true;
+    // Mostly repeated chars (e.g. "aaabbb", "xxxyyyzzz")
+    const stripped = t.replace(/\s/g, '');
+    const unique = new Set(stripped.split('')).size;
+    if (stripped.length >= 6 && unique <= 2) return true;
+    // Keyboard-walk patterns (horizontal and vertical simplified)
+    const walks = [
+      'asdfgh', 'qwerty', 'zxcvbn', 'qazwsx', 'edcrfv', 'tgbyhn', 'ujmikol',
+      '123456', '654321', '012345', 'poiuyt', 'lkjhgf', 'mnbvcx'
+    ];
+    if (walks.some(walk => stripped.includes(walk))) return true;
+    // All same words repeated: "test test test"
+    const words = t.split(' ').filter(Boolean);
+    if (words.length >= 2 && new Set(words).size === 1 && GIBBERISH_WORDS.includes(words[0])) return true;
+    return false;
+  };
+
+  const validateField = (field, value) => {
+    const trimmed = (value || '').trim().replace(/\s{2,}/g, ' ');
+    switch (field) {
+      case 'topic': {
+        if (!trimmed) return 'Topic / Sub-topic is required';
+        if (trimmed.length < 3) return 'Topic must be at least 3 characters';
+        if (trimmed.length > 100) return 'Topic / Sub-topic cannot exceed 100 characters';
+        if (!TOPIC_ALLOWED_PATTERN.test(trimmed)) return 'Topic / Sub-topic contains invalid characters';
+        if (ONLY_NUMBERS.test(trimmed)) return 'Topic must contain letters, not only numbers';
+        if (!HAS_LETTER.test(trimmed)) return 'Topic must contain at least one letter';
+        if (ONLY_SYMBOLS.test(trimmed)) return 'Please enter a meaningful topic / sub-topic';
+        if (isGibberish(trimmed)) return 'Please enter a meaningful topic / sub-topic';
+        return null;
+      }
+      case 'title': {
+        if (!trimmed) return 'Question title is required';
+        if (trimmed.length < 10) return 'Question title must be at least 10 characters';
+        if (trimmed.length > 150) return 'Question title cannot exceed 150 characters';
+        if (!HAS_LETTER.test(trimmed) || ONLY_NUMBERS.test(trimmed) || ONLY_SYMBOLS.test(trimmed) || isGibberish(trimmed)) {
+          return 'Please enter a meaningful question title';
+        }
+        return null;
+      }
+      case 'description': {
+        if (!trimmed) return 'Problem description is required';
+        if (trimmed.length < 20) return 'Problem description must be at least 20 characters';
+        if (trimmed.length > 1000) return 'Problem description cannot exceed 1000 characters';
+        if (!HAS_LETTER.test(trimmed) || ONLY_SYMBOLS.test(trimmed) || isGibberish(trimmed)) {
+          return 'Please enter a clear and meaningful problem description';
+        }
+        return null;
+      }
+      case 'whatIveTried': {
+        if (!trimmed) return null; // optional
+        if (trimmed.length < 5 || !HAS_LETTER.test(trimmed) || isGibberish(trimmed)) {
+          return 'Please explain a little more about where you are stuck';
+        }
+        if (trimmed.length > 500) return 'Where Are You Stuck? cannot exceed 500 characters';
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const closeAskModal = () => {
+    setIsAskOpen(false);
+    setAskStep(1);
+    setAskData({
+      title: "", description: "", topic: "", urgencyLevel: "Normal",
+      difficultyLevel: "Medium", whatIveTried: "", assignmentContext: "",
+      codeSnippet: ""
+    });
+    setAskErrors({});
+    setAskTouched({});
+    setSubmitError("");
+  };
+
+  const cleanFieldValue = (field, value) => {
+    // Replace multiple consecutive spaces with a single space for all fields
+    let cleaned = value.replace(/  +/g, ' ');
+    // For topic, also strip disallowed chars live (keep the cursor smooth)
+    return cleaned;
+  };
+
+  const handleFieldChange = (field, value) => {
+    const cleaned = cleanFieldValue(field, value);
+    setAskData(prev => ({ ...prev, [field]: cleaned }));
+    // Real-time validation only if field was already touched (blur or submit attempt)
+    if (askTouched[field]) {
+      const error = validateField(field, cleaned);
+      setAskErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const handleFieldBlur = (field) => {
+    setAskTouched(prev => ({ ...prev, [field]: true }));
+    // Trim leading/trailing whitespace on blur
+    setAskData(prev => ({ ...prev, [field]: (prev[field] || '').trim().replace(/\s{2,}/g, ' ') }));
+    const error = validateField(field, askData[field]);
+    setAskErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const getCharInfo = (field, value) => {
+    const limits = { topic: { min: 3, max: 100 }, title: { min: 10, max: 150 }, description: { min: 20, max: 1000 }, whatIveTried: { min: 5, max: 500 } };
+    const l = limits[field];
+    if (!l) return null;
+    const len = (value || '').trim().length;
+    const isOptional = field === 'whatIveTried';
+    if (isOptional && len === 0) return { len, max: l.max, color: 'text-slate-400', min: l.min };
+    if (len > l.max) return { len, max: l.max, color: 'text-red-500', min: l.min };
+    if (len < l.min) return { len, max: l.max, color: 'text-amber-500', min: l.min };
+    return { len, max: l.max, color: 'text-emerald-500', min: l.min };
+  };
+
+  // Helper: border + ring class based on error/success state
+  const getFieldClasses = (field) => {
+    const hasError = askErrors[field];
+    const isTouched = askTouched[field];
+    const value = (askData[field] || '').trim();
+    const isValid = isTouched && !hasError && value.length > 0;
+    if (hasError) return 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20';
+    if (isValid) return 'border-emerald-400 focus:border-emerald-500 ring-1 ring-emerald-400/20';
+    return 'border-slate-200 focus:border-blue-500';
+  };
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [ansLoading, setAnsLoading] = useState(false);
@@ -189,12 +332,19 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
   const handleAskQuestion = async (e) => {
     e.preventDefault();
+    // Mark all step 2 fields as touched
+    setAskTouched(prev => ({ ...prev, title: true, description: true, whatIveTried: true }));
+
     const errors = {};
-    if (!askData.title.trim()) errors.title = "Question title is required.";
-    if (!askData.description.trim()) errors.description = "Problem description is required.";
+    const titleErr = validateField('title', askData.title);
+    const descErr = validateField('description', askData.description);
+    const stuckErr = validateField('whatIveTried', askData.whatIveTried);
+    if (titleErr) errors.title = titleErr;
+    if (descErr) errors.description = descErr;
+    if (stuckErr) errors.whatIveTried = stuckErr;
     
     if (Object.keys(errors).length > 0) {
-      setAskErrors(errors);
+      setAskErrors(prev => ({ ...prev, ...errors }));
       return;
     }
     
@@ -233,6 +383,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
         codeSnippet: ""
       });
       setAskErrors({});
+      setAskTouched({});
       fetchQuestions();
     } catch (error) {
       setSubmitError("Network error. Please try again.");
@@ -256,14 +407,18 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   };
 
   const handleNextStep = () => {
-    const errors = {};
-    if (askStep === 1 && !askData.topic.trim()) {
-      errors.topic = "Topic is required.";
-    }
-    
-    if (Object.keys(errors).length > 0) {
-      setAskErrors(errors);
-      return;
+    if (askStep === 1) {
+      // Mark topic as touched
+      setAskTouched(prev => ({ ...prev, topic: true }));
+      // Trim the topic value
+      const trimmedTopic = askData.topic.trim().replace(/  +/g, ' ');
+      setAskData(prev => ({ ...prev, topic: trimmedTopic }));
+      
+      const topicErr = validateField('topic', trimmedTopic);
+      if (topicErr) {
+        setAskErrors(prev => ({ ...prev, topic: topicErr }));
+        return;
+      }
     }
     
     setAskErrors({});
@@ -1009,7 +1164,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       Step {askStep} of 2 <span className="w-1 h-1 bg-blue-400 rounded-full"></span> {selectedModule?.moduleName}
                     </p>
                   </div>
-                  <button onClick={() => setIsAskOpen(false)} className="p-2 rounded-xl hover:bg-white/10 text-white/70 transition-all">
+                  <button onClick={closeAskModal} className="p-2 rounded-xl hover:bg-white/10 text-white/70 transition-all">
                     <X size={18} />
                   </button>
                 </div>
@@ -1050,20 +1205,22 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                     </div>
 
                     <div className="space-y-1.5 pt-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Topic / Sub-topic <span className="text-red-400">*</span></label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase">Topic / Sub-topic <span className="text-red-400">*</span></label>
+                        {(() => { const c = getCharInfo('topic', askData.topic); return c && (askTouched.topic || askData.topic.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
+                      </div>
                       <input
                         type="text"
-                        required
                         value={askData.topic}
-                        onChange={(e) => {
-                          setAskData({ ...askData, topic: e.target.value });
-                          if (askErrors.topic) setAskErrors({ ...askErrors, topic: null });
-                        }}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${askErrors.topic ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
+                        onChange={(e) => handleFieldChange('topic', e.target.value)}
+                        onBlur={() => handleFieldBlur('topic')}
+                        maxLength={100}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${getFieldClasses('topic')}`}
                         placeholder="e.g. Networking Fundamentals"
                         autoFocus
                       />
-                      {askErrors.topic && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.topic}</p>}
+                      {askErrors.topic && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.topic}</p>}
+                      {!askErrors.topic && askTouched.topic && askData.topic.trim().length >= 3 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
                     </div>
                   </div>
                 )}
@@ -1075,51 +1232,65 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       <p className="text-xs text-slate-500 mb-4">Provide a clear title and description of your problem.</p>
                     </div>
 
+                    {/* ── Question Title ── */}
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Question Title <span className="text-red-400">*</span></label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase">Question Title <span className="text-red-400">*</span></label>
+                        {(() => { const c = getCharInfo('title', askData.title); return c && (askTouched.title || askData.title.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
+                      </div>
                       <input
                         type="text"
-                        required
                         value={askData.title}
-                        onChange={(e) => {
-                          setAskData({ ...askData, title: e.target.value });
-                          if (askErrors.title) setAskErrors({ ...askErrors, title: null });
-                        }}
-                        maxLength={200}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${askErrors.title ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
+                        onChange={(e) => handleFieldChange('title', e.target.value)}
+                        onBlur={() => handleFieldBlur('title')}
+                        maxLength={160}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${getFieldClasses('title')}`}
                         placeholder="e.g. What is the difference between TCP and UDP?"
                         autoFocus
                       />
-                      {askErrors.title && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.title}</p>}
+                      {askErrors.title && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.title}</p>}
+                      {!askErrors.title && askTouched.title && askData.title.trim().length >= 10 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
                     </div>
 
+                    {/* ── Problem Description ── */}
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Problem Description <span className="text-red-400">*</span></label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase">Problem Description <span className="text-red-400">*</span></label>
+                        {(() => { const c = getCharInfo('description', askData.description); return c && (askTouched.description || askData.description.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
+                      </div>
                       <textarea
-                        required
                         value={askData.description}
-                        onChange={(e) => {
-                          setAskData({ ...askData, description: e.target.value });
-                          if (askErrors.description) setAskErrors({ ...askErrors, description: null });
-                        }}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none transition-all focus:bg-white ${askErrors.description ? 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20' : 'border-slate-200 focus:border-blue-500'}`}
+                        onChange={(e) => handleFieldChange('description', e.target.value)}
+                        onBlur={() => handleFieldBlur('description')}
+                        maxLength={1050}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none transition-all focus:bg-white ${getFieldClasses('description')}`}
                         placeholder="Describe your question in detail..."
                       />
-                      {askErrors.description && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {askErrors.description}</p>}
+                      {askErrors.description && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.description}</p>}
+                      {!askErrors.description && askTouched.description && askData.description.trim().length >= 20 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
                     </div>
 
+                    {/* ── Where Are You Stuck? ── */}
                     <div className="space-y-1.5 pt-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Where are you stuck?</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase">Where are you stuck? <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+                        {(() => { const c = getCharInfo('whatIveTried', askData.whatIveTried); return c && askData.whatIveTried.trim().length > 0 ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
+                      </div>
                       <textarea
                         value={askData.whatIveTried}
-                        onChange={(e) => setAskData({ ...askData, whatIveTried: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium h-20 resize-none focus:outline-none focus:border-blue-500 transition-all focus:bg-white"
+                        onChange={(e) => handleFieldChange('whatIveTried', e.target.value)}
+                        onBlur={() => handleFieldBlur('whatIveTried')}
+                        maxLength={520}
+                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-20 resize-none focus:outline-none transition-all focus:bg-white ${getFieldClasses('whatIveTried')}`}
                         placeholder="Optional: Explain what you've already tried..."
                       />
+                      {askErrors.whatIveTried && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.whatIveTried}</p>}
+                      {!askErrors.whatIveTried && askTouched.whatIveTried && askData.whatIveTried.trim().length >= 5 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
                     </div>
 
+                    {/* ── Urgency Level ── */}
                     <div className="space-y-3 pt-2 border-t border-slate-100">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Urgency Level</label>
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">Urgency Level <span className="text-red-400">*</span></label>
                       <div className="grid grid-cols-2 gap-4">
                         {["Normal", "Urgent"].map(urgency => (
                           <label key={urgency} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${askData.urgencyLevel === urgency ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300'}`}>
@@ -1147,7 +1318,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
               <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => askStep > 1 ? setAskStep(s => s - 1) : setIsAskOpen(false)}
+                  onClick={() => askStep > 1 ? setAskStep(s => s - 1) : closeAskModal()}
                   className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all shadow-sm"
                 >
                   {askStep > 1 ? "Back" : "Cancel"}
@@ -1620,7 +1791,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                     key={module._id}
                     onClick={() => {
                       setSelectedModule(module);
-                      setActiveView("resources");
+                      setActiveView("qa");
                     }}
                     className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group"
                   >
