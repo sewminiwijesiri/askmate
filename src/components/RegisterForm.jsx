@@ -25,7 +25,12 @@ const registerSchema = z.object({
   semester: z.string().optional(),
   graduationYear: z.string().optional(),
   skills: z.string().optional(),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must include at least one uppercase letter")
+    .regex(/[a-z]/, "Must include at least one lowercase letter")
+    .regex(/[0-9]/, "Must include at least one number")
+    .regex(/[@$!%*?&#]/, "Must include at least one special character (@$!%*?&#)"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -77,7 +82,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     watch,
     resetField,
     unregister,
-    formState: { errors, isValid, isDirty },
+    formState: { errors, isValid, isDirty, touchedFields, isSubmitted },
     setValue,
     trigger,
   } = useForm({
@@ -105,9 +110,11 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
     fieldsToClear.forEach(field => {
       resetField(field, { defaultValue: "" });
     });
-    // Trigger validation to clear errors of irrelevant fields
-    trigger();
-  }, [selectedRole, resetField, trigger]);
+    // Trigger validation to clear errors if the form was already interacted with
+    if (isDirty) {
+      trigger();
+    }
+  }, [selectedRole, resetField, trigger, isDirty]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -150,7 +157,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
   const InputField = ({ label, name, placeholder, type = "text", options = null }) => {
     const error = errors[name];
-    const isInvalid = !!error;
+    const isTouched = touchedFields[name];
+    const shouldShowError = !!error && (isTouched || isSubmitted);
+    const isInvalid = shouldShowError;
 
     return (
       <div className="w-full">
@@ -184,7 +193,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
             </div>
           )}
         </div>
-        {isInvalid && <p className="text-xs text-red-500 mt-1 font-medium">{error.message}</p>}
+        {shouldShowError && <p className="text-xs text-red-500 mt-1 font-medium">{error.message}</p>}
       </div>
     );
   };
@@ -266,7 +275,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 {...register("password")}
-                className={`w-full px-3.5 py-2 rounded-xl border ${errors.password ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+                className={`w-full px-3.5 py-2 rounded-xl border ${errors.password && (touchedFields.password || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                   } bg-gray-50 text-sm text-gray-900 outline-none transition-all pr-12`}
               />
               <button
@@ -278,7 +287,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-500 mt-1 font-medium">{errors.password.message}</p>}
+            {errors.password && (touchedFields.password || isSubmitted) && <p className="text-xs text-red-500 mt-1 font-medium">{errors.password.message}</p>}
           </div>
 
           <div>
@@ -287,16 +296,16 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
               type="password"
               placeholder="••••••••"
               {...register("confirmPassword")}
-              className={`w-full px-3.5 py-2 rounded-xl border ${errors.confirmPassword ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
+              className={`w-full px-3.5 py-2 rounded-xl border ${errors.confirmPassword && (touchedFields.confirmPassword || isSubmitted) ? "border-red-500 ring-1 ring-red-500" : "border-gray-200 focus:border-[#002147] focus:ring-2 focus:ring-[#002147]/10"
                 } bg-gray-50 text-sm text-gray-900 outline-none transition-all`}
             />
-            {errors.confirmPassword && <p className="text-[10px] text-red-500 mt-0.5 font-medium">{errors.confirmPassword.message}</p>}
+            {errors.confirmPassword && (touchedFields.confirmPassword || isSubmitted) && <p className="text-[10px] text-red-500 mt-0.5 font-medium">{errors.confirmPassword.message}</p>}
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={!isValid || isLoading}
+          disabled={isLoading}
           className="w-full py-2.5 px-6 bg-[#002147] hover:bg-[#002147]/90 text-white font-bold rounded-2xl shadow-xl shadow-[#002147]/20 hover:shadow-[#002147]/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
         >
           {isLoading ? (
