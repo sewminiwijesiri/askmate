@@ -10,6 +10,7 @@ const ModuleSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      match: [/^IT\d{4}$/, "Module code must follow the pattern ITXXXX"],
     },
     year: {
       type: Number,

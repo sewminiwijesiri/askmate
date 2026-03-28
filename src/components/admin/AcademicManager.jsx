@@ -115,10 +115,12 @@ export default function AcademicManager() {
     if (!newModule.moduleName || !newModule.moduleName.trim()) {
       errors.moduleName = "Module name is required";
     }
+    
+    const moduleCodeRegex = /^IT\d{4}$/;
     if (!newModule.moduleCode || !newModule.moduleCode.trim()) {
-      errors.moduleCode = "Reference code is required";
-    } else if (!newModule.moduleCode.trim().startsWith("IT")) {
-      errors.moduleCode = "Reference code must start with IT";
+      errors.moduleCode = "Module code is required";
+    } else if (!moduleCodeRegex.test(newModule.moduleCode.trim())) {
+      errors.moduleCode = "Module code must follow the pattern ITXXXX (e.g. IT3050)";
     }
     return errors;
   };
@@ -619,10 +621,9 @@ export default function AcademicManager() {
                   onBlur={() => handleModuleBlur("moduleName")}
                   onChange={(e) => {
                     setNewModule({ ...newModule, moduleName: e.target.value });
-                    if (touched.moduleName) {
-                      const errors = validateModuleForm();
-                      setModuleErrors(errors);
-                    }
+                    setTouched((prev) => ({ ...prev, moduleName: true }));
+                    const errors = validateModuleForm();
+                    setModuleErrors(errors);
                   }}
                   className={`w-full bg-slate-50 border ${touched.moduleName && moduleErrors.moduleName ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
                   placeholder="Enter module name"
@@ -639,13 +640,12 @@ export default function AcademicManager() {
                   onBlur={() => handleModuleBlur("moduleCode")}
                   onChange={(e) => {
                     setNewModule({ ...newModule, moduleCode: e.target.value });
-                    if (touched.moduleCode) {
-                      const errors = validateModuleForm();
-                      setModuleErrors(errors);
-                    }
+                    setTouched((prev) => ({ ...prev, moduleCode: true }));
+                    const errors = validateModuleForm();
+                    setModuleErrors(errors);
                   }}
                   className={`w-full bg-slate-50 border ${touched.moduleCode && moduleErrors.moduleCode ? 'border-rose-500 bg-rose-50/10' : 'border-slate-200'} rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all placeholder:text-slate-300`}
-                  placeholder="e.g. IT-3050"
+                  placeholder="e.g. IT3050"
                 />
                 {touched.moduleCode && moduleErrors.moduleCode && (
                   <p className="text-[10px] font-bold text-rose-500 ml-1 mt-1 ring-offset-2 animate-in fade-in slide-in-from-top-1 duration-200">{moduleErrors.moduleCode}</p>
@@ -673,8 +673,7 @@ export default function AcademicManager() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!newModule.moduleName?.trim() || !newModule.moduleCode?.trim().startsWith("IT")}
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md active:scale-95"
                 >
                   {editingModule ? "Save Changes" : "Create Module"}
                 </button>
