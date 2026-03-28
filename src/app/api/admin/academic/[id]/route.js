@@ -15,7 +15,18 @@ export async function PATCH(req, { params }) {
     return NextResponse.json(updatedModule);
   } catch (error) {
     console.error("PATCH module error:", error, "ID:", moduleId, "Payload:", requestData);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    // Handle MongoDB duplicate key error (11000)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      const message = field === 'moduleCode' 
+        ? `Module code "${requestData.moduleCode}" already exists.` 
+        : `Duplicate entry for ${field}.`;
+      
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+
+    return NextResponse.json({ error: error.message || "An unexpected error occurred" }, { status: 500 });
   }
 }
 
