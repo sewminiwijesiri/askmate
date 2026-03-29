@@ -398,6 +398,7 @@ export default function StudentDashboard() {
               defaultYear={user.year}
               defaultSemester={user.semester}
               user={user}
+              setActiveTab={setActiveTab}
             />
           </div>
         )}
@@ -432,6 +433,7 @@ export default function StudentDashboard() {
               defaultSemester={user.semester || 1}
               user={user}
               initialView="qa"
+              setActiveTab={setActiveTab}
             />
           </div>
         )}

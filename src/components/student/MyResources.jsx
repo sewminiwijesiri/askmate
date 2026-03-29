@@ -27,7 +27,8 @@ export default function MyResources({ user }) {
     const [statusFilter, setStatusFilter] = useState("all");
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editingResource, setEditingResource] = useState(null);
-    const [editData, setEditData] = useState({ title: "", description: "", category: "Short Note" });
+    const [editData, setEditData] = useState({ title: "", description: "", category: "Short Note", url: "", resourceType: "link" });
+    const [selectedFile, setSelectedFile] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
@@ -71,22 +72,32 @@ export default function MyResources({ user }) {
         const token = localStorage.getItem("token");
         try {
             setIsUpdating(true);
+            const formData = new FormData();
+            formData.append("title", editData.title);
+            formData.append("description", editData.description);
+            formData.append("category", editData.category);
+            formData.append("resourceType", editData.resourceType);
+            formData.append("userId", user.userId);
+
+            if (selectedFile) {
+                formData.append("file", selectedFile);
+            } else if (editData.resourceType === "link") {
+                formData.append("url", editData.url);
+            }
+
             const res = await fetch(`/api/resources/${editingResource._id}`, {
                 method: "PATCH",
                 headers: {
-                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    ...editData,
-                    userId: user.userId
-                })
+                body: formData
             });
 
             if (res.ok) {
                 fetchMyResources();
                 setIsEditOpen(false);
                 setEditingResource(null);
+                setSelectedFile(null);
             }
         } catch (error) {
             console.error("Error updating resource:", error);
@@ -100,8 +111,11 @@ export default function MyResources({ user }) {
         setEditData({
             title: resource.title,
             description: resource.description,
-            category: resource.category || "Short Note"
+            category: resource.category || "Short Note",
+            url: resource.url || "",
+            resourceType: resource.resourceType || "link"
         });
+        setSelectedFile(null);
         setIsEditOpen(true);
     };
 
@@ -269,7 +283,11 @@ export default function MyResources({ user }) {
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-[#002147]">Edit Details</h2>
                             <button
-                                onClick={() => setIsEditOpen(false)}
+                                onClick={() => {
+                                    setIsEditOpen(false);
+                                    setEditingResource(null);
+                                    setSelectedFile(null);
+                                }}
                                 className="p-2 rounded-lg hover:bg-slate-50 text-slate-400"
                             >
                                 <X size={18} />
@@ -288,20 +306,71 @@ export default function MyResources({ user }) {
                                 />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Type</label>
+                                    <select
+                                        value={editData.resourceType}
+                                        onChange={(e) => setEditData({ ...editData, resourceType: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="link">Link</option>
+                                        <option value="pdf">PDF</option>
+                                        <option value="word">Word</option>
+                                        <option value="text">Text</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
+                                    <select
+                                        value={editData.category}
+                                        onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="Short Note">Short Note</option>
+                                        <option value="Lecture Note">Lecture Note</option>
+                                        <option value="YouTube Link">YouTube Link</option>
+                                        <option value="Past Paper">Past Paper</option>
+                                        <option value="Tutorial">Tutorial</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Category</label>
-                                <select
-                                    value={editData.category}
-                                    onChange={(e) => setEditData({ ...editData, category: e.target.value })}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="Short Note">Short Note</option>
-                                    <option value="Lecture Note">Lecture Note</option>
-                                    <option value="YouTube Link">YouTube Link</option>
-                                    <option value="Past Paper">Past Paper</option>
-                                    <option value="Tutorial">Tutorial</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                                    {editData.resourceType === 'link' ? 'URL / Link' : 'Replace File'}
+                                </label>
+                                {editData.resourceType === 'link' ? (
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editData.url}
+                                        onChange={(e) => setEditData({ ...editData, url: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                                        placeholder="Enter resource URL (e.g. YouTube, Google Drive link)"
+                                    />
+                                ) : (
+                                    <div className="relative group">
+                                        <input
+                                            type="file"
+                                            onChange={(e) => {
+                                                const file = e.target.files[0];
+                                                setSelectedFile(file);
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            accept={
+                                                editData.resourceType === 'pdf' ? '.pdf' :
+                                                    editData.resourceType === 'word' ? '.doc,.docx' :
+                                                        editData.resourceType === 'text' ? '.txt' : '*'
+                                            }
+                                        />
+                                        <div className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-medium flex items-center gap-2 text-slate-500 group-hover:border-blue-500 transition-all overflow-hidden whitespace-nowrap">
+                                            <FileIcon size={14} className="text-blue-500 flex-shrink-0" />
+                                            <span className="truncate text-[11px]">{selectedFile ? selectedFile.name : 'Change current file...'}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-1">
@@ -316,7 +385,11 @@ export default function MyResources({ user }) {
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setIsEditOpen(false)}
+                                    onClick={() => {
+                                        setIsEditOpen(false);
+                                        setEditingResource(null);
+                                        setSelectedFile(null);
+                                    }}
                                     className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm"
                                 >
                                     Cancel

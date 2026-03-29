@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import UserProfileModal from "@/components/shared/UserProfileModal";
 
-export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView }) {
+export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView, setActiveTab }) {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;
@@ -552,6 +552,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
         setIsUploadOpen(false);
         setUploadData({ title: "", description: "", resourceType: "link", category: "Short Note", url: "" });
         setSelectedFile(null);
+        if (setActiveTab) setActiveTab("resources");
       }
     } catch (error) {
       console.error("Error uploading resource:", error);
