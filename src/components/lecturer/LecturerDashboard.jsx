@@ -430,6 +430,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             defaultSemester={1}
                             user={user}
                             initialView="qa"
+                            setActiveTab={setActiveTab}
                         />
                     </div>
                 )}

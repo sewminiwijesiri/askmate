@@ -45,10 +45,16 @@ export async function PATCH(req, { params }) {
         resourceType: formData.get("resourceType"),
         category: formData.get("category"),
         status: formData.get("status"),
+        url: formData.get("url"),
       };
+
+      // Clear textContent if switching to link (AI doesn't parse links yet)
+      if (data.resourceType === "link") {
+        data.textContent = "";
+      }
       
-      // Remove undefined fields
-      Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+      // Remove null/undefined fields
+      Object.keys(data).forEach(key => (data[key] === undefined || data[key] === null) && delete data[key]);
 
       const file = formData.get("file");
       if (file && typeof file !== "string") {
