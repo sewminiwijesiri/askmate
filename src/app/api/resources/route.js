@@ -98,12 +98,8 @@ export async function POST(req) {
       data = await req.json();
     }
     
-    // Set initial status
-    if (data.uploaderRole === "admin" || data.uploaderRole === "lecturer") {
-      data.status = "approved";
-    } else {
-      data.status = "pending";
-    }
+    // Set initial status to pending for all resources (requires approval)
+    data.status = "pending";
     
     // Create resource
     const newResource = await Resource.create(data);
