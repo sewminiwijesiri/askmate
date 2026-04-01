@@ -297,7 +297,11 @@ export default function RemindersSection({ user }) {
         }
       `}</style>
 
-      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingReminder(null); }}>
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setEditingReminder(null); }}
+        maxWidth="max-w-md"
+      >
         <div className="px-6 py-5">
            <ReminderForm 
             onSuccess={handleSuccess} 

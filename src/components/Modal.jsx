@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-export default function Modal({ isOpen, onClose, title, children }) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }) {
   const modalRef = useRef();
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
       {/* Modal Content */}
       <div 
         ref={modalRef}
-        className="relative w-full max-w-lg transform overflow-hidden rounded-3xl bg-white shadow-2xl transition-all duration-300 ease-out animate-in fade-in zoom-in-95"
+        className={`relative w-full ${maxWidth} transform overflow-hidden rounded-3xl bg-white shadow-2xl transition-all duration-300 ease-out animate-in fade-in zoom-in-95`}
       >
         <div className="absolute right-4 top-4 z-10">
           <button
