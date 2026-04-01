@@ -159,7 +159,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
 
   return (
     <div className="bg-white rounded-2xl">
-      <div className="flex items-center gap-4 mb-5 border-b border-slate-50 pb-5">
+      <div className="flex items-center gap-4 mb-4 border-b border-slate-50 pb-4">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isEditMode ? 'bg-blue-50 text-blue-500' : 'bg-orange-50 text-orange-500'}`}>
           {isEditMode ? <Pencil size={20} /> : <Bell size={20} className="animate-pulse" />}
         </div>
@@ -173,7 +173,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 animate-in fade-in slide-in-from-top-1">
             <AlertCircle size={18} />
@@ -181,7 +181,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {/* Title Field */}
           <div className="group">
             <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
@@ -193,7 +193,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
                 {...register("title")}
                 type="text"
                 placeholder="e.g., OS Assignment"
-                className={`w-full bg-slate-50 border ${errors.title ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-3 px-4 text-sm font-bold text-[#002147] placeholder:text-slate-300 placeholder:font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all`}
+                className={`w-full bg-slate-50 border ${errors.title ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-2.5 px-4 text-sm font-bold text-[#002147] placeholder:text-slate-300 placeholder:font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all`}
               />
             </div>
             {errors.title && (
@@ -214,7 +214,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
                 {...register("description")}
                 placeholder="Reminder details..."
                 rows={2}
-                className={`w-full bg-slate-50 border ${errors.description ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-3 px-4 text-sm font-bold text-[#002147] placeholder:text-slate-300 placeholder:font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all resize-none`}
+                className={`w-full bg-slate-50 border ${errors.description ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-2.5 px-4 text-sm font-bold text-[#002147] placeholder:text-slate-300 placeholder:font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all resize-none`}
               />
             </div>
             {errors.description && (
@@ -236,7 +236,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
                   {...register("deadlineDate")}
                   type="date"
                   min={new Date().toISOString().split('T')[0]}
-                  className={`w-full bg-slate-50 border ${errors.deadlineDate ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-3 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
+                  className={`w-full bg-slate-50 border ${errors.deadlineDate ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-2.5 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
                 />
               </div>
               {errors.deadlineDate && (
@@ -256,7 +256,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
                 <input
                   {...register("deadlineTime")}
                   type="time"
-                  className={`w-full bg-slate-50 border ${errors.deadlineTime ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-3 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
+                  className={`w-full bg-slate-50 border ${errors.deadlineTime ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-2.5 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
                 />
               </div>
               {errors.deadlineTime && (
@@ -276,7 +276,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
             <div className={`relative transition-all duration-300 ${errors.notificationTime ? 'ring-2 ring-rose-500/20' : 'group-focus-within:ring-4 group-focus-within:ring-blue-500/10'}`}>
               <select
                 {...register("notificationTime")}
-                className={`w-full bg-slate-50 border ${errors.notificationTime ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-3 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
+                className={`w-full bg-slate-50 border ${errors.notificationTime ? 'border-rose-300' : 'border-slate-100 group-hover:border-slate-200'} rounded-xl py-2.5 px-4 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-400 focus:bg-white transition-all appearance-none cursor-pointer`}
               >
                 {notificationOptions.map((opt) => (
                   <option key={opt} value={opt}>
@@ -299,7 +299,7 @@ export default function ReminderForm({ onSuccess, user, reminder }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className={`w-full py-3.5 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group ${
+          className={`w-full py-3 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group ${
             isEditMode 
             ? 'bg-blue-600 shadow-blue-900/10 hover:bg-blue-700 hover:shadow-blue-900/20' 
             : 'bg-[#002147] shadow-blue-900/10 hover:bg-slate-800 hover:shadow-blue-900/20'

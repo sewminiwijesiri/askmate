@@ -135,22 +135,7 @@ export default function StudentDashboard() {
               </p>
             </div>
           ) : (
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold text-[#4DA8DA] capitalize">
-                {activeTab === "academic" ? "Academic Hub" :
-                  activeTab === "resources" ? "My Resources" :
-                  activeTab === "reminders" ? "Reminders" :
-                    activeTab === "profile" ? "Student Profile" :
-                      activeTab === "qa" ? (user.role === "helper" ? "Recommend Questions" : "Consultation Hub") : activeTab}
-              </h1>
-              <p className="text-slate-500 font-medium">
-                Student Portal • {activeTab === "academic" ? "Browse Knowledge" :
-                  activeTab === "resources" ? "Manage Contributions" :
-                  activeTab === "reminders" ? "Academic Deadlines" :
-                    activeTab === "profile" ? "Account Settings" :
-                      activeTab === "qa" ? (user.role === "helper" ? "Share Your Expertise" : "Expert Help") : "Workspace"}
-              </p>
-            </div>
+            <div />
           )}
 
           <div className="flex items-center gap-4">
