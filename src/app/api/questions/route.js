@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Student from "@/models/Student";
 import { NextResponse } from "next/server";
+import { translateQuestion } from "@/lib/ai/translation";
 
 // GET: List questions with filters
 export async function GET(req) {
@@ -68,7 +69,34 @@ export async function POST(req) {
             ...(tags || [])
         ])];
 
-        // 4. Create Question
+        // 4. Automatic Translation (Gemini)
+        let translatedVersions = body.translatedVersions || { english: title, sinhala: "", tamil: "" };
+        const lang = originalLanguage || "English";
+
+        if (lang === "English" && !body.translatedVersions) {
+            try {
+                console.log("Triggering translation utility for English question...");
+                const translations = await translateQuestion(title, description, whatIveTried);
+                if (translations) {
+                    console.log("Translations generated successfully.");
+                    translatedVersions = {
+                        english: title,
+                        sinhala: translations.sinhala.title,
+                        tamil: translations.tamil.title,
+                        sinhalaDescription: translations.sinhala.description,
+                        tamilDescription: translations.tamil.description,
+                        sinhalaStuck: translations.sinhala.stuck,
+                        tamilStuck: translations.tamil.stuck
+                    };
+                } else {
+                    console.error("Translation utility returned NULL.");
+                }
+            } catch (err) {
+                console.error("Critical failure in translation flow:", err);
+            }
+        }
+
+        // 5. Create Question
         const newQuestion = await Question.create({
             title,
             description,
@@ -86,7 +114,8 @@ export async function POST(req) {
             tags: tags || [],
             keywords,
             isVoiceQuestion: !!isVoiceQuestion,
-            originalLanguage: originalLanguage || "English"
+            originalLanguage: lang,
+            translatedVersions
         });
 
         return NextResponse.json(newQuestion, { status: 201 });

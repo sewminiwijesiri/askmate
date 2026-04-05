@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Student from "@/models/Student";
 import { NextResponse } from "next/server";
+import { translateQuestion } from "@/lib/ai/translation";
 
 // GET: Single question detail
 export async function GET(req, { params }) {
@@ -37,6 +38,37 @@ export async function PATCH(req, { params }) {
         await connectDB();
         const { id } = params;
         const body = await req.json();
+
+        // ── AUTOMATIC RE-TRANSLATION ──
+        // If title, description or whatIveTried is updated, and translations aren't provided manually
+        if ((body.title || body.description || body.whatIveTried) && !body.translatedVersions) {
+            try {
+                // Get current question for fallback values
+                const existing = await Question.findById(id);
+                if (existing) {
+                    const title = body.title || existing.title;
+                    const description = body.description || existing.description;
+                    const stuck = body.whatIveTried || existing.whatIveTried || "";
+
+                    console.log("Re-translating updated question...");
+                    const translations = await translateQuestion(title, description, stuck);
+                    
+                    if (translations) {
+                        body.translatedVersions = {
+                            english: title,
+                            sinhala: translations.sinhala.title,
+                            tamil: translations.tamil.title,
+                            sinhalaDescription: translations.sinhala.description,
+                            tamilDescription: translations.tamil.description,
+                            sinhalaStuck: translations.sinhala.stuck,
+                            tamilStuck: translations.tamil.stuck
+                        };
+                    }
+                }
+            } catch (transErr) {
+                console.error("Update translation error:", transErr);
+            }
+        }
 
         const updatedQuestion = await Question.findByIdAndUpdate(id, body, { returnDocument: 'after' });
 

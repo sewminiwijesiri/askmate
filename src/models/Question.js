@@ -56,6 +56,10 @@ const QuestionSchema = new mongoose.Schema(
             english: String,
             sinhala: String,
             tamil: String,
+            sinhalaDescription: String,
+            tamilDescription: String,
+            sinhalaStuck: String,
+            tamilStuck: String,
         },
 
         // Academic Structure
