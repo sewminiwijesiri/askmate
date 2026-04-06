@@ -74,6 +74,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [askErrors, setAskErrors] = useState({});
   const [askTouched, setAskTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationTab, setTranslationTab] = useState("english");
+  const [sinhalaData, setSinhalaData] = useState({ title: "", description: "", stuck: "" });
+  const [tamilData, setTamilData] = useState({ title: "", description: "", stuck: "" });
 
   // ── Inline Validation Utilities ──
   const TOPIC_ALLOWED_PATTERN = /^[a-zA-Z0-9\s/,.\-&()]+$/;
@@ -226,6 +230,9 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [submitError, setSubmitError] = useState("");
 
   // Enhanced Answer States (for Helpers/Lecturers)
+  const [qaLanguage, setQaLanguage] = useState("english"); // english | sinhala | tamil
+  const [ansErrors, setAnsErrors] = useState({});
+  const [ansTouched, setAnsTouched] = useState({});
   const [ansConcept, setAnsConcept] = useState("");
   const [ansHints, setAnsHints] = useState([""]);
   const [ansExamples, setAnsExamples] = useState([""]);
@@ -315,6 +322,60 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     }
   };
 
+  const validateAnswerField = (field, value, index = null, subfield = null) => {
+    const trimmed = (value || '').trim();
+    switch (field) {
+      case 'answerContent': {
+        if (!trimmed) return 'Answer is required';
+        if (trimmed.length < 10) return 'Please provide a more meaningful answer (at least 10 characters)';
+        if (trimmed.length > 2000) return 'Answer cannot exceed 2000 characters';
+        if (isGibberish(trimmed)) return 'Please enter a meaningful answer';
+        return null;
+      }
+      case 'ansConcept': {
+        if (!trimmed) return null; // optional
+        if (trimmed.length > 200) return 'Concept description is too long (max 200 chars)';
+        if (isGibberish(trimmed)) return 'Please enter a meaningful concept';
+        return null;
+      }
+      case 'ansHints':
+      case 'ansExamples': {
+        if (!trimmed) return null;
+        const max = field === 'ansHints' ? 300 : 1000;
+        if (trimmed.length > max) return `This ${field === 'ansHints' ? 'hint' : 'example'} is too long`;
+        return null;
+      }
+      case 'ansResources': {
+        if (subfield === 'url' && trimmed && !trimmed.startsWith('http')) return 'Invalid URL format';
+        if (subfield === 'title' && trimmed && trimmed.length > 100) return 'Resource title is too long';
+        return null;
+      }
+      default: return null;
+    }
+  };
+
+  const getAnsFieldClasses = (field, index = null, subfield = null) => {
+    const key = index !== null ? (subfield ? `${field}_${index}_${subfield}` : `${field}_${index}`) : field;
+    const hasError = ansErrors[key];
+    const isTouched = ansTouched[key];
+    if (hasError && isTouched) return 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20';
+    if (!hasError && isTouched && ((index === null && (typeof field === 'string' && field.includes('Content'))) || subfield)) {
+      return 'border-emerald-400 focus:border-emerald-500 ring-1 ring-emerald-400/20';
+    }
+    return 'border-slate-200 focus:border-blue-500';
+  };
+
+  const getAnsCharInfo = (field, value) => {
+    const limits = { answerContent: { min: 10, max: 2000 }, ansConcept: { max: 200 }, ansHints: { max: 300 }, ansExamples: { max: 1000 } };
+    const l = limits[field];
+    if (!l) return null;
+    const len = (value || '').trim().length;
+    if (len === 0 && !l.min) return null;
+    if (len > l.max) return { len, max: l.max, color: 'text-red-500' };
+    if (l.min && len < l.min) return { len, max: l.max, color: 'text-amber-500' };
+    return { len, max: l.max, color: 'text-emerald-500' };
+  };
+
   const fetchAnswers = async (questionId) => {
     try {
       setAnsLoading(true);
@@ -330,6 +391,47 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     }
   };
 
+  const handleAutoTranslate = async () => {
+    // 1. Mark fields as touched
+    setAskTouched(prev => ({ ...prev, title: true, description: true }));
+    
+    // 2. Validate fields before translating
+    const titleErr = validateField('title', askData.title);
+    const descErr = validateField('description', askData.description);
+    
+    if (titleErr || descErr) {
+      setAskErrors(prev => ({ ...prev, title: titleErr, description: descErr }));
+      setSubmitError("Please provide a valid English title and description before translating.");
+      return;
+    }
+
+    try {
+      setIsTranslating(true);
+      setSubmitError("");
+      const res = await fetch("/api/ai/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: askData.title,
+          description: askData.description,
+          stuck: askData.whatIveTried
+        })
+      });
+
+      if (!res.ok) throw new Error("Translation failed");
+      const data = await res.json();
+      
+      setSinhalaData(data.sinhala);
+      setTamilData(data.tamil);
+      setTranslationTab("sinhala"); // Auto-switch to show results
+    } catch (error) {
+      console.error("Translation Error:", error);
+      setSubmitError("AI Translation service is temporarily unavailable. You can still submit in English.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleAskQuestion = async (e) => {
     e.preventDefault();
     // Mark all step 2 fields as touched
@@ -342,12 +444,12 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     if (titleErr) errors.title = titleErr;
     if (descErr) errors.description = descErr;
     if (stuckErr) errors.whatIveTried = stuckErr;
-    
+
     if (Object.keys(errors).length > 0) {
       setAskErrors(prev => ({ ...prev, ...errors }));
       return;
     }
-    
+
     setAskErrors({});
     setSubmitError("");
     try {
@@ -368,8 +470,19 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
           year: String(selectedYear),
           semester: String(selectedSemester),
           student: user?.id || user?.userId,
+          originalLanguage: "English",
+          translatedVersions: (sinhalaData.title || tamilData.title) ? {
+            english: askData.title.trim(),
+            sinhala: sinhalaData.title.trim(),
+            tamil: tamilData.title.trim(),
+            sinhalaDescription: sinhalaData.description.trim(),
+            tamilDescription: tamilData.description.trim(),
+            sinhalaStuck: sinhalaData.stuck.trim(),
+            tamilStuck: tamilData.stuck.trim()
+          } : null
         }),
       });
+      console.log("Submission Status:", res.status);
       const data = await res.json();
       if (!res.ok) {
         setSubmitError(data.error || "Failed to submit question.");
@@ -384,6 +497,9 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
       });
       setAskErrors({});
       setAskTouched({});
+      setSinhalaData({ title: "", description: "", stuck: "" });
+      setTamilData({ title: "", description: "", stuck: "" });
+      setTranslationTab("english");
       fetchQuestions();
     } catch (error) {
       setSubmitError("Network error. Please try again.");
@@ -413,14 +529,14 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
       // Trim the topic value
       const trimmedTopic = askData.topic.trim().replace(/  +/g, ' ');
       setAskData(prev => ({ ...prev, topic: trimmedTopic }));
-      
+
       const topicErr = validateField('topic', trimmedTopic);
       if (topicErr) {
         setAskErrors(prev => ({ ...prev, topic: topicErr }));
         return;
       }
     }
-    
+
     setAskErrors({});
     setSubmitError("");
     setAskStep(s => Math.min(s + 1, 2));
@@ -428,7 +544,15 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
   const handlePostAnswer = async (e) => {
     e.preventDefault();
-    if (!answerContent.trim()) return;
+
+    // Validate main content
+    const mainErr = validateAnswerField('answerContent', answerContent);
+    if (mainErr) {
+      setAnsErrors(prev => ({ ...prev, answerContent: mainErr }));
+      setAnsTouched(prev => ({ ...prev, answerContent: true }));
+      return;
+    }
+
     try {
       setIsPostingAnswer(true);
       const res = await fetch("/api/answers", {
@@ -496,7 +620,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
   const openQuestion = (q) => {
     setSelectedQuestion(q);
+    setQaLanguage("english"); // Default to English when opening a new question
     setAnswerContent("");
+    setAnsErrors({});
+    setAnsTouched({});
     setAnsConcept("");
     setAnsHints([""]);
     setAnsExamples([""]);
@@ -918,8 +1045,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       key={f}
                       onClick={() => setQaFilter(f)}
                       className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${qaFilter === f
-                          ? "bg-[#002147] text-white shadow-lg"
-                          : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
+                        ? "bg-[#002147] text-white shadow-lg"
+                        : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
                         }`}
                     >
                       {f}
@@ -1289,8 +1416,131 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       {!askErrors.whatIveTried && askTouched.whatIveTried && askData.whatIveTried.trim().length >= 5 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
                     </div>
 
-                    {/* ── Urgency Level ── */}
-                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                    {/* ── Tabs for Multilingual Support ── */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                          {[
+                            { id: "english", label: "English", icon: "EN" },
+                            { id: "sinhala", label: "සිංහල", icon: "සිං" },
+                            { id: "tamil", label: "தமிழ்", icon: "த" }
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => setTranslationTab(tab.id)}
+                              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${translationTab === tab.id
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-slate-400 hover:text-slate-600"
+                                }`}
+                            >
+                              <span>{tab.icon}</span>
+                              <span className="hidden sm:inline">{tab.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        {translationTab === "english" && (
+                          <button
+                            type="button"
+                            onClick={handleAutoTranslate}
+                            disabled={isTranslating || !askData.title || !askData.description}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-blue-100 transition-all disabled:opacity-50"
+                          >
+                            {isTranslating ? (
+                              <div className="w-3 h-3 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                            ) : (
+                              <Zap size={12} />
+                            )}
+                            {isTranslating ? "Translating..." : "Translate (SI/TA)"}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* ── English Tab Content (Original Fields) ── */}
+                      {translationTab === "english" && (
+                        <p className="text-[10px] text-slate-400 font-medium italic px-1">Tip: Use the Translate button to automatically generate Sinhala and Tamil versions of your question.</p>
+                      )}
+
+                      {/* ── Sinhala Tab Content ── */}
+                      {translationTab === "sinhala" && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-blue-50/30 p-4 rounded-2xl border border-blue-100/50">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                              Question Title (සිංහල)
+                              {sinhalaData.title && <span className="px-1.5 py-0.5 bg-blue-100 rounded text-[8px]">Auto-generated</span>}
+                            </label>
+                            <input
+                              type="text"
+                              value={sinhalaData.title}
+                              onChange={(e) => setSinhalaData({ ...sinhalaData, title: e.target.value })}
+                              className="w-full bg-white border border-blue-100 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
+                              placeholder="ප්‍රශ්නයේ මාතෘකාව මෙහි ඇතුළත් කරන්න..."
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Problem Description (සිංහල)</label>
+                            <textarea
+                              value={sinhalaData.description}
+                              onChange={(e) => setSinhalaData({ ...sinhalaData, description: e.target.value })}
+                              className="w-full bg-white border border-blue-100 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-400 transition-all"
+                              placeholder="ඔබේ ප්‍රශ්නය විස්තර කරන්න..."
+                            />
+                          </div>
+                          {askData.whatIveTried && (
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Where I'm Stuck (සිංහල)</label>
+                              <textarea
+                                value={sinhalaData.stuck}
+                                onChange={(e) => setSinhalaData({ ...sinhalaData, stuck: e.target.value })}
+                                className="w-full bg-white border border-blue-100 rounded-xl py-2 px-4 text-[13px] font-medium h-16 resize-none focus:outline-none focus:border-blue-400 transition-all"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Tamil Tab Content ── */}
+                      {translationTab === "tamil" && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/50">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                              Question Title (தமிழ்)
+                              {tamilData.title && <span className="px-1.5 py-0.5 bg-emerald-100 rounded text-[8px]">Auto-generated</span>}
+                            </label>
+                            <input
+                              type="text"
+                              value={tamilData.title}
+                              onChange={(e) => setTamilData({ ...tamilData, tamilTitle: e.target.value })}
+                              className="w-full bg-white border border-emerald-100 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-emerald-400 transition-all"
+                              placeholder="கேள்வியின் தலைப்பை இங்கே உள்ளிடவும்..."
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Problem Description (தமிழ்)</label>
+                            <textarea
+                              value={tamilData.description}
+                              onChange={(e) => setTamilData({ ...tamilData, description: e.target.value })}
+                              className="w-full bg-white border border-emerald-100 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-emerald-400 transition-all"
+                              placeholder="உங்கள் கேள்வியை விவரிக்கவும்..."
+                            />
+                          </div>
+                          {askData.whatIveTried && (
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Where I'm Stuck (தமிழ்)</label>
+                              <textarea
+                                value={tamilData.stuck}
+                                onChange={(e) => setTamilData({ ...tamilData, stuck: e.target.value })}
+                                className="w-full bg-white border border-emerald-100 rounded-xl py-2 px-4 text-[13px] font-medium h-16 resize-none focus:outline-none focus:border-emerald-400 transition-all"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Urgency Level (Moved below tabs) ── */}
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
                       <label className="text-[11px] font-bold text-slate-500 uppercase">Urgency Level <span className="text-red-400">*</span></label>
                       <div className="grid grid-cols-2 gap-4">
                         {["Normal", "Urgent"].map(urgency => (
@@ -1384,7 +1634,26 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         {selectedQuestion.student?.studentId || "Student"}
                       </button>
                     </div>
-                    <h3 className="text-lg font-bold text-[#002147] leading-snug">{selectedQuestion.title}</h3>
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <h3 className="text-lg font-bold text-[#002147] leading-snug">
+                        {qaLanguage === "english"
+                          ? selectedQuestion.title
+                          : (selectedQuestion.translatedVersions?.[qaLanguage] || (
+                            <span className="text-slate-400 italic">Translation not available (Showing English: {selectedQuestion.title})</span>
+                          ))}
+                      </h3>
+                      <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+                        {["english", "sinhala", "tamil"].map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => setQaLanguage(lang)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${qaLanguage === lang ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                          >
+                            {lang === "english" ? "EN" : lang === "sinhala" ? "සිං" : "த"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     {selectedQuestion.topic && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-400 font-bold"><Tag size={10} />{selectedQuestion.topic}</span>
                     )}
@@ -1413,9 +1682,35 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                 </div>
 
                 {/* Description */}
-                <p className="mt-4 text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  {selectedQuestion.description}
-                </p>
+                <div className="mt-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 relative group overflow-hidden">
+                  <div className="text-sm text-slate-600 leading-relaxed relative z-10">
+                    {qaLanguage === "english"
+                      ? selectedQuestion.description
+                      : (selectedQuestion.translatedVersions?.[`${qaLanguage}Description`] || (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-slate-400 italic text-[11px] mb-1">“Translation not available”</span>
+                          {selectedQuestion.description}
+                        </div>
+                      ))}
+                  </div>
+                  {qaLanguage !== "english" && (selectedQuestion.translatedVersions?.[`${qaLanguage}Description`]) && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Zap size={8} /> Translated
+                    </div>
+                  )}
+                </div>
+
+                {/* Stuck Section */}
+                {selectedQuestion.whatIveTried && (
+                  <div className="mt-3 p-4 bg-orange-50/30 rounded-2xl border border-orange-100/50">
+                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1 shadow-sm">Where I'm stuck</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed italic">
+                      {qaLanguage === "english"
+                        ? selectedQuestion.whatIveTried
+                        : (selectedQuestion.translatedVersions?.[`${qaLanguage}Stuck`] || selectedQuestion.whatIveTried)}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 mt-3 text-[11px] text-slate-400 font-bold">
                   <span className="flex items-center gap-1"><Eye size={12} /> {selectedQuestion.views || 0} views</span>
@@ -1509,8 +1804,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         <button
                           onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
                           className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm transition-transform hover:scale-105 focus:outline-none ${ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' :
-                              ans.student?.role === 'helper' ? 'bg-[#002147] text-white' :
-                                'bg-slate-200 text-slate-600'
+                            ans.student?.role === 'helper' ? 'bg-[#002147] text-white' :
+                              'bg-slate-200 text-slate-600'
                             }`}>
                           {((ans.student?.name || ans.student?.studentId || "A")[0]).toUpperCase()}
                         </button>
@@ -1524,8 +1819,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                           </button>
                           <div className="flex items-center gap-2">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${ans.student?.role === 'lecturer' ? 'text-orange-600' :
-                                ans.student?.role === 'helper' ? 'text-blue-600' :
-                                  'text-slate-400'
+                              ans.student?.role === 'helper' ? 'text-blue-600' :
+                                'text-slate-400'
                               }`}>
                               {ans.student?.role || 'User'}
                             </span>
@@ -1555,146 +1850,201 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
               <div className="p-4 sm:p-6 border-t border-slate-100 shrink-0 bg-white">
                 {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer") || user?.role?.toLowerCase()?.includes("admin")) ? (
                   <form onSubmit={handlePostAnswer} className="space-y-4">
-                  {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
-                    <div className="space-y-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowExpertMode(!showExpertMode)}
-                        className="w-full flex items-center justify-between p-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Zap size={14} className={showExpertMode ? "animate-pulse border border-white/30 rounded-full p-0.5" : ""} />
-                          {showExpertMode ? "Hide Guidance Builder" : "Open Expert Guidance Builder"}
-                        </div>
-                        <ChevronRight size={14} className={`transition-transform duration-300 ${showExpertMode ? "rotate-90" : ""}`} />
-                      </button>
+                    {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowExpertMode(!showExpertMode)}
+                          className="w-full flex items-center justify-between p-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Zap size={14} className={showExpertMode ? "animate-pulse border border-white/30 rounded-full p-0.5" : ""} />
+                            {showExpertMode ? "Hide Guidance Builder" : "Open Expert Guidance Builder"}
+                          </div>
+                          <ChevronRight size={14} className={`transition-transform duration-300 ${showExpertMode ? "rotate-90" : ""}`} />
+                        </button>
 
-                      {showExpertMode && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 max-h-[200px] overflow-y-auto shadow-inner">
-                            <div className="flex items-center gap-2 text-[#002147] font-bold text-[11px] uppercase tracking-widest sticky top-0 bg-slate-50 pb-2 z-10 border-b border-slate-200">
-                              <GraduationCap size={14} className="text-blue-500" />
-                              Expert Guidance Content
-                            </div>
+                        {showExpertMode && (
+                          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 max-h-[200px] overflow-y-auto shadow-inner">
+                              <div className="flex items-center gap-2 text-[#002147] font-bold text-[11px] uppercase tracking-widest sticky top-0 bg-slate-50 pb-2 z-10 border-b border-slate-200">
+                                <GraduationCap size={14} className="text-blue-500" />
+                                Expert Guidance Content
+                              </div>
 
-                            {/* Concept */}
-                            <div className="space-y-1.5 pt-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Core Concept</label>
-                              <input
-                                type="text"
-                                value={ansConcept}
-                                onChange={(e) => setAnsConcept(e.target.value)}
-                                placeholder="The underlying principle"
-                                className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                              />
-                            </div>
-
-                            {/* Rest of the Expert Content remains the same but inside this new scrollable container */}
-                            {/* Hints */}
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                <span>Step-by-step Hints</span>
-                                <button type="button" onClick={addHint} className="text-blue-500 hover:underline text-[9px]">Add Hint</button>
-                              </label>
-                              {ansHints.map((hint, i) => (
-                                <div key={i} className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={hint}
-                                    onChange={(e) => updateHint(i, e.target.value)}
-                                    placeholder={`Hint ${i + 1}...`}
-                                    className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                                  />
-                                  {ansHints.length > 1 && (
-                                    <button type="button" onClick={() => removeHint(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                              {/* Concept */}
+                              <div className="space-y-1.5 pt-2">
+                                <div className="flex justify-between items-center px-1">
+                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Core Concept</label>
+                                  {getAnsCharInfo('ansConcept', ansConcept) && (
+                                    <span className={`text-[9px] font-bold ${getAnsCharInfo('ansConcept', ansConcept).color}`}>
+                                      {getAnsCharInfo('ansConcept', ansConcept).len}/{getAnsCharInfo('ansConcept', ansConcept).max}
+                                    </span>
                                   )}
                                 </div>
-                              ))}
-                            </div>
+                                <input
+                                  type="text"
+                                  value={ansConcept}
+                                  onChange={(e) => {
+                                    setAnsConcept(e.target.value);
+                                    setAnsErrors(prev => ({ ...prev, ansConcept: validateAnswerField('ansConcept', e.target.value) }));
+                                  }}
+                                  onBlur={() => setAnsTouched(prev => ({ ...prev, ansConcept: true }))}
+                                  placeholder="The underlying principle"
+                                  className={`w-full bg-white border rounded-xl py-2 px-3 text-xs font-medium focus:outline-none transition-all placeholder:text-slate-300 ${getAnsFieldClasses('ansConcept')}`}
+                                />
+                                {ansErrors.ansConcept && ansTouched.ansConcept && <p className="text-[9px] text-red-500 font-bold ml-1">{ansErrors.ansConcept}</p>}
+                              </div>
 
-                            {/* Examples */}
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                <span>Practical Examples</span>
-                                <button type="button" onClick={addExample} className="text-blue-500 hover:underline text-[9px]">Add Example</button>
-                              </label>
-                              {ansExamples.map((ex, i) => (
-                                <div key={i} className="flex gap-2">
-                                  <textarea
-                                    value={ex}
-                                    onChange={(e) => updateExample(i, e.target.value)}
-                                    placeholder={`Example ${i + 1}...`}
-                                    rows={1}
-                                    className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all resize-none placeholder:text-slate-300"
-                                  />
-                                  {ansExamples.length > 1 && (
-                                    <button type="button" onClick={() => removeExample(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Resources */}
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                <span>Supporting Resources</span>
-                                <button type="button" onClick={addAnsResource} className="text-blue-500 hover:underline text-[9px]">Add Resource</button>
-                              </label>
-                              {ansResources.map((res, i) => (
-                                <div key={i} className="grid grid-cols-2 gap-2">
-                                  <input
-                                    type="text"
-                                    value={res.title}
-                                    onChange={(e) => updateAnsResource(i, "title", e.target.value)}
-                                    placeholder="Title"
-                                    className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                                  />
-                                  <div className="flex gap-2">
-                                    <input
-                                      type="url"
-                                      value={res.url}
-                                      onChange={(e) => updateAnsResource(i, "url", e.target.value)}
-                                      placeholder="URL"
-                                      className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                                    />
-                                    {ansResources.length > 1 && (
-                                      <button type="button" onClick={() => removeAnsResource(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
-                                    )}
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                  <span>Step-by-step Hints</span>
+                                  <button type="button" onClick={addHint} className="text-blue-500 hover:underline text-[9px]">Add Hint</button>
+                                </label>
+                                {ansHints.map((hint, i) => (
+                                  <div key={i} className="space-y-1">
+                                    <div className="flex gap-2">
+                                      <div className="flex-1 relative">
+                                        <input
+                                          type="text"
+                                          value={hint}
+                                          onChange={(e) => {
+                                            updateHint(i, e.target.value);
+                                            setAnsErrors(prev => ({ ...prev, [`ansHints_${i}`]: validateAnswerField('ansHints', e.target.value) }));
+                                          }}
+                                          onBlur={() => setAnsTouched(prev => ({ ...prev, [`ansHints_${i}`]: true }))}
+                                          placeholder={`Hint ${i + 1}...`}
+                                          className={`w-full bg-white border rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none transition-all placeholder:text-slate-300 ${getAnsFieldClasses('ansHints', i)}`}
+                                        />
+                                        {getAnsCharInfo('ansHints', hint) && (
+                                          <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold ${getAnsCharInfo('ansHints', hint).color}`}>
+                                            {getAnsCharInfo('ansHints', hint).len}/{getAnsCharInfo('ansHints', hint).max}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {ansHints.length > 1 && (
+                                        <button type="button" onClick={() => removeHint(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                      )}
+                                    </div>
+                                    {ansErrors[`ansHints_${i}`] && ansTouched[`ansHints_${i}`] && <p className="text-[8px] text-red-500 font-bold ml-1">{ansErrors[`ansHints_${i}`]}</p>}
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
+
+                              {/* Examples */}
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                  <span>Practical Examples</span>
+                                  <button type="button" onClick={addExample} className="text-blue-500 hover:underline text-[9px]">Add Example</button>
+                                </label>
+                                {ansExamples.map((ex, i) => (
+                                  <div key={i} className="space-y-1">
+                                    <div className="flex gap-2">
+                                      <div className="flex-1 relative">
+                                        <textarea
+                                          value={ex}
+                                          onChange={(e) => {
+                                            updateExample(i, e.target.value);
+                                            setAnsErrors(prev => ({ ...prev, [`ansExamples_${i}`]: validateAnswerField('ansExamples', e.target.value) }));
+                                          }}
+                                          onBlur={() => setAnsTouched(prev => ({ ...prev, [`ansExamples_${i}`]: true }))}
+                                          placeholder={`Example ${i + 1}...`}
+                                          rows={1}
+                                          className={`w-full bg-white border rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none transition-all resize-none placeholder:text-slate-300 ${getAnsFieldClasses('ansExamples', i)}`}
+                                        />
+                                        {getAnsCharInfo('ansExamples', ex) && (
+                                          <span className={`absolute right-2 top-2 text-[8px] font-bold ${getAnsCharInfo('ansExamples', ex).color}`}>
+                                            {getAnsCharInfo('ansExamples', ex).len}/{getAnsCharInfo('ansExamples', ex).max}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {ansExamples.length > 1 && (
+                                        <button type="button" onClick={() => removeExample(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                      )}
+                                    </div>
+                                    {ansErrors[`ansExamples_${i}`] && ansTouched[`ansExamples_${i}`] && <p className="text-[8px] text-red-500 font-bold ml-1">{ansErrors[`ansExamples_${i}`]}</p>}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Resources */}
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                  <span>Supporting Resources</span>
+                                  <button type="button" onClick={addAnsResource} className="text-blue-500 hover:underline text-[9px]">Add Resource</button>
+                                </label>
+                                {ansResources.map((res, i) => (
+                                  <div key={i} className="grid grid-cols-2 gap-2">
+                                    <input
+                                      type="text"
+                                      value={res.title}
+                                      onChange={(e) => updateAnsResource(i, "title", e.target.value)}
+                                      placeholder="Title"
+                                      className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                                    />
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="url"
+                                        value={res.url}
+                                        onChange={(e) => updateAnsResource(i, "url", e.target.value)}
+                                        placeholder="URL"
+                                        className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
+                                      />
+                                      {ansResources.length > 1 && (
+                                        <button type="button" onClick={() => removeAnsResource(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
 
-                  <div className="flex items-stretch gap-3">
-                    <textarea
-                      value={answerContent}
-                      onChange={(e) => setAnswerContent(e.target.value)}
-                      placeholder={user?.role === "student" ? "Write your answer here..." : "Write a summary or additional explanation for your guidance..."}
-                      rows={2}
-                      required
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium resize-none focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-400"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isPostingAnswer || !answerContent.trim()}
-                      className="px-6 bg-[#002147] text-white rounded-2xl font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition-all flex flex-col items-center justify-center gap-1 active:scale-95 shadow-md shadow-blue-900/10 min-w-[100px]"
-                    >
-                      {isPostingAnswer ? (
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Send size={16} />
-                          <span>Submit</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex items-stretch gap-3">
+                      <div className="flex-1 relative group">
+                        <textarea
+                          value={answerContent}
+                          onChange={(e) => {
+                            setAnswerContent(e.target.value);
+                            if (ansTouched.answerContent) {
+                              setAnsErrors(prev => ({ ...prev, answerContent: validateAnswerField('answerContent', e.target.value) }));
+                            }
+                          }}
+                          onBlur={() => {
+                            setAnsTouched(prev => ({ ...prev, answerContent: true }));
+                            setAnsErrors(prev => ({ ...prev, answerContent: validateAnswerField('answerContent', answerContent) }));
+                          }}
+                          placeholder={user?.role === "student" ? "Write your answer here..." : "Write a summary or additional explanation for your guidance..."}
+                          rows={2}
+                          className={`w-full bg-slate-50 border rounded-2xl py-3 px-4 text-sm font-medium resize-none focus:outline-none transition-all placeholder:text-slate-400 ${getAnsFieldClasses('answerContent')}`}
+                        />
+                        <div className="absolute bottom-2 right-3 flex items-center gap-2">
+                          {getAnsCharInfo('answerContent', answerContent) && (
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md bg-white/80 backdrop-blur-sm shadow-sm ${getAnsCharInfo('answerContent', answerContent).color}`}>
+                              {getAnsCharInfo('answerContent', answerContent).len} / {getAnsCharInfo('answerContent', answerContent).max}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isPostingAnswer || !!validateAnswerField('answerContent', answerContent)}
+                        className="px-6 bg-[#002147] text-white rounded-2xl font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-all flex flex-col items-center justify-center gap-1 active:scale-95 shadow-md shadow-blue-900/10 min-w-[100px]"
+                      >
+                        {isPostingAnswer ? (
+                          <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            <span>Submit</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 ) : (
                   <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                     <p className="text-sm font-bold text-slate-500">Only lecturers and helpers can post answers.</p>
