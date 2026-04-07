@@ -62,7 +62,12 @@ export default function StudentDashboard() {
   const fetchCurrentModules = async () => {
     try {
       setModulesLoading(true);
-      const res = await fetch("/api/admin/academic");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/academic", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;

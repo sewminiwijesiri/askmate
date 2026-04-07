@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/mongodb";
 import Module from "@/models/Module";
 
+async function getAuthUser(req) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+    const token = authHeader.split(" ")[1];
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+}
+
 export async function GET(req) {
   try {
+    const user = await getAuthUser(req);
+    if (!user || (user.role !== "admin" && user.role !== "lecturer" && user.role !== "student" && user.role !== "helper")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     await connectDB();
     const modules = await Module.find({});
     return NextResponse.json(modules);
@@ -16,6 +32,10 @@ export async function GET(req) {
 export async function POST(req) {
   let requestData;
   try {
+    const user = await getAuthUser(req);
+    if (!user || (user.role !== "admin" && user.role !== "lecturer")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     await connectDB();
     requestData = await req.json();
 

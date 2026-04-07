@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import Question from "@/models/Question";
 import Module from "@/models/Module";
+import Notification from "@/models/Notification";
+import Lecturer from "@/models/Lecturer";
+import Helper from "@/models/Helper";
 import { translateQuestion } from "@/lib/ai/translation";
 
 async function getAuthUser(req) {
@@ -75,6 +78,34 @@ export async function POST(req) {
     });
 
     await newQuestion.save();
+
+    // ── NOTIFICATIONS ──
+    try {
+      // Find all lecturers and relevant helpers
+      const lecturers = await Lecturer.find({});
+      const helpers = await Helper.find({
+        $or: [
+          { preferredModules: moduleDoc.moduleName },
+          { preferredModules: moduleDoc.moduleCode }
+        ]
+      });
+
+      const notificationTargets = [
+        ...lecturers.map(l => ({ userId: l._id, role: 'lecturer' })),
+        ...helpers.map(h => ({ userId: h._id, role: 'helper' }))
+      ];
+
+      // Create notifications in parallel
+      await Promise.all(notificationTargets.map(target => {
+        return new Notification({
+          userId: target.userId,
+          title: "New Question Posted",
+          message: `A new question has been posted in ${moduleDoc.moduleCode}: "${title.substring(0, 30)}..."`,
+        }).save();
+      }));
+    } catch (notifErr) {
+      console.error("Question notification error:", notifErr);
+    }
 
     return NextResponse.json({
       ok: true,
