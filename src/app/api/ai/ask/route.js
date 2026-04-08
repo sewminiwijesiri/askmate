@@ -160,21 +160,54 @@ export async function POST(req) {
       },
     };
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(geminiPayload),
-      }
-    );
+    // Gemini Call with automatic retry for 503 (High Demand)
+    let response;
+    let aiData;
+    let maxRetries = 2;
+    let attempt = 0;
 
-    const aiData = await response.json();
+    while (attempt <= maxRetries) {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(geminiPayload),
+        }
+      );
+
+      aiData = await response.json();
+      
+      if (response.ok) break;
+      
+      // If busy, wait and retry
+      if (response.status === 503 && attempt < maxRetries) {
+        attempt++;
+        console.log(`Gemini busy (503). Retrying attempt ${attempt}...`);
+        await new Promise(r => setTimeout(r, 1500 * attempt)); // Exponential backoff: 1.5s, 3s
+        continue;
+      }
+      
+      break;
+    }
+
     if (!response.ok) {
-      console.error("Gemini Error:", JSON.stringify(aiData, null, 2));
-      throw new Error("AI Service Error");
+      console.error("Gemini Final Error:", JSON.stringify(aiData, null, 2));
+      
+      // Specially handle high demand (503)
+      if (response.status === 503) {
+        return NextResponse.json(
+          { message: "The AI is currently under heavy load. Please try again in 15-30 seconds." },
+          { status: 503 }
+        );
+      }
+
+      return NextResponse.json(
+        { message: "AI Assistant is temporarily unavailable. Please try again later." },
+        { status: response.status || 500 }
+      );
     }
 
     const aiAnswer = aiData.candidates[0].content.parts[0].text;
