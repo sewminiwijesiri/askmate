@@ -16,7 +16,12 @@ const ModulePicker = ({ onModuleChange }) => {
             try {
                 setLoading(true);
                 setError(null);
-                const res = await fetch("/api/admin/academic");
+                const token = localStorage.getItem("token");
+                const res = await fetch("/api/admin/academic", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
                 
                 if (!res.ok) {
                     throw new Error(`Failed to fetch modules: ${res.status} ${res.statusText}`);
