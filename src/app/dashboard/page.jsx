@@ -8,6 +8,7 @@ import ProfileSection from "@/components/student/ProfileSection";
 import MyResources from "@/components/student/MyResources";
 import RemindersSection from "@/components/student/RemindersSection";
 import LecturerDashboard from "@/components/lecturer/LecturerDashboard";
+import HelperDashboard from "@/components/helper/HelperDashboard";
 import {
   Bell,
   Search,
@@ -106,6 +107,10 @@ export default function StudentDashboard() {
     return <LecturerDashboard user={user} onLogout={handleLogout} />;
   }
 
+  if (user.role === "helper") {
+    return <HelperDashboard user={user} onLogout={handleLogout} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-100 via-[#f8fafc] to-orange-100 text-slate-800 font-sans selection:bg-blue-100">
       <StudentSidebar
@@ -123,20 +128,15 @@ export default function StudentDashboard() {
             <div className="space-y-1">
               <h1 className="text-3xl font-bold text-[#002147] flex flex-wrap items-center gap-3">
                 Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
-                <span className={`text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-[0.15em] font-black border shadow-sm ${user.role === 'helper' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                  user.role === 'student' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                    'bg-slate-50 text-slate-600 border-slate-100'
-                  }`}>
-                  {user.role}
-                </span>
+                 <span className={`text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-[0.15em] font-black border shadow-sm ${user.role === 'student' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-600 border-slate-100'}`}>
+                   {user.role}
+                 </span>
               </h1>
               <p className="text-slate-500 font-medium">
-                {user.role === "student"
-                  ? (() => {
-                    const yr = parseInt(String(user.year).replace(/\D/g, "")) || 1;
-                    return `Continue your ${yr}${yr === 1 ? "st" : yr === 2 ? "nd" : yr === 3 ? "rd" : "th"} year studies`;
-                  })()
-                  : `Manage your ${user.role} workspace`}
+                {(() => {
+                  const yr = parseInt(String(user.year).replace(/\D/g, "")) || 1;
+                  return `Continue your ${yr}${yr === 1 ? "st" : yr === 2 ? "nd" : yr === 3 ? "rd" : "th"} year studies`;
+                })()}
               </p>
             </div>
           ) : (
@@ -152,8 +152,7 @@ export default function StudentDashboard() {
               </div>
               <div className="hidden sm:block">
                 <p className="text-[13px] font-bold text-[#002147] leading-none">{user.userId}</p>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${user.role === 'helper' ? 'text-orange-500' : 'text-slate-400'
-                  }`}>{user.role}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider mt-0.5 text-slate-400">{user.role}</p>
               </div>
             </div>
           </div>
@@ -163,17 +162,12 @@ export default function StudentDashboard() {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(user.role === "helper" ? [
-                { label: "🧠 Questions Answered", value: "24", icon: Brain, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-                { label: "⭐ Reputation Points", value: "1.2k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
-                { label: "🏆 Rank", value: "#12", icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-                { label: "⏳ Pending Recommended Questions", value: "5", icon: Hourglass, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-              ] : [
+              {[
                 { label: "Trust Score", value: "850", icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
                 { label: "Answers", value: "12", icon: MessageSquare, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
                 { label: "Points", value: "2.4k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
                 { label: "Helper Rank", value: "#42", icon: Award, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-              ]).map((stat, i) => (
+              ].map((stat, i) => (
                 <div key={i} className={`${stat.bg} border ${stat.border} p-7 rounded-[28px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
                   <div className="flex justify-between items-start">
                     <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
@@ -202,13 +196,13 @@ export default function StudentDashboard() {
                 <section>
                   <div className="flex justify-between items-center mb-5">
                     <h3 className="text-xl font-bold text-[#002147]">
-                      {user.role === "helper" ? "📘 My Skilled Modules" : "Current Modules"}
+                      Current Modules
                     </h3>
                     <button
                       onClick={() => setActiveTab("academic")}
                       className="text-[#4DA8DA] font-bold text-sm hover:underline flex items-center gap-1"
                     >
-                      {user.role === "helper" ? "Manage Skills" : "View All"} <ChevronRight size={14} />
+                      View All <ChevronRight size={14} />
                     </button>
                   </div>
 
@@ -244,40 +238,6 @@ export default function StudentDashboard() {
                           </div>
                           <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
 
-                          {user.role === "helper" ? (
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <MessageSquare size={12} className="text-blue-500" />
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Answers</span>
-                                </div>
-                                <p className="text-lg font-black text-[#002147] leading-none">{module.answersCount || Math.floor(Math.random() * 15) + 5}</p>
-                              </div>
-                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Star size={12} className="text-orange-500" />
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rating</span>
-                                </div>
-                                <p className="text-lg font-black text-[#002147] leading-none">{(4 + Math.random()).toFixed(1)}</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-slate-500 text-sm mb-6 line-clamp-2">
-                              {module.description || `Master the principles of ${module.moduleName}.`}
-                            </p>
-                          )}
-
-                          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                            {user.role === "helper" ? (
-                              <button
-                                onClick={() => setActiveTab("academic")}
-                                className="w-full py-2.5 bg-[#002147] text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#4DA8DA] transition-all shadow-sm flex items-center justify-center gap-2 group/btn"
-                              >
-                                Manage Skills
-                                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                              </button>
-                            ) : (
-                              <>
                                 <div className="flex -space-x-2">
                                   <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-50 flex items-center justify-center text-[9px] font-bold text-[#4DA8DA]">L1</div>
                                   <div className="w-8 h-8 rounded-full border-2 border-white bg-orange-50 flex items-center justify-center text-[9px] font-bold text-[#FF9F1C]">L2</div>
@@ -291,9 +251,6 @@ export default function StudentDashboard() {
                                 >
                                   <ArrowRight size={18} />
                                 </button>
-                              </>
-                            )}
-                          </div>
                         </div>
                       ))
                     ) : (
@@ -310,17 +267,15 @@ export default function StudentDashboard() {
                 <div className="bg-[#002147] p-8 rounded-3xl text-white relative overflow-hidden group">
                   <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
                     <div className="flex-1">
-                      <h3 className="text-2xl font-bold mb-2">{user.role === 'helper' ? 'Ready to share expertise?' : 'Stuck on a problem?'}</h3>
+                      <h3 className="text-2xl font-bold mb-2">Stuck on a problem?</h3>
                       <p className="text-blue-100 text-sm mb-6 max-w-sm">
-                        {user.role === 'helper'
-                          ? 'Browse unanswered questions in your skilled modules and build your reputation today.'
-                          : 'Our AI-powered assistant and elite helpers are ready to guide you.'}
+                        Our AI-powered assistant and elite helpers are ready to guide you.
                       </p>
                       <button
                         onClick={() => setActiveTab("qa")}
                         className="px-8 py-3 bg-[#FF9F1C] hover:bg-orange-600 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-orange-500/10 active:scale-95"
                       >
-                        {user.role === 'helper' ? 'Answer Questions' : 'Ask Question'}
+                        Ask Question
                       </button>
                     </div>
                     <div className="hidden sm:flex w-32 h-32 bg-white/5 rounded-2xl border border-white/10 items-center justify-center transform rotate-6 border-dashed group-hover:rotate-0 transition-transform">

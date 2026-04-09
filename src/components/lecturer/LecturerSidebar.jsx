@@ -14,7 +14,8 @@ import {
     Bell,
     Activity,
     Award,
-    Thermometer
+    Thermometer,
+    HelpCircle
 } from "lucide-react";
 
 export default function LecturerSidebar({ activeTab, setActiveTab, user, onLogout }) {
@@ -22,7 +23,7 @@ export default function LecturerSidebar({ activeTab, setActiveTab, user, onLogou
         { id: "dashboard", label: "Lecturer Overview", icon: LayoutDashboard },
         { id: "modules", label: "Module Management", icon: BookOpen },
         { id: "resources", label: "Course Materials", icon: FileText },
-        { id: "students", label: "Student Engagement", icon: Users },
+        { id: "students", label: "Unanswered Questions", icon: HelpCircle },
         { id: "qa", label: "Q&A Consulting", icon: MessageSquare },
         { id: "heatmap", label: "Confusion Heatmap", icon: Thermometer },
         { id: "profile", label: "My Profile", icon: User },

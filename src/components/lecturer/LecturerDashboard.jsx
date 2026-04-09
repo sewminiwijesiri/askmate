@@ -5,6 +5,7 @@ import LecturerSidebar from "./LecturerSidebar";
 import LecturerMaterials from "./LecturerMaterials";
 import ProfileSection from "@/components/student/ProfileSection";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
+import UnansweredManager from "./UnansweredManager";
 import AcademicManager from "@/components/admin/AcademicManager";
 import {
     Bell,
@@ -102,7 +103,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <h1 className="text-3xl font-bold text-[#FF9F1C] capitalize">
                                 {activeTab === "modules" ? "Module Management" :
                                     activeTab === "resources" ? "Course Materials" :
-                                        activeTab === "students" ? "Student Engagement" :
+                                        activeTab === "students" ? "Unanswered Questions" :
                                             activeTab === "qa" ? "Consultation Hub" :
                                                 activeTab === "heatmap" ? "Confusion Analytics" :
                                                     activeTab === "profile" ? "Lecturer Profile" : activeTab}
@@ -110,7 +111,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <p className="text-slate-500 font-medium">
                                 Lecturer Portal • {activeTab === "modules" ? "View and edit classes" :
                                     activeTab === "resources" ? "Upload and manage materials" :
-                                        activeTab === "students" ? "Track performance metrics" :
+                                        activeTab === "students" ? "Focus on providing academic guidance" :
                                             activeTab === "heatmap" ? "Identify difficult academic areas" :
                                                 activeTab === "profile" ? "Account Settings" : "Workspace"}
                             </p>
@@ -430,13 +431,21 @@ export default function LecturerDashboard({ user, onLogout }) {
                     <LecturerMaterials user={user} />
                 )}
 
+                {activeTab === "students" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <UnansweredManager
+                            user={user}
+                        />
+                    </div>
+                )}
+
                 {activeTab === "qa" && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <AcademicBrowser
                             defaultYear={1}
                             defaultSemester={1}
                             user={user}
-                            initialView="qa"
+                            initialView="modules"
                             setActiveTab={setActiveTab}
                         />
                     </div>
