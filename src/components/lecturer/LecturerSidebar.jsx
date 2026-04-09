@@ -23,7 +23,7 @@ export default function LecturerSidebar({ activeTab, setActiveTab, user, onLogou
         { id: "dashboard", label: "Lecturer Overview", icon: LayoutDashboard },
         { id: "modules", label: "Module Management", icon: BookOpen },
         { id: "resources", label: "Course Materials", icon: FileText },
-        { id: "students", label: "Unanswered Questions", icon: HelpCircle },
+        { id: "students", label: "Unanswered Question", icon: HelpCircle },
         { id: "qa", label: "Q&A Consulting", icon: MessageSquare },
         { id: "heatmap", label: "Confusion Heatmap", icon: Thermometer },
         { id: "profile", label: "My Profile", icon: User },
