@@ -35,7 +35,12 @@ export default function ConfusionAnalytics() {
   const fetchModules = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/academic");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/academic", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setModules(data);
