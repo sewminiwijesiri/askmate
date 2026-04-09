@@ -5,6 +5,7 @@ import LecturerSidebar from "./LecturerSidebar";
 import LecturerMaterials from "./LecturerMaterials";
 import ProfileSection from "@/components/student/ProfileSection";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
+import UnansweredManager from "./UnansweredManager";
 import {
     Bell,
     BookOpen,
@@ -101,7 +102,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <h1 className="text-3xl font-bold text-[#FF9F1C] capitalize">
                                 {activeTab === "modules" ? "Module Management" :
                                     activeTab === "resources" ? "Course Materials" :
-                                        activeTab === "students" ? "Student Engagement" :
+                                        activeTab === "students" ? "Unanswered Questions" :
                                             activeTab === "qa" ? "Consultation Hub" :
                                                 activeTab === "heatmap" ? "Confusion Analytics" :
                                                     activeTab === "profile" ? "Lecturer Profile" : activeTab}
@@ -109,7 +110,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <p className="text-slate-500 font-medium">
                                 Lecturer Portal • {activeTab === "modules" ? "View and edit classes" :
                                     activeTab === "resources" ? "Upload and manage materials" :
-                                        activeTab === "students" ? "Track performance metrics" :
+                                        activeTab === "students" ? "Focus on providing academic guidance" :
                                             activeTab === "heatmap" ? "Identify difficult academic areas" :
                                                 activeTab === "profile" ? "Account Settings" : "Workspace"}
                             </p>
@@ -398,7 +399,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                 )}
 
                 {/* Placeholder for other tabs */}
-                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && (
+                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && activeTab !== "students" && (
                     <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto mb-8">
                             {activeTab === "modules" ? <BookOpen size={32} /> :
@@ -423,13 +424,21 @@ export default function LecturerDashboard({ user, onLogout }) {
                     <LecturerMaterials user={user} />
                 )}
 
+                {activeTab === "students" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <UnansweredManager
+                            user={user}
+                        />
+                    </div>
+                )}
+
                 {activeTab === "qa" && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <AcademicBrowser
                             defaultYear={1}
                             defaultSemester={1}
                             user={user}
-                            initialView="qa"
+                            initialView="modules"
                             setActiveTab={setActiveTab}
                         />
                     </div>

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import Question from "@/models/Question";
 import Module from "@/models/Module";
-import { translateQuestion } from "@/lib/ai/translation";
+import { translateQuestion } from "@/lib/translation";
 
 async function getAuthUser(req) {
   try {

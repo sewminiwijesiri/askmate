@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Student from "@/models/Student";
 import { NextResponse } from "next/server";
-import { translateQuestion } from "@/lib/ai/translation";
+import { translateQuestion, translateText } from "@/lib/ai/translation";
 
 // GET: List questions with filters
 export async function GET(req) {

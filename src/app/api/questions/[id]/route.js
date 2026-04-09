@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Student from "@/models/Student";
 import { NextResponse } from "next/server";
-import { translateQuestion } from "@/lib/ai/translation";
+import { translateQuestion } from "@/lib/translation";
 
 // GET: Single question detail
 export async function GET(req, { params }) {
@@ -52,7 +52,7 @@ export async function PATCH(req, { params }) {
 
                     console.log("Re-translating updated question...");
                     const translations = await translateQuestion(title, description, stuck);
-                    
+
                     if (translations) {
                         body.translatedVersions = {
                             english: title,

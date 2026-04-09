@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   BookOpen,
   ChevronRight,
@@ -31,10 +31,19 @@ import {
   ThumbsUp,
   Tag,
   Zap,
+  Mic,
+  Languages,
+  Volume2,
+  AlignLeft,
+  Check,
+  Loader2,
 } from "lucide-react";
 import UserProfileModal from "@/components/shared/UserProfileModal";
+import ExpertDetailView from "@/components/helper/ExpertDetailView";
+import VoiceInteractionModal from "./VoiceInteractionModal";
 
-export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView, setActiveTab }) {
+export default function AcademicBrowser({ defaultYear, defaultSemester, user, initialView, initialQaFilter, setActiveTab }) {
+  const isLecturerLike = user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer") || user?.role?.toLowerCase()?.includes("admin");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const getNum = (val) => parseInt(String(val).replace(/\D/g, "")) || 1;
@@ -61,6 +70,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [qaLoading, setQaLoading] = useState(false);
   const [isAskOpen, setIsAskOpen] = useState(false);
   const [askStep, setAskStep] = useState(1);
+  const [comfortableLanguage, setComfortableLanguage] = useState("en-US"); // State for speech recognition
   const [askData, setAskData] = useState({
     title: "",
     description: "",
@@ -78,12 +88,92 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [translationTab, setTranslationTab] = useState("english");
   const [sinhalaData, setSinhalaData] = useState({ title: "", description: "", stuck: "" });
   const [tamilData, setTamilData] = useState({ title: "", description: "", stuck: "" });
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [activeDictationField, setActiveDictationField] = useState(null);
+  const dictationRecognitionRef = useRef(null);
+
+  const startDictation = (field) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSubmitError("This browser does not support voice recognition.");
+      return;
+    }
+
+    setActiveDictationField(field);
+    setSubmitError(""); // Clear any previous errors
+
+    if (dictationRecognitionRef.current) dictationRecognitionRef.current.stop();
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = comfortableLanguage; // Dynamically set based on user selection
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = async (event) => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (transcript) {
+        if (translationTab === "sinhala") {
+          setSinhalaData(prev => ({
+            ...prev,
+            [field === "whatIveTried" ? "stuck" : field]: prev[field === "whatIveTried" ? "stuck" : field] ? prev[field === "whatIveTried" ? "stuck" : field] + " " + transcript : transcript
+          }));
+        } else if (translationTab === "tamil") {
+          setTamilData(prev => ({
+            ...prev,
+            [field === "whatIveTried" ? "stuck" : field]: prev[field === "whatIveTried" ? "stuck" : field] ? prev[field === "whatIveTried" ? "stuck" : field] + " " + transcript : transcript
+          }));
+        } else {
+          // Default to English askData
+          handleFieldChange(field, askData[field] ? askData[field] + " " + transcript : transcript);
+        }
+      }
+    };
+
+    recognition.onend = () => setActiveDictationField(null);
+    recognition.onerror = (event) => {
+      if (event.error === 'not-allowed') {
+        setSubmitError("Microphone permission denied.");
+      } else {
+        setSubmitError("Voice could not be recognized. Please try again.");
+      }
+      setActiveDictationField(null);
+    };
+
+    dictationRecognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopDictation = () => {
+    dictationRecognitionRef.current?.stop();
+    setActiveDictationField(null);
+  };
+
+  const handleDraftVoiceQuestion = (draft) => {
+    // Prioritize English version for the main submission fields
+    const englishVer = draft.translations?.["en-US"] || draft.translations?.["English"] || draft.title;
+
+    setAskData({
+      ...askData,
+      title: englishVer || draft.originalTranscript,
+      description: englishVer || draft.originalTranscript,
+      topic: englishVer || draft.originalTranscript,
+      originalTranscript: draft.originalTranscript,
+      originalLanguage: draft.language,
+      isVoiceQuestion: true,
+      translatedVersions: draft.translations || {}
+    });
+    setAskStep(2);
+    setIsAskOpen(true);
+  };
 
   // ── Inline Validation Utilities ──
-  const TOPIC_ALLOWED_PATTERN = /^[a-zA-Z0-9\s/,.\-&()]+$/;
+  const TOPIC_ALLOWED_PATTERN = /^[\p{L}0-9\s/,.\-&()]+$/u;
   const ONLY_NUMBERS = /^[0-9\s]+$/;
-  const ONLY_SYMBOLS = /^[^a-zA-Z0-9]+$/;
-  const HAS_LETTER = /[a-zA-Z]/;
+  const ONLY_SYMBOLS = /^[^\p{L}0-9]+$/u;
+  const HAS_LETTER = /[\p{L}]/u;
   const GIBBERISH_WORDS = [
     'test', 'testing', 'asdf', 'asdfg', 'asdfgh', 'asdfghjk', 'qwerty', 'qwer',
     'abcd', 'abcde', 'abc', 'aaa', 'bbb', 'ccc', 'xxx', 'zzz', 'hello',
@@ -223,45 +313,68 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [ansLoading, setAnsLoading] = useState(false);
-  const [answerContent, setAnswerContent] = useState("");
-  const [isPostingAnswer, setIsPostingAnswer] = useState(false);
   const [qaSearch, setQaSearch] = useState("");
-  const [qaFilter, setQaFilter] = useState("all"); // all | open | resolved
+  const [qaFilter, setQaFilter] = useState(initialQaFilter || "all"); // all | open | unanswered | resolved
   const [submitError, setSubmitError] = useState("");
 
-  // Enhanced Answer States (for Helpers/Lecturers)
   const [qaLanguage, setQaLanguage] = useState("english"); // english | sinhala | tamil
-  const [ansErrors, setAnsErrors] = useState({});
-  const [ansTouched, setAnsTouched] = useState({});
-  const [ansConcept, setAnsConcept] = useState("");
-  const [ansHints, setAnsHints] = useState([""]);
-  const [ansExamples, setAnsExamples] = useState([""]);
-  const [ansResources, setAnsResources] = useState([{ title: "", url: "" }]);
   const [showExpertMode, setShowExpertMode] = useState(true);
+  const [ansViewerTab, setAnsViewerTab] = useState("expert"); // expert | community | resources
 
-  const addHint = () => setAnsHints([...ansHints, ""]);
-  const updateHint = (idx, val) => {
-    const newHints = [...ansHints];
-    newHints[idx] = val;
-    setAnsHints(newHints);
-  };
-  const removeHint = (idx) => setAnsHints(ansHints.filter((_, i) => i !== idx));
+  // ── Answer Translation State ──
+  const [translatedAnswersCache, setTranslatedAnswersCache] = useState({}); // { "answerId_lang": { content, concept, hints, examples } }
+  const [ansTranslatingIds, setAnsTranslatingIds] = useState({}); // { "answerId_lang": true }
 
-  const addExample = () => setAnsExamples([...ansExamples, ""]);
-  const updateExample = (idx, val) => {
-    const newExamples = [...ansExamples];
-    newExamples[idx] = val;
-    setAnsExamples(newExamples);
-  };
-  const removeExample = (idx) => setAnsExamples(ansExamples.filter((_, i) => i !== idx));
+  const translateSingleAnswer = async (ans, lang) => {
+    const cacheKey = `${ans._id}_${lang}`;
+    if (translatedAnswersCache[cacheKey]) return; // already cached
+    if (ansTranslatingIds[cacheKey]) return; // already in progress
 
-  const addAnsResource = () => setAnsResources([...ansResources, { title: "", url: "" }]);
-  const updateAnsResource = (idx, field, val) => {
-    const newResources = [...ansResources];
-    newResources[idx] = { ...newResources[idx], [field]: val };
-    setAnsResources(newResources);
+    setAnsTranslatingIds(prev => ({ ...prev, [cacheKey]: true }));
+    try {
+      const res = await fetch("/api/ai/translate-answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: ans.content || "",
+          concept: ans.concept || "",
+          hints: ans.hints || [],
+          examples: ans.examples || [],
+          targetLang: lang
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTranslatedAnswersCache(prev => ({ ...prev, [cacheKey]: data }));
+      }
+    } catch (err) {
+      console.error("Answer translation error:", err);
+    } finally {
+      setAnsTranslatingIds(prev => ({ ...prev, [cacheKey]: false }));
+    }
   };
-  const removeAnsResource = (idx) => setAnsResources(ansResources.filter((_, i) => i !== idx));
+
+  const translateAllVisibleAnswers = async (lang) => {
+    if (lang === "english") return;
+    for (const ans of answers) {
+      const cacheKey = `${ans._id}_${lang}`;
+      if (!translatedAnswersCache[cacheKey] && !ansTranslatingIds[cacheKey]) {
+        translateSingleAnswer(ans, lang);
+      }
+    }
+  };
+
+  const getTranslatedAnswer = (ans) => {
+    if (qaLanguage === "english") return null;
+    const cacheKey = `${ans._id}_${qaLanguage}`;
+    return translatedAnswersCache[cacheKey] || null;
+  };
+
+  const isAnswerTranslating = (ans) => {
+    if (qaLanguage === "english") return false;
+    const cacheKey = `${ans._id}_${qaLanguage}`;
+    return !!ansTranslatingIds[cacheKey];
+  };
 
   useEffect(() => {
     fetchModules();
@@ -322,59 +435,6 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     }
   };
 
-  const validateAnswerField = (field, value, index = null, subfield = null) => {
-    const trimmed = (value || '').trim();
-    switch (field) {
-      case 'answerContent': {
-        if (!trimmed) return 'Answer is required';
-        if (trimmed.length < 10) return 'Please provide a more meaningful answer (at least 10 characters)';
-        if (trimmed.length > 2000) return 'Answer cannot exceed 2000 characters';
-        if (isGibberish(trimmed)) return 'Please enter a meaningful answer';
-        return null;
-      }
-      case 'ansConcept': {
-        if (!trimmed) return null; // optional
-        if (trimmed.length > 200) return 'Concept description is too long (max 200 chars)';
-        if (isGibberish(trimmed)) return 'Please enter a meaningful concept';
-        return null;
-      }
-      case 'ansHints':
-      case 'ansExamples': {
-        if (!trimmed) return null;
-        const max = field === 'ansHints' ? 300 : 1000;
-        if (trimmed.length > max) return `This ${field === 'ansHints' ? 'hint' : 'example'} is too long`;
-        return null;
-      }
-      case 'ansResources': {
-        if (subfield === 'url' && trimmed && !trimmed.startsWith('http')) return 'Invalid URL format';
-        if (subfield === 'title' && trimmed && trimmed.length > 100) return 'Resource title is too long';
-        return null;
-      }
-      default: return null;
-    }
-  };
-
-  const getAnsFieldClasses = (field, index = null, subfield = null) => {
-    const key = index !== null ? (subfield ? `${field}_${index}_${subfield}` : `${field}_${index}`) : field;
-    const hasError = ansErrors[key];
-    const isTouched = ansTouched[key];
-    if (hasError && isTouched) return 'border-red-400 focus:border-red-500 ring-1 ring-red-400/20';
-    if (!hasError && isTouched && ((index === null && (typeof field === 'string' && field.includes('Content'))) || subfield)) {
-      return 'border-emerald-400 focus:border-emerald-500 ring-1 ring-emerald-400/20';
-    }
-    return 'border-slate-200 focus:border-blue-500';
-  };
-
-  const getAnsCharInfo = (field, value) => {
-    const limits = { answerContent: { min: 10, max: 2000 }, ansConcept: { max: 200 }, ansHints: { max: 300 }, ansExamples: { max: 1000 } };
-    const l = limits[field];
-    if (!l) return null;
-    const len = (value || '').trim().length;
-    if (len === 0 && !l.min) return null;
-    if (len > l.max) return { len, max: l.max, color: 'text-red-500' };
-    if (l.min && len < l.min) return { len, max: l.max, color: 'text-amber-500' };
-    return { len, max: l.max, color: 'text-emerald-500' };
-  };
 
   const fetchAnswers = async (questionId) => {
     try {
@@ -394,14 +454,11 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const handleAutoTranslate = async () => {
     // 1. Mark fields as touched
     setAskTouched(prev => ({ ...prev, title: true, description: true }));
-    
-    // 2. Validate fields before translating
-    const titleErr = validateField('title', askData.title);
-    const descErr = validateField('description', askData.description);
-    
-    if (titleErr || descErr) {
-      setAskErrors(prev => ({ ...prev, title: titleErr, description: descErr }));
-      setSubmitError("Please provide a valid English title and description before translating.");
+
+    // 2. We remove strict length/regex validateField() constraints here, 
+    // to allow pure Sinhala or sparse notes to naturally trigger translation!
+    if (!askData.title || !askData.description) {
+      setSubmitError("Please provide a title and description before translating.");
       return;
     }
 
@@ -418,15 +475,67 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
         })
       });
 
-      if (!res.ok) throw new Error("Translation failed");
       const data = await res.json();
-      
+      if (!res.ok) throw new Error(data.error || "Translation failed");
+
       setSinhalaData(data.sinhala);
       setTamilData(data.tamil);
       setTranslationTab("sinhala"); // Auto-switch to show results
     } catch (error) {
       console.error("Translation Error:", error);
       setSubmitError("AI Translation service is temporarily unavailable. You can still submit in English.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleGlobalAutoFill = async () => {
+    const sourceData = translationTab === 'sinhala' ? sinhalaData : translationTab === 'tamil' ? tamilData : askData;
+
+    if (!sourceData.title || !sourceData.description) {
+      setSubmitError(`Please provide a title and description in ${translationTab} for the AI to analyze.`);
+      return;
+    }
+
+    try {
+      setIsTranslating(true);
+      setSubmitError("");
+
+      // Advanced: Call a consolidated translation & enhancement endpoint
+      const res = await fetch("/api/ai/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: sourceData.title,
+          description: sourceData.description,
+          stuck: sourceData.stuck || sourceData.whatIveTried,
+          enhance: true // Request AI enhancement
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Global sync failed");
+
+      // Update all datasets
+      if (data.enhancedEnglish) {
+        setAskData(prev => ({
+          ...prev,
+          title: data.enhancedEnglish.title || prev.title,
+          description: data.enhancedEnglish.description || prev.description,
+          whatIveTried: data.enhancedEnglish.stuck || prev.whatIveTried
+        }));
+      }
+
+      setSinhalaData(data.sinhala);
+      setTamilData(data.tamil);
+
+      // Visual feedback
+      setTranslationTab("sinhala");
+    } catch (error) {
+      console.error("Global Auto-Fill Error:", error);
+      setSubmitError("Advanced AI Sync failed. Proceeding with manual translation...");
+      // Fallback to basic translate
+      handleAutoTranslate();
     } finally {
       setIsTranslating(false);
     }
@@ -454,23 +563,40 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     setSubmitError("");
     try {
       setIsSubmitting(true);
+
+      // Determine main submission data based on user's selected language
+      let mainData = askData;
+      let langLabel = "English";
+
+      if (comfortableLanguage === "si-LK" || translationTab === "sinhala") {
+        if (sinhalaData.title && sinhalaData.description) {
+          mainData = { ...sinhalaData, whatIveTried: sinhalaData.stuck };
+          langLabel = "Sinhala";
+        }
+      } else if (comfortableLanguage === "ta-LK" || translationTab === "tamil") {
+        if (tamilData.title && tamilData.description) {
+          mainData = { ...tamilData, whatIveTried: tamilData.stuck };
+          langLabel = "Tamil";
+        }
+      }
+
       const res = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: askData.title.trim(),
-          description: askData.description.trim(),
+          title: (mainData.title || askData.title).trim(),
+          description: (mainData.description || askData.description).trim(),
           topic: askData.topic.trim(),
           urgencyLevel: askData.urgencyLevel,
           difficultyLevel: askData.difficultyLevel,
-          whatIveTried: askData.whatIveTried.trim(),
+          whatIveTried: (mainData.whatIveTried || askData.whatIveTried).trim(),
           assignmentContext: askData.assignmentContext.trim(),
           codeSnippet: askData.codeSnippet.trim(),
           module: selectedModule.moduleName,
           year: String(selectedYear),
           semester: String(selectedSemester),
           student: user?.id || user?.userId,
-          originalLanguage: "English",
+          originalLanguage: langLabel,
           translatedVersions: (sinhalaData.title || tamilData.title) ? {
             english: askData.title.trim(),
             sinhala: sinhalaData.title.trim(),
@@ -542,49 +668,6 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     setAskStep(s => Math.min(s + 1, 2));
   };
 
-  const handlePostAnswer = async (e) => {
-    e.preventDefault();
-
-    // Validate main content
-    const mainErr = validateAnswerField('answerContent', answerContent);
-    if (mainErr) {
-      setAnsErrors(prev => ({ ...prev, answerContent: mainErr }));
-      setAnsTouched(prev => ({ ...prev, answerContent: true }));
-      return;
-    }
-
-    try {
-      setIsPostingAnswer(true);
-      const res = await fetch("/api/answers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: selectedQuestion._id,
-          author: user?.id || user?.userId,
-          authorType: user?.role === "lecturer" ? "Lecturer" : user?.role === "helper" ? "Helper" : "Student",
-          content: answerContent.trim(),
-          concept: (user?.role === "helper" || user?.role === "lecturer") ? ansConcept.trim() : "",
-          hints: (user?.role === "helper" || user?.role === "lecturer") ? ansHints.filter(h => h.trim()) : [],
-          examples: (user?.role === "helper" || user?.role === "lecturer") ? ansExamples.filter(ex => ex.trim()) : [],
-          supportingResources: (user?.role === "helper" || user?.role === "lecturer") ? ansResources.filter(r => r.title.trim() && r.url.trim()) : [],
-        }),
-      });
-      if (res.ok) {
-        setAnswerContent("");
-        setAnsConcept("");
-        setAnsHints([""]);
-        setAnsExamples([""]);
-        setAnsResources([{ title: "", url: "" }]);
-        fetchAnswers(selectedQuestion._id);
-        // update local answer count
-        setSelectedQuestion((q) => ({ ...q, answersCount: (q.answersCount || 0) + 1 }));
-      }
-    } catch (error) {
-      console.error("Error posting answer:", error);
-    } finally {
-      setIsPostingAnswer(false);
-    }
-  };
 
   const handleUpvote = async (answerId) => {
     try {
@@ -621,22 +704,15 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
   const openQuestion = (q) => {
     setSelectedQuestion(q);
     setQaLanguage("english"); // Default to English when opening a new question
-    setAnswerContent("");
-    setAnsErrors({});
-    setAnsTouched({});
-    setAnsConcept("");
-    setAnsHints([""]);
-    setAnsExamples([""]);
-    setAnsResources([{ title: "", url: "" }]);
     fetchAnswers(q._id);
     // update view count locally
     setSelectedQuestion(prev => ({ ...prev, views: (prev.views || 0) + 1 }));
   };
-
   const closeQuestion = () => {
     setSelectedQuestion(null);
     setAnswers([]);
-    setAnswerContent("");
+    setTranslatedAnswersCache({});
+    setAnsTranslatingIds({});
   };
 
   const timeSince = (dateStr) => {
@@ -1029,18 +1105,22 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                   <h3 className="text-xl font-bold text-[#002147]">Q&amp;A Discussion</h3>
                   <p className="text-slate-500 text-sm mt-1">Ask questions, help peers, get answers.</p>
                 </div>
-                <button
-                  onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md active:scale-95"
-                >
-                  <Plus size={16} /> Ask Question
-                </button>
+                {user?.role?.toLowerCase() !== "lecturer" && user?.role?.toLowerCase() !== "helper" && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-[#FF9F1C] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-all shadow-md active:scale-95"
+                    >
+                      <Plus size={16} /> Ask Question
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Filter & Search */}
               <div className="flex flex-col sm:flex-row gap-3 pb-4 border-b border-slate-100">
                 <div className="flex gap-2">
-                  {["all", "open", "resolved"].map((f) => (
+                  {["all", "open", "unanswered", "resolved"].map((f) => (
                     <button
                       key={f}
                       onClick={() => setQaFilter(f)}
@@ -1072,13 +1152,15 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                 </div>
               ) : (() => {
                 const filtered = questions
-                  .filter((q) => qaFilter === "all" ? true : qaFilter === "resolved" ? (q.answersCount || 0) > 0 : !q.isResolved)
+                  .filter((q) => qaFilter === "all" ? true : qaFilter === "unanswered" ? (q.answersCount || 0) === 0 : qaFilter === "resolved" ? (q.answersCount || 0) > 0 : !q.isResolved)
                   .filter((q) => !qaSearch || q.title.toLowerCase().includes(qaSearch.toLowerCase()) || q.description.toLowerCase().includes(qaSearch.toLowerCase()));
                 return filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-slate-100 rounded-2xl">
                     <HelpCircle size={36} className="text-slate-200 mb-3" />
                     <p className="text-slate-400 font-bold text-sm">No questions yet.</p>
-                    <button onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }} className="mt-2 text-[#FF9F1C] font-bold text-sm hover:underline">Be the first to ask!</button>
+                    {user?.role?.toLowerCase() !== "lecturer" && (
+                      <button onClick={() => { setIsAskOpen(true); setSubmitError(""); setAskErrors({}); }} className="mt-2 text-[#FF9F1C] font-bold text-sm hover:underline">Be the first to ask!</button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
@@ -1312,30 +1394,52 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
                 {askStep === 1 && (
                   <div className="space-y-5 animate-in slide-in-from-right-2 duration-300">
-                    <div>
-                      <h3 className="text-[#002147] font-bold mb-1">Academic Structure</h3>
-                      <p className="text-xs text-slate-500 mb-4">Confirm your academic context before asking.</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-[#002147] font-bold mb-1">Academic Structure</h3>
+                        <p className="text-xs text-slate-500">Confirm your academic context before asking.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsVoiceModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest border border-blue-100 hover:bg-blue-100 transition-all active:scale-95 shadow-sm"
+                      >
+                        <Mic size={14} /> Voice Assistant
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Year</span>
-                        <p className="text-sm font-bold text-[#002147]">{selectedYear}</p>
+                      <div className="p-4 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-center">
+                        <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-1">Academic Year</span>
+                        <p className="text-base font-black text-[#002147]">{selectedYear}</p>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Semester</span>
-                        <p className="text-sm font-bold text-[#002147]">{selectedSemester}</p>
+                      <div className="p-4 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-center">
+                        <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-1">Semester</span>
+                        <p className="text-base font-black text-[#002147]">{selectedSemester}</p>
                       </div>
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Module</span>
-                      <p className="text-sm font-bold text-[#002147]">{selectedModule?.moduleCode} - {selectedModule?.moduleName}</p>
+                    <div className="p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110 group-hover:rotate-12 duration-500">
+                        <BookOpen size={40} className="text-blue-600" />
+                      </div>
+                      <span className="text-[9px] font-black tracking-widest text-blue-500 uppercase mb-1 relative z-10">Selected Module</span>
+                      <p className="text-sm font-bold text-[#002147] relative z-10">{selectedModule?.moduleCode} - {selectedModule?.moduleName}</p>
                     </div>
 
                     <div className="space-y-1.5 pt-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase">Topic / Sub-topic <span className="text-red-400">*</span></label>
-                        {(() => { const c = getCharInfo('topic', askData.topic); return c && (askTouched.topic || askData.topic.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
+                      <div className="flex items-center justify-between pl-1">
+                        <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Topic / Sub-topic <span className="text-red-400">*</span></label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => activeDictationField === 'topic' ? stopDictation() : startDictation('topic')}
+                            className={`p-2 rounded-xl transition-all ${activeDictationField === 'topic' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'bg-slate-50 text-slate-400 border border-transparent hover:bg-white hover:border-blue-200 hover:text-blue-500 hover:shadow-sm'}`}
+                            title="Voice Dictation"
+                          >
+                            <Mic size={14} className={activeDictationField === 'topic' ? "scale-110" : ""} />
+                          </button>
+                          {(() => { const c = getCharInfo('topic', askData.topic); return c && (askTouched.topic || askData.topic.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums px-2 py-1 bg-slate-50 rounded-lg border border-slate-100`}>{c.len} / {c.max}</span> : null; })()}
+                        </div>
                       </div>
                       <input
                         type="text"
@@ -1343,7 +1447,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                         onChange={(e) => handleFieldChange('topic', e.target.value)}
                         onBlur={() => handleFieldBlur('topic')}
                         maxLength={100}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${getFieldClasses('topic')}`}
+                        className={`w-full bg-slate-50/50 border rounded-2xl py-3.5 px-5 text-sm font-semibold focus:outline-none transition-all focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 shadow-sm ${getFieldClasses('topic')}`}
                         placeholder="e.g. Networking Fundamentals"
                         autoFocus
                       />
@@ -1354,197 +1458,351 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                 )}
 
                 {askStep === 2 && (
-                  <div className="space-y-5 animate-in slide-in-from-right-2 duration-300">
+                  <div className="space-y-6 animate-in slide-in-from-right-2 duration-300">
+                    {/* ── Step 2 Header ── */}
                     <div>
                       <h3 className="text-[#002147] font-bold mb-1">Enter the Question</h3>
-                      <p className="text-xs text-slate-500 mb-4">Provide a clear title and description of your problem.</p>
+                      <p className="text-xs text-slate-500 mb-5">Provide a clear title and description. Use voice or type in your preferred language.</p>
                     </div>
 
-                    {/* ── Question Title ── */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase">Question Title <span className="text-red-400">*</span></label>
-                        {(() => { const c = getCharInfo('title', askData.title); return c && (askTouched.title || askData.title.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
-                      </div>
-                      <input
-                        type="text"
-                        value={askData.title}
-                        onChange={(e) => handleFieldChange('title', e.target.value)}
-                        onBlur={() => handleFieldBlur('title')}
-                        maxLength={160}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium focus:outline-none transition-all focus:bg-white ${getFieldClasses('title')}`}
-                        placeholder="e.g. What is the difference between TCP and UDP?"
-                        autoFocus
-                      />
-                      {askErrors.title && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.title}</p>}
-                      {!askErrors.title && askTouched.title && askData.title.trim().length >= 10 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
-                    </div>
-
-                    {/* ── Problem Description ── */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase">Problem Description <span className="text-red-400">*</span></label>
-                        {(() => { const c = getCharInfo('description', askData.description); return c && (askTouched.description || askData.description.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
-                      </div>
-                      <textarea
-                        value={askData.description}
-                        onChange={(e) => handleFieldChange('description', e.target.value)}
-                        onBlur={() => handleFieldBlur('description')}
-                        maxLength={1050}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-24 resize-none focus:outline-none transition-all focus:bg-white ${getFieldClasses('description')}`}
-                        placeholder="Describe your question in detail..."
-                      />
-                      {askErrors.description && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.description}</p>}
-                      {!askErrors.description && askTouched.description && askData.description.trim().length >= 20 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
-                    </div>
-
-                    {/* ── Where Are You Stuck? ── */}
-                    <div className="space-y-1.5 pt-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase">Where are you stuck? <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
-                        {(() => { const c = getCharInfo('whatIveTried', askData.whatIveTried); return c && askData.whatIveTried.trim().length > 0 ? <span className={`text-[10px] font-bold ${c.color} tabular-nums`}>{c.len} / {c.max}</span> : null; })()}
-                      </div>
-                      <textarea
-                        value={askData.whatIveTried}
-                        onChange={(e) => handleFieldChange('whatIveTried', e.target.value)}
-                        onBlur={() => handleFieldBlur('whatIveTried')}
-                        maxLength={520}
-                        className={`w-full bg-slate-50 border rounded-xl py-3 px-4 text-sm font-medium h-20 resize-none focus:outline-none transition-all focus:bg-white ${getFieldClasses('whatIveTried')}`}
-                        placeholder="Optional: Explain what you've already tried..."
-                      />
-                      {askErrors.whatIveTried && <p className="text-red-500 text-[11px] font-bold mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={12} /> {askErrors.whatIveTried}</p>}
-                      {!askErrors.whatIveTried && askTouched.whatIveTried && askData.whatIveTried.trim().length >= 5 && <p className="text-emerald-500 text-[10px] font-bold mt-1 flex items-center gap-1"><CheckCircle size={11} /> Looks good!</p>}
-                    </div>
-
-                    {/* ── Tabs for Multilingual Support ── */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                    {/* ── Unified Language & Voice Control Bar ── */}
+                    <div className="p-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border border-slate-200/60 rounded-[2rem] shadow-sm space-y-4">
+                      {/* Language Tabs – controls both voice recognition & content tab */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex bg-white p-1 rounded-2xl border border-slate-200/50 shadow-inner w-full sm:w-auto">
                           {[
-                            { id: "english", label: "English", icon: "EN" },
-                            { id: "sinhala", label: "සිංහල", icon: "සිං" },
-                            { id: "tamil", label: "தமிழ்", icon: "த" }
+                            { id: "english", speechId: "en-US", label: "English", icon: "EN" },
+                            { id: "sinhala", speechId: "si-LK", label: "සිංහල", icon: "සිං" },
+                            { id: "tamil",   speechId: "ta-LK", label: "தமிழ்",  icon: "த" }
                           ].map((tab) => (
                             <button
                               key={tab.id}
                               type="button"
-                              onClick={() => setTranslationTab(tab.id)}
-                              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-2 ${translationTab === tab.id
-                                ? "bg-white text-blue-600 shadow-sm"
-                                : "text-slate-400 hover:text-slate-600"
+                              onClick={() => {
+                                setTranslationTab(tab.id);
+                                setComfortableLanguage(tab.speechId);
+                              }}
+                              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${translationTab === tab.id
+                                ? "bg-[#002147] text-white shadow-lg shadow-blue-900/20 active:scale-95"
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                                 }`}
                             >
-                              <span>{tab.icon}</span>
-                              <span className="hidden sm:inline">{tab.label}</span>
+                              <span className={translationTab === tab.id ? "text-blue-300" : "opacity-40"}>{tab.icon}</span>
+                              <span>{tab.label}</span>
                             </button>
                           ))}
                         </div>
 
-                        {translationTab === "english" && (
-                          <button
-                            type="button"
-                            onClick={handleAutoTranslate}
-                            disabled={isTranslating || !askData.title || !askData.description}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-blue-100 transition-all disabled:opacity-50"
-                          >
-                            {isTranslating ? (
-                              <div className="w-3 h-3 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                            ) : (
-                              <Zap size={12} />
-                            )}
-                            {isTranslating ? "Translating..." : "Translate (SI/TA)"}
-                          </button>
-                        )}
+                        {/* AI Sync Button */}
+                        <button
+                          type="button"
+                          onClick={handleGlobalAutoFill}
+                          disabled={isTranslating || (!askData.title && !sinhalaData.title && !tamilData.title)}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.12em] shadow-lg shadow-blue-500/20 hover:scale-[1.03] transition-all disabled:opacity-30 disabled:grayscale active:scale-95 whitespace-nowrap"
+                        >
+                          {isTranslating ? (
+                            <><Loader2 size={14} className="animate-spin" /> Translating...</>
+                          ) : (
+                            <><Zap size={14} className="fill-white/30" /> Translate All</>
+                          )}
+                        </button>
                       </div>
 
-                      {/* ── English Tab Content (Original Fields) ── */}
-                      {translationTab === "english" && (
-                        <p className="text-[10px] text-slate-400 font-medium italic px-1">Tip: Use the Translate button to automatically generate Sinhala and Tamil versions of your question.</p>
-                      )}
+                      {/* Voice Status Indicator */}
+                      <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center gap-3">
+                          {activeDictationField ? (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-full border border-red-200 animate-pulse">
+                              <div className="flex items-center gap-0.5 h-3">
+                                {[1, 2, 3, 4, 3, 2, 1].map((h, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-0.5 bg-red-400 rounded-full animate-voice-pulse"
+                                    style={{ height: `${h * 25}%`, animationDelay: `${i * 0.1}s` }}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">Recording • {activeDictationField}</span>
+                              <button type="button" onClick={stopDictation} className="ml-1 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-all">
+                                <X size={10} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voice Ready • {comfortableLanguage === "en-US" ? "English" : comfortableLanguage === "si-LK" ? "සිංහල" : "தமிழ்"}</span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsVoiceModalOpen(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-xl font-black text-[9px] uppercase tracking-widest border border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-all active:scale-95 shadow-sm"
+                        >
+                          <Mic size={13} /> Voice Assistant
+                        </button>
+                      </div>
+                    </div>
+                    <style jsx>{`
+                      @keyframes voice-pulse {
+                        0%, 100% { transform: scaleY(1); opacity: 0.5; }
+                        50% { transform: scaleY(2.5); opacity: 1; }
+                      }
+                      .animate-voice-pulse {
+                        animation: voice-pulse 1s ease-in-out infinite;
+                      }
+                    `}</style>
 
-                      {/* ── Sinhala Tab Content ── */}
-                      {translationTab === "sinhala" && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-blue-50/30 p-4 rounded-2xl border border-blue-100/50">
+                    {/* ── Language-Specific Content Wrapper ── */}
+                    <div className="space-y-5">
+                      {/* ── English Tab (Primary Source) ── */}
+                      {translationTab === "english" && (
+                        <>
+                          {/* ── Question Title ── */}
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                              Question Title (සිංහල)
-                              {sinhalaData.title && <span className="px-1.5 py-0.5 bg-blue-100 rounded text-[8px]">Auto-generated</span>}
-                            </label>
+                            <div className="flex items-center justify-between pl-1">
+                              <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide flex items-center gap-2">
+                                <FileText size={14} className="text-blue-500" />
+                                Question Title <span className="text-red-400">*</span>
+                              </label>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'title' ? stopDictation() : startDictation('title')}
+                                  className={`p-2 rounded-xl transition-all ${activeDictationField === 'title' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'bg-slate-50 text-slate-400 hover:text-blue-500 hover:bg-white border border-transparent hover:border-blue-200 hover:shadow-sm'}`}
+                                  title="Voice Dictation"
+                                >
+                                  <Mic size={14} className={activeDictationField === 'title' ? "scale-110" : ""} />
+                                </button>
+                                {(() => { const c = getCharInfo('title', askData.title); return c && (askTouched.title || askData.title.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums px-2 py-1 bg-slate-50 rounded-lg border border-slate-100`}>{c.len} / {c.max}</span> : null; })()}
+                              </div>
+                            </div>
                             <input
                               type="text"
-                              value={sinhalaData.title}
-                              onChange={(e) => setSinhalaData({ ...sinhalaData, title: e.target.value })}
-                              className="w-full bg-white border border-blue-100 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
-                              placeholder="ප්‍රශ්නයේ මාතෘකාව මෙහි ඇතුළත් කරන්න..."
+                              value={askData.title}
+                              onChange={(e) => handleFieldChange('title', e.target.value)}
+                              onBlur={() => handleFieldBlur('title')}
+                              maxLength={160}
+                              className={`w-full bg-white border border-slate-200/80 rounded-2xl py-4 px-5 text-sm font-bold text-slate-700 focus:outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm ${getFieldClasses('title')}`}
+                              placeholder="e.g. What is the difference between TCP and UDP?"
+                              autoFocus
                             />
+                            {askErrors.title && <p className="text-red-500 text-[11px] font-bold mt-2 flex items-center gap-1.5 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={14} /> {askErrors.title}</p>}
                           </div>
+
+                          {/* ── Problem Description ── */}
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Problem Description (සිංහල)</label>
+                            <div className="flex items-center justify-between pl-1">
+                              <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide flex items-center gap-2">
+                                <AlignLeft size={14} className="text-blue-500" />
+                                Problem Description <span className="text-red-400">*</span>
+                              </label>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'description' ? stopDictation() : startDictation('description')}
+                                  className={`p-2 rounded-xl transition-all ${activeDictationField === 'description' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'bg-slate-50 text-slate-400 border border-transparent hover:bg-white hover:border-blue-200 hover:text-blue-500 hover:shadow-sm'}`}
+                                >
+                                  <Mic size={14} className={activeDictationField === 'description' ? "scale-110" : ""} />
+                                </button>
+                                {(() => { const c = getCharInfo('description', askData.description); return c && (askTouched.description || askData.description.trim().length > 0) ? <span className={`text-[10px] font-bold ${c.color} tabular-nums px-2 py-1 bg-slate-50 rounded-lg border border-slate-100`}>{c.len} / {c.max}</span> : null; })()}
+                              </div>
+                            </div>
                             <textarea
-                              value={sinhalaData.description}
-                              onChange={(e) => setSinhalaData({ ...sinhalaData, description: e.target.value })}
-                              className="w-full bg-white border border-blue-100 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-blue-400 transition-all"
-                              placeholder="ඔබේ ප්‍රශ්නය විස්තර කරන්න..."
+                              value={askData.description}
+                              onChange={(e) => handleFieldChange('description', e.target.value)}
+                              onBlur={() => handleFieldBlur('description')}
+                              maxLength={1050}
+                              className={`w-full bg-white border border-slate-200/80 rounded-3xl py-4 px-6 text-[13px] leading-relaxed font-medium text-slate-700 h-36 resize-none focus:outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 shadow-sm ${getFieldClasses('description')}`}
+                              placeholder="Describe your question in detail..."
+                            />
+                            {askErrors.description && <p className="text-red-500 text-[11px] font-bold mt-2 flex items-center gap-1.5 animate-in slide-in-from-top-1 duration-200"><AlertCircle size={14} /> {askErrors.description}</p>}
+                          </div>
+
+                          {/* ── Where Are You Stuck? ── */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-2">
+                                <HelpCircle size={12} className="text-blue-500" />
+                                Where are you stuck? <span className="text-slate-300 normal-case font-medium">(optional)</span>
+                              </label>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'whatIveTried' ? stopDictation() : startDictation('whatIveTried')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'whatIveTried' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-slate-400 hover:bg-blue-50 hover:text-blue-500'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                                {(() => { const c = getCharInfo('whatIveTried', askData.whatIveTried); return c && askData.whatIveTried.trim().length > 0 ? <span className={`text-[10px] font-bold ${c.color} tabular-nums px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100`}>{c.len} / {c.max}</span> : null; })()}
+                              </div>
+                            </div>
+                            <textarea
+                              value={askData.whatIveTried}
+                              onChange={(e) => handleFieldChange('whatIveTried', e.target.value)}
+                              onBlur={() => handleFieldBlur('whatIveTried')}
+                              maxLength={520}
+                              className={`w-full bg-slate-50/50 border rounded-2xl py-3 px-5 text-sm font-medium h-20 resize-none focus:outline-none transition-all focus:bg-white focus:ring-4 focus:ring-blue-500/5 ${getFieldClasses('whatIveTried')}`}
+                              placeholder="Explain what you've already tried..."
                             />
                           </div>
-                          {askData.whatIveTried && (
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Where I'm Stuck (සිංහල)</label>
+                        </>
+                      )}
+
+                      {/* ── Sinhala TabContent ── */}
+                      {translationTab === "sinhala" && (
+                        <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-300">
+                          <div className="p-5 bg-blue-50/40 rounded-[2rem] border border-blue-100/50 space-y-5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                              <Languages size={80} />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                                  Question Title (සිංහල)
+                                  {sinhalaData.title && <span className="px-2 py-0.5 bg-blue-600 text-white rounded-lg text-[8px] font-black uppercase tracking-tighter">AI Localized</span>}
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'title' ? stopDictation() : startDictation('title')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'title' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-blue-400 hover:bg-blue-100 hover:text-blue-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                value={sinhalaData.title}
+                                onChange={(e) => setSinhalaData({ ...sinhalaData, title: e.target.value })}
+                                className="w-full bg-white border border-blue-200/60 rounded-2xl py-3.5 px-5 text-sm font-bold text-[#002147] focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+                                placeholder="ප්‍රශ්නයේ මාතෘකාව මෙහි ඇතුළත් කරන්න..."
+                              />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Problem Description (සිංහල)</label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'description' ? stopDictation() : startDictation('description')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'description' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-blue-400 hover:bg-blue-100 hover:text-blue-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
+                              <textarea
+                                value={sinhalaData.description}
+                                onChange={(e) => setSinhalaData({ ...sinhalaData, description: e.target.value })}
+                                className="w-full bg-white border border-blue-200/60 rounded-2xl py-4 px-5 text-sm font-medium text-[#002147] h-36 resize-none focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+                                placeholder="ඔබේ ප්‍රශ්නය විස්තර කරන්න..."
+                              />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Where I&apos;m Stuck (සිංහල)</label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'whatIveTried' ? stopDictation() : startDictation('whatIveTried')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'whatIveTried' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-blue-400 hover:bg-blue-100 hover:text-blue-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
                               <textarea
                                 value={sinhalaData.stuck}
                                 onChange={(e) => setSinhalaData({ ...sinhalaData, stuck: e.target.value })}
-                                className="w-full bg-white border border-blue-100 rounded-xl py-2 px-4 text-[13px] font-medium h-16 resize-none focus:outline-none focus:border-blue-400 transition-all"
+                                className="w-full bg-white border border-blue-200/60 rounded-2xl py-3 px-5 text-[13px] font-medium text-[#002147] h-16 resize-none focus:outline-none focus:border-blue-500/50 transition-all shadow-sm"
+                                placeholder="ඔබ උත්සාහ කළ දේ..."
                               />
                             </div>
-                          )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium italic text-center px-4">
+                            Note: The English version remains the primary submission for search and indexing.
+                          </p>
                         </div>
                       )}
 
                       {/* ── Tamil Tab Content ── */}
                       {translationTab === "tamil" && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/50">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                              Question Title (தமிழ்)
-                              {tamilData.title && <span className="px-1.5 py-0.5 bg-emerald-100 rounded text-[8px]">Auto-generated</span>}
-                            </label>
-                            <input
-                              type="text"
-                              value={tamilData.title}
-                              onChange={(e) => setTamilData({ ...tamilData, tamilTitle: e.target.value })}
-                              className="w-full bg-white border border-emerald-100 rounded-xl py-2.5 px-4 text-sm font-medium focus:outline-none focus:border-emerald-400 transition-all"
-                              placeholder="கேள்வியின் தலைப்பை இங்கே உள்ளிடவும்..."
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Problem Description (தமிழ்)</label>
-                            <textarea
-                              value={tamilData.description}
-                              onChange={(e) => setTamilData({ ...tamilData, description: e.target.value })}
-                              className="w-full bg-white border border-emerald-100 rounded-xl py-2.5 px-4 text-sm font-medium h-24 resize-none focus:outline-none focus:border-emerald-400 transition-all"
-                              placeholder="உங்கள் கேள்வியை விவரிக்கவும்..."
-                            />
-                          </div>
-                          {askData.whatIveTried && (
-                            <div className="space-y-1.5">
-                              <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Where I'm Stuck (தமிழ்)</label>
+                        <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-300">
+                          <div className="p-5 bg-emerald-50/40 rounded-[2rem] border border-emerald-100/50 space-y-5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                              <Languages size={80} className="text-emerald-500" />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                  Question Title (தமிழ்)
+                                  {tamilData.title && <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase tracking-tighter">AI Localized</span>}
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'title' ? stopDictation() : startDictation('title')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'title' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-emerald-400 hover:bg-emerald-100 hover:text-emerald-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                value={tamilData.title}
+                                onChange={(e) => setTamilData({ ...tamilData, title: e.target.value })}
+                                className="w-full bg-white border border-emerald-200/60 rounded-2xl py-3.5 px-5 text-sm font-bold text-[#002147] focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm"
+                                placeholder="கேள்வியின் தலைப்பை இங்கே உள்ளிடவும்..."
+                              />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Problem Description (தமிழ்)</label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'description' ? stopDictation() : startDictation('description')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'description' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-emerald-400 hover:bg-emerald-100 hover:text-emerald-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
+                              <textarea
+                                value={tamilData.description}
+                                onChange={(e) => setTamilData({ ...tamilData, description: e.target.value })}
+                                className="w-full bg-white border border-emerald-200/60 rounded-2xl py-4 px-5 text-sm font-medium text-[#002147] h-36 resize-none focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm"
+                                placeholder="உங்கள் கேள்வியை விவரிக்கவும்..."
+                              />
+                            </div>
+                            <div className="space-y-1.5 relative z-10">
+                              <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Where I&apos;m Stuck (தமிழ்)</label>
+                                <button
+                                  type="button"
+                                  onClick={() => activeDictationField === 'whatIveTried' ? stopDictation() : startDictation('whatIveTried')}
+                                  className={`p-1.5 rounded-lg transition-all ${activeDictationField === 'whatIveTried' ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'text-emerald-400 hover:bg-emerald-100 hover:text-emerald-600'}`}
+                                >
+                                  <Mic size={14} />
+                                </button>
+                              </div>
                               <textarea
                                 value={tamilData.stuck}
                                 onChange={(e) => setTamilData({ ...tamilData, stuck: e.target.value })}
-                                className="w-full bg-white border border-emerald-100 rounded-xl py-2 px-4 text-[13px] font-medium h-16 resize-none focus:outline-none focus:border-emerald-400 transition-all"
+                                className="w-full bg-white border border-emerald-200/60 rounded-2xl py-3 px-5 text-[13px] font-medium text-[#002147] h-16 resize-none focus:outline-none focus:border-emerald-500/50 transition-all shadow-sm"
+                                placeholder="நீங்கள் ஏற்கனவே முயற்சித்ததை விவரிக்கவும்..."
                               />
                             </div>
-                          )}
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* ── Urgency Level (Moved below tabs) ── */}
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">Urgency Level <span className="text-red-400">*</span></label>
+                    {/* ── Urgency Level (Global for all languages) ── */}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-2">
+                          <Zap size={14} className="text-amber-500" />
+                          Urgency Level <span className="text-red-400">*</span>
+                        </label>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded">Selection Required</span>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         {["Normal", "Urgent"].map(urgency => (
-                          <label key={urgency} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${askData.urgencyLevel === urgency ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-500 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300'}`}>
+                          <label key={urgency} className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${askData.urgencyLevel === urgency ? 'bg-amber-50/50 border-amber-500 ring-4 ring-amber-500/5 shadow-md active:scale-[0.98]' : 'bg-white border-slate-100 hover:border-amber-200 hover:bg-slate-50/30'}`}>
                             <input
                               type="radio"
                               name="urgencyLevel"
@@ -1553,10 +1811,13 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               checked={askData.urgencyLevel === urgency}
                               onChange={(e) => setAskData({ ...askData, urgencyLevel: e.target.value })}
                             />
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${askData.urgencyLevel === urgency ? 'border-amber-600' : 'border-slate-300'}`}>
-                              {askData.urgencyLevel === urgency && <div className="w-2 h-2 rounded-full bg-amber-600"></div>}
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${askData.urgencyLevel === urgency ? 'border-amber-600 bg-amber-600' : 'border-slate-300'}`}>
+                              {askData.urgencyLevel === urgency && <Check size={14} className="text-white" />}
                             </div>
-                            <span className={`text-sm font-bold ${askData.urgencyLevel === urgency ? 'text-amber-700' : 'text-slate-600'}`}>{urgency}</span>
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-black ${askData.urgencyLevel === urgency ? 'text-amber-700' : 'text-slate-600'}`}>{urgency}</span>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{urgency === 'Urgent' ? 'Priority Response' : 'Standard Queue'}</span>
+                            </div>
                           </label>
                         ))}
                       </div>
@@ -1602,461 +1863,269 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
           </div>
         )}
 
-        {/* ── Question Detail Slide-over ── */}
+        {/* ── Question Detail Component ── */}
         {selectedQuestion && (
-          <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
-              {/* Header */}
-              <div className="p-6 border-b border-slate-100 shrink-0">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      {selectedQuestion.isResolved ? (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100">
-                          <CheckCircle size={10} /> Resolved
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded-lg text-[9px] font-black uppercase border border-orange-100">
-                          <Clock size={10} /> Open
-                        </span>
-                      )}
-                      {selectedQuestion.urgencyLevel === "Urgent" && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-500 rounded-lg text-[9px] font-black uppercase border border-red-100">
-                          <Zap size={10} /> Urgent
-                        </span>
-                      )}
-                      <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
-                      <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setViewingProfileId(selectedQuestion.student?._id || selectedQuestion.student?.studentId); }}
-                        className="text-[10px] text-blue-600 font-black uppercase tracking-widest hover:underline transition-colors focus:outline-none"
-                      >
-                        {selectedQuestion.student?.studentId || "Student"}
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 mb-3">
-                      <h3 className="text-lg font-bold text-[#002147] leading-snug">
-                        {qaLanguage === "english"
-                          ? selectedQuestion.title
-                          : (selectedQuestion.translatedVersions?.[qaLanguage] || (
-                            <span className="text-slate-400 italic">Translation not available (Showing English: {selectedQuestion.title})</span>
-                          ))}
-                      </h3>
-                      <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+          isLecturerLike ? (
+            <ExpertDetailView
+              selectedQuestion={selectedQuestion}
+              user={user}
+              qaLanguage={qaLanguage}
+              setQaLanguage={setQaLanguage}
+              closeQuestion={closeQuestion}
+              timeSince={timeSince}
+              answers={answers}
+              expertAnswers={answers.filter(a => ['lecturer', 'helper', 'admin'].includes(a.student?.role?.toLowerCase()))}
+              communityAnswers={answers.filter(a => !['lecturer', 'helper', 'admin'].includes(a.student?.role?.toLowerCase()))}
+              allResources={answers.flatMap(a => a.supportingResources || []).filter(r => r.title && r.url)}
+              ansViewerTab={ansViewerTab}
+              setAnsViewerTab={setAnsViewerTab}
+              fetchAnswers={fetchAnswers}
+              setSelectedQuestion={setSelectedQuestion}
+              setViewingProfileId={setViewingProfileId}
+            />
+          ) : (
+            <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white w-full sm:max-w-4xl h-full sm:h-[85vh] rounded-t-3xl sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
+                <div className="px-8 py-5 border-b border-slate-100 shrink-0 bg-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-slate-100 p-1 rounded-xl">
                         {["english", "sinhala", "tamil"].map((lang) => (
-                          <button
-                            key={lang}
-                            onClick={() => setQaLanguage(lang)}
-                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${qaLanguage === lang ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
-                          >
-                            {lang === "english" ? "EN" : lang === "sinhala" ? "සිං" : "த"}
-                          </button>
+                          <button key={lang} onClick={() => setQaLanguage(lang)} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${qaLanguage === lang ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>{lang === "english" ? "EN" : lang === "sinhala" ? "සිං" : "த"}</button>
                         ))}
                       </div>
+                      <button onClick={closeQuestion} className="p-2.5 bg-slate-50 text-slate-400 hover:text-red-500 rounded-xl transition-all"><X size={20} /></button>
                     </div>
-                    {selectedQuestion.topic && (
-                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-slate-400 font-bold"><Tag size={10} />{selectedQuestion.topic}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {(String(selectedQuestion.student?._id) === String(user?.id) || String(selectedQuestion.student?.studentId) === String(user?.userId)) && (
-                      <button
-                        onClick={(e) => handleDeleteQuestion(e, selectedQuestion._id)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-[11px] border border-red-100 hover:bg-red-100 transition-all"
-                      >
-                        <Trash2 size={12} /> Delete
-                      </button>
-                    )}
-                    {!selectedQuestion.isResolved && (String(selectedQuestion.student?._id) === String(user?.id) || String(selectedQuestion.student?.studentId) === String(user?.userId)) && (
-                      <button
-                        onClick={() => handleMarkResolved(selectedQuestion._id)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[11px] border border-emerald-100 hover:bg-emerald-100 transition-all"
-                      >
-                        <CheckCircle size={12} /> Mark Resolved
-                      </button>
-                    )}
-                    <button onClick={closeQuestion} className="p-2 rounded-xl hover:bg-slate-50 text-slate-400 transition-all">
-                      <X size={18} />
-                    </button>
-                  </div>
                 </div>
 
-                {/* Description */}
-                <div className="mt-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 relative group overflow-hidden">
-                  <div className="text-sm text-slate-600 leading-relaxed relative z-10">
-                    {qaLanguage === "english"
-                      ? selectedQuestion.description
-                      : (selectedQuestion.translatedVersions?.[`${qaLanguage}Description`] || (
-                        <div className="flex flex-col gap-2">
-                          <span className="text-slate-400 italic text-[11px] mb-1">“Translation not available”</span>
-                          {selectedQuestion.description}
-                        </div>
-                      ))}
-                  </div>
-                  {qaLanguage !== "english" && (selectedQuestion.translatedVersions?.[`${qaLanguage}Description`]) && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Zap size={8} /> Translated
-                    </div>
-                  )}
-                </div>
-
-                {/* Stuck Section */}
-                {selectedQuestion.whatIveTried && (
-                  <div className="mt-3 p-4 bg-orange-50/30 rounded-2xl border border-orange-100/50">
-                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1 shadow-sm">Where I'm stuck</h4>
-                    <p className="text-xs text-slate-600 leading-relaxed italic">
-                      {qaLanguage === "english"
-                        ? selectedQuestion.whatIveTried
-                        : (selectedQuestion.translatedVersions?.[`${qaLanguage}Stuck`] || selectedQuestion.whatIveTried)}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4 mt-3 text-[11px] text-slate-400 font-bold">
-                  <span className="flex items-center gap-1"><Eye size={12} /> {selectedQuestion.views || 0} views</span>
-                  <span className="flex items-center gap-1"><MessageCircle size={12} /> {selectedQuestion.answersCount || 0} answers</span>
-                </div>
-              </div>
-
-              {/* Answers */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{answers.length} Answer{answers.length !== 1 ? "s" : ""}</h4>
-                {ansLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="w-6 h-6 border-2 border-blue-100 border-t-[#FF9F1C] rounded-full animate-spin" />
-                  </div>
-                ) : answers.length === 0 ? (
-                  <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                    <p className="text-slate-400 font-bold text-sm">No answers yet. Be the first to help!</p>
-                  </div>
-                ) : (
-                  answers.map((ans) => (
-                    <div key={ans._id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                      {/* Structured Content (if exists) */}
-                      {ans.concept && (
-                        <div className="flex items-center gap-3 p-3 bg-white/50 border border-blue-100 rounded-2xl">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                            <Zap size={16} />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Concept</p>
-                            <p className="text-sm font-bold text-[#002147]">{ans.concept}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Main Content */}
-                      <p className="text-sm text-slate-700 leading-relaxed font-medium">{ans.content}</p>
-
-                      {/* Hints & Examples Grid */}
-                      {(ans.hints?.length > 0 || ans.examples?.length > 0) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {ans.hints?.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Guidance Hints</p>
-                              <div className="space-y-1.5">
-                                {ans.hints.map((h, i) => (
-                                  <div key={i} className="flex gap-2 p-2 bg-white rounded-xl border border-slate-100 text-xs text-slate-600 font-medium">
-                                    <span className="text-blue-500 font-black">{i + 1}.</span>
-                                    {h}
-                                  </div>
-                                ))}
-                              </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar group/scroll">
+                        <div className="p-8 sm:p-10 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+                            <div className="flex items-center gap-3 mb-4">
+                               {selectedQuestion.isResolved ? (
+                                 <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100">
+                                   <CheckCircle size={10} /> Resolved
+                                 </span>
+                               ) : (
+                                 <span className="flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-500 rounded-lg text-[9px] font-black uppercase border border-orange-100">
+                                   <Clock size={10} /> Open
+                                 </span>
+                               )}
+                               <span className="text-[10px] text-slate-400">{timeSince(selectedQuestion.createdAt)}</span>
                             </div>
-                          )}
-                          {ans.examples?.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Examples</p>
-                              <div className="space-y-1.5">
-                                {ans.examples.map((ex, i) => (
-                                  <div key={i} className="p-3 bg-slate-100/50 rounded-xl border border-slate-200 text-xs text-slate-600 italic font-medium">
-                                    {ex}
-                                  </div>
-                                ))}
-                              </div>
+                            <h3 className="text-2xl font-black text-[#002147] mb-6">
+                                {qaLanguage === "english" ? selectedQuestion.title : (selectedQuestion.translatedVersions?.[qaLanguage] || selectedQuestion.title)}
+                            </h3>
+
+                            <div className="mt-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                                <p className="text-slate-600 leading-relaxed font-medium">
+                                    {qaLanguage === "english" ? selectedQuestion.description : (selectedQuestion.translatedVersions?.[`${qaLanguage}Description`] || selectedQuestion.description)}
+                                </p>
                             </div>
-                          )}
-                        </div>
-                      )}
 
-                      {/* Resources */}
-                      {ans.supportingResources?.length > 0 && (
-                        <div className="space-y-2 pt-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Supporting Resources</p>
-                          <div className="flex flex-wrap gap-2">
-                            {ans.supportingResources.map((res, i) => (
-                              <a
-                                key={i}
-                                href={res.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-blue-600 hover:border-blue-300 transition-all shadow-sm"
-                              >
-                                <ExternalLink size={12} />
-                                {res.title}
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3 mt-3 pt-4 border-t border-slate-200/50">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase shadow-sm transition-transform hover:scale-105 focus:outline-none ${ans.student?.role === 'lecturer' ? 'bg-orange-600 text-white' :
-                            ans.student?.role === 'helper' ? 'bg-[#002147] text-white' :
-                              'bg-slate-200 text-slate-600'
-                            }`}>
-                          {((ans.student?.name || ans.student?.studentId || "A")[0]).toUpperCase()}
-                        </button>
-                        <div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setViewingProfileId(ans.student?._id || ans.student?.studentId); }}
-                            className="text-[11px] font-bold text-[#002147] leading-none mb-1 text-left hover:text-blue-600 hover:underline transition-colors focus:outline-none"
-                          >
-                            {ans.student?.name || ans.student?.studentId || "Anonymous"}
-                            <span className="ml-1 text-[9px] text-slate-400 font-medium">({ans.student?.studentId})</span>
-                          </button>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${ans.student?.role === 'lecturer' ? 'text-orange-600' :
-                              ans.student?.role === 'helper' ? 'text-blue-600' :
-                                'text-slate-400'
-                              }`}>
-                              {ans.student?.role || 'User'}
-                            </span>
-                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                            <span className="text-[9px] text-slate-400 font-bold">{timeSince(ans.createdAt)}</span>
-                          </div>
-                        </div>
-
-                        {/* Upvote Button */}
-                        <div className="ml-auto flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-400">{ans.upvotes || 0}</span>
-                          <button
-                            onClick={() => handleUpvote(ans._id)}
-                            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"
-                            title="Upvote Answer"
-                          >
-                            <ThumbsUp size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Post Answer */}
-              <div className="p-4 sm:p-6 border-t border-slate-100 shrink-0 bg-white">
-                {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer") || user?.role?.toLowerCase()?.includes("admin")) ? (
-                  <form onSubmit={handlePostAnswer} className="space-y-4">
-                    {(user?.role?.toLowerCase()?.includes("helper") || user?.role?.toLowerCase()?.includes("lecturer")) && (
-                      <div className="space-y-3">
-                        <button
-                          type="button"
-                          onClick={() => setShowExpertMode(!showExpertMode)}
-                          className="w-full flex items-center justify-between p-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-all active:scale-95"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Zap size={14} className={showExpertMode ? "animate-pulse border border-white/30 rounded-full p-0.5" : ""} />
-                            {showExpertMode ? "Hide Guidance Builder" : "Open Expert Guidance Builder"}
-                          </div>
-                          <ChevronRight size={14} className={`transition-transform duration-300 ${showExpertMode ? "rotate-90" : ""}`} />
-                        </button>
-
-                        {showExpertMode && (
-                          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 max-h-[200px] overflow-y-auto shadow-inner">
-                              <div className="flex items-center gap-2 text-[#002147] font-bold text-[11px] uppercase tracking-widest sticky top-0 bg-slate-50 pb-2 z-10 border-b border-slate-200">
-                                <GraduationCap size={14} className="text-blue-500" />
-                                Expert Guidance Content
-                              </div>
-
-                              {/* Concept */}
-                              <div className="space-y-1.5 pt-2">
-                                <div className="flex justify-between items-center px-1">
-                                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Core Concept</label>
-                                  {getAnsCharInfo('ansConcept', ansConcept) && (
-                                    <span className={`text-[9px] font-bold ${getAnsCharInfo('ansConcept', ansConcept).color}`}>
-                                      {getAnsCharInfo('ansConcept', ansConcept).len}/{getAnsCharInfo('ansConcept', ansConcept).max}
-                                    </span>
-                                  )}
+                            {selectedQuestion.whatIveTried && (
+                                <div className="mt-4 p-5 bg-orange-50/30 rounded-[2rem] border border-orange-100/50 text-xs italic text-slate-600">
+                                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">Stuck Context</h4>
+                                    "{qaLanguage === "english" ? selectedQuestion.whatIveTried : (selectedQuestion.translatedVersions?.[`${qaLanguage}Stuck`] || selectedQuestion.whatIveTried)}"
                                 </div>
-                                <input
-                                  type="text"
-                                  value={ansConcept}
-                                  onChange={(e) => {
-                                    setAnsConcept(e.target.value);
-                                    setAnsErrors(prev => ({ ...prev, ansConcept: validateAnswerField('ansConcept', e.target.value) }));
-                                  }}
-                                  onBlur={() => setAnsTouched(prev => ({ ...prev, ansConcept: true }))}
-                                  placeholder="The underlying principle"
-                                  className={`w-full bg-white border rounded-xl py-2 px-3 text-xs font-medium focus:outline-none transition-all placeholder:text-slate-300 ${getAnsFieldClasses('ansConcept')}`}
-                                />
-                                {ansErrors.ansConcept && ansTouched.ansConcept && <p className="text-[9px] text-red-500 font-bold ml-1">{ansErrors.ansConcept}</p>}
-                              </div>
-
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                  <span>Step-by-step Hints</span>
-                                  <button type="button" onClick={addHint} className="text-blue-500 hover:underline text-[9px]">Add Hint</button>
-                                </label>
-                                {ansHints.map((hint, i) => (
-                                  <div key={i} className="space-y-1">
-                                    <div className="flex gap-2">
-                                      <div className="flex-1 relative">
-                                        <input
-                                          type="text"
-                                          value={hint}
-                                          onChange={(e) => {
-                                            updateHint(i, e.target.value);
-                                            setAnsErrors(prev => ({ ...prev, [`ansHints_${i}`]: validateAnswerField('ansHints', e.target.value) }));
-                                          }}
-                                          onBlur={() => setAnsTouched(prev => ({ ...prev, [`ansHints_${i}`]: true }))}
-                                          placeholder={`Hint ${i + 1}...`}
-                                          className={`w-full bg-white border rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none transition-all placeholder:text-slate-300 ${getAnsFieldClasses('ansHints', i)}`}
-                                        />
-                                        {getAnsCharInfo('ansHints', hint) && (
-                                          <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold ${getAnsCharInfo('ansHints', hint).color}`}>
-                                            {getAnsCharInfo('ansHints', hint).len}/{getAnsCharInfo('ansHints', hint).max}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {ansHints.length > 1 && (
-                                        <button type="button" onClick={() => removeHint(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
-                                      )}
-                                    </div>
-                                    {ansErrors[`ansHints_${i}`] && ansTouched[`ansHints_${i}`] && <p className="text-[8px] text-red-500 font-bold ml-1">{ansErrors[`ansHints_${i}`]}</p>}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Examples */}
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                  <span>Practical Examples</span>
-                                  <button type="button" onClick={addExample} className="text-blue-500 hover:underline text-[9px]">Add Example</button>
-                                </label>
-                                {ansExamples.map((ex, i) => (
-                                  <div key={i} className="space-y-1">
-                                    <div className="flex gap-2">
-                                      <div className="flex-1 relative">
-                                        <textarea
-                                          value={ex}
-                                          onChange={(e) => {
-                                            updateExample(i, e.target.value);
-                                            setAnsErrors(prev => ({ ...prev, [`ansExamples_${i}`]: validateAnswerField('ansExamples', e.target.value) }));
-                                          }}
-                                          onBlur={() => setAnsTouched(prev => ({ ...prev, [`ansExamples_${i}`]: true }))}
-                                          placeholder={`Example ${i + 1}...`}
-                                          rows={1}
-                                          className={`w-full bg-white border rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none transition-all resize-none placeholder:text-slate-300 ${getAnsFieldClasses('ansExamples', i)}`}
-                                        />
-                                        {getAnsCharInfo('ansExamples', ex) && (
-                                          <span className={`absolute right-2 top-2 text-[8px] font-bold ${getAnsCharInfo('ansExamples', ex).color}`}>
-                                            {getAnsCharInfo('ansExamples', ex).len}/{getAnsCharInfo('ansExamples', ex).max}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {ansExamples.length > 1 && (
-                                        <button type="button" onClick={() => removeExample(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
-                                      )}
-                                    </div>
-                                    {ansErrors[`ansExamples_${i}`] && ansTouched[`ansExamples_${i}`] && <p className="text-[8px] text-red-500 font-bold ml-1">{ansErrors[`ansExamples_${i}`]}</p>}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Resources */}
-                              <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
-                                  <span>Supporting Resources</span>
-                                  <button type="button" onClick={addAnsResource} className="text-blue-500 hover:underline text-[9px]">Add Resource</button>
-                                </label>
-                                {ansResources.map((res, i) => (
-                                  <div key={i} className="grid grid-cols-2 gap-2">
-                                    <input
-                                      type="text"
-                                      value={res.title}
-                                      onChange={(e) => updateAnsResource(i, "title", e.target.value)}
-                                      placeholder="Title"
-                                      className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                                    />
-                                    <div className="flex gap-2">
-                                      <input
-                                        type="url"
-                                        value={res.url}
-                                        onChange={(e) => updateAnsResource(i, "url", e.target.value)}
-                                        placeholder="URL"
-                                        className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-medium focus:outline-none focus:border-blue-400 transition-all placeholder:text-slate-300"
-                                      />
-                                      {ansResources.length > 1 && (
-                                        <button type="button" onClick={() => removeAnsResource(i)} className="p-1.5 text-slate-300 hover:text-red-500"><X size={12} /></button>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-stretch gap-3">
-                      <div className="flex-1 relative group">
-                        <textarea
-                          value={answerContent}
-                          onChange={(e) => {
-                            setAnswerContent(e.target.value);
-                            if (ansTouched.answerContent) {
-                              setAnsErrors(prev => ({ ...prev, answerContent: validateAnswerField('answerContent', e.target.value) }));
-                            }
-                          }}
-                          onBlur={() => {
-                            setAnsTouched(prev => ({ ...prev, answerContent: true }));
-                            setAnsErrors(prev => ({ ...prev, answerContent: validateAnswerField('answerContent', answerContent) }));
-                          }}
-                          placeholder={user?.role === "student" ? "Write your answer here..." : "Write a summary or additional explanation for your guidance..."}
-                          rows={2}
-                          className={`w-full bg-slate-50 border rounded-2xl py-3 px-4 text-sm font-medium resize-none focus:outline-none transition-all placeholder:text-slate-400 ${getAnsFieldClasses('answerContent')}`}
-                        />
-                        <div className="absolute bottom-2 right-3 flex items-center gap-2">
-                          {getAnsCharInfo('answerContent', answerContent) && (
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md bg-white/80 backdrop-blur-sm shadow-sm ${getAnsCharInfo('answerContent', answerContent).color}`}>
-                              {getAnsCharInfo('answerContent', answerContent).len} / {getAnsCharInfo('answerContent', answerContent).max}
-                            </span>
-                          )}
+                            )}
                         </div>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={isPostingAnswer || !!validateAnswerField('answerContent', answerContent)}
-                        className="px-6 bg-[#002147] text-white rounded-2xl font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-all flex flex-col items-center justify-center gap-1 active:scale-95 shadow-md shadow-blue-900/10 min-w-[100px]"
-                      >
-                        {isPostingAnswer ? (
-                          <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <Send size={16} />
-                            <span>Submit</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                    <p className="text-sm font-bold text-slate-500">Only lecturers and helpers can post answers.</p>
-                  </div>
-                )}
+
+                        <div className="p-8 space-y-8">
+                             <div className="flex items-center gap-4 mb-8 flex-wrap">
+                               <div className="flex p-1.5 bg-slate-100 rounded-2xl w-fit">
+                                  {['expert', 'community'].map(tab => (
+                                      <button key={tab} onClick={() => setAnsViewerTab(tab)} className={`px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${ansViewerTab === tab ? "bg-[#002147] text-white" : "text-slate-400"}`}>{tab}</button>
+                                  ))}
+                               </div>
+                               {qaLanguage !== "english" && (
+                                 <button
+                                   onClick={() => translateAllVisibleAnswers(qaLanguage)}
+                                   disabled={Object.values(ansTranslatingIds).some(v => v)}
+                                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:scale-105 transition-all disabled:opacity-50 disabled:grayscale active:scale-95"
+                                 >
+                                   {Object.values(ansTranslatingIds).some(v => v) ? (
+                                     <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Translating...</>
+                                   ) : (
+                                     <><Zap size={12} className="fill-white/30" /> Translate All to {qaLanguage === "sinhala" ? "සිංහල" : "தமிழ்"}</>
+                                   )}
+                                 </button>
+                               )}
+                             </div>
+                             
+                             <div className="space-y-6">
+                                {(ansViewerTab === 'expert' ? answers.filter(a => ['lecturer', 'helper', 'admin'].includes(a.student?.role?.toLowerCase())) : answers.filter(a => !['lecturer', 'helper', 'admin'].includes(a.student?.role?.toLowerCase()))).map(ans => {
+                                  const isLec = ans.student?.role?.toLowerCase() === 'lecturer';
+                                  const isSelf = String(ans.student?._id || ans.student?.studentId) === String(user?.id || user?.userId);
+                                  const translated = getTranslatedAnswer(ans);
+                                  const translating = isAnswerTranslating(ans);
+                                  const displayContent = translated?.content || ans.content;
+                                  const displayConcept = translated?.concept || ans.concept;
+                                  const displayHints = (translated?.hints?.length > 0) ? translated.hints : (ans.hints || []);
+                                  const displayExamples = (translated?.examples?.length > 0) ? translated.examples : (ans.examples || []);
+
+                                  return (
+                                    <div key={ans._id} className={`relative group/guidance p-px rounded-[2rem] bg-gradient-to-br transition-all duration-300 ${isSelf ? 'from-blue-200 via-white to-blue-200 ring-2 ring-blue-500/20' : 'from-slate-200 via-white to-slate-200'}`}>
+                                      <div className="bg-white/95 backdrop-blur-2xl rounded-[1.9rem] p-5 sm:p-6 space-y-5 relative overflow-hidden">
+                                        <div className={`absolute top-0 left-0 w-1 h-full ${isLec ? 'bg-orange-500' : 'bg-blue-600'}`} />
+                                        
+                                        <div className="flex items-start justify-between gap-4">
+                                          <div className="flex items-center gap-3">
+                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black uppercase shadow-inner ${isLec ? 'bg-orange-600 text-white' : 'bg-[#002147] text-white'}`}>
+                                              {(ans.student?.name || ans.student?.studentId || "E")[0]}
+                                            </div>
+                                            <div>
+                                              <p className="text-[13px] font-black text-[#002147] flex items-center gap-2">
+                                                {ans.student?.name || ans.student?.studentId || "Anonymous"}
+                                                {isSelf && <span className="text-[9px] text-blue-500 font-black uppercase tracking-tighter bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100">You</span>}
+                                              </p>
+                                              <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${isLec ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                  {ans.student?.role || (ansViewerTab === 'expert' ? "Expert" : "Student")}
+                                                </span>
+                                                <span className="w-0.5 h-0.5 bg-slate-200 rounded-full"></span>
+                                                <span className="text-[9px] text-slate-400 font-bold">{timeSince(ans.createdAt)}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            {displayConcept && (
+                                              <span className="px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-500 truncate max-w-[120px]">
+                                                {displayConcept}
+                                              </span>
+                                            )}
+                                            {qaLanguage !== "english" && !translated && !translating && (
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); translateSingleAnswer(ans, qaLanguage); }}
+                                                className="p-1.5 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-lg transition-all text-[8px] font-black border border-blue-100"
+                                                title={`Translate to ${qaLanguage}`}
+                                              >
+                                                <Languages size={12} />
+                                              </button>
+                                            )}
+                                            {translating && (
+                                              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-lg border border-blue-100">
+                                                <div className="w-3 h-3 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                                                <span className="text-[8px] font-black text-blue-500">Translating</span>
+                                              </div>
+                                            )}
+                                            {qaLanguage !== "english" && translated && (
+                                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[7px] font-black uppercase tracking-widest border border-emerald-100">
+                                                {qaLanguage === "sinhala" ? "සිංහල" : "தமிழ்"}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        <div className="relative">
+                                          <div className="text-[12px] text-slate-600 leading-relaxed font-semibold border-l-2 border-slate-100 pl-4 py-1 whitespace-pre-wrap">
+                                            {displayContent}
+                                          </div>
+                                        </div>
+
+                                        {(displayHints.length > 0 || displayExamples.length > 0) && (
+                                          <div className="pt-4 border-t border-slate-50 grid grid-cols-2 gap-4">
+                                            {displayHints.length > 0 && (
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
+                                                  <Zap size={10} />
+                                                </div>
+                                                <span className="text-[9px] font-black text-slate-400">{displayHints.length} Hints</span>
+                                              </div>
+                                            )}
+                                            {displayExamples.length > 0 && (
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                                  <GraduationCap size={10} />
+                                                </div>
+                                                <span className="text-[9px] font-black text-slate-400">{displayExamples.length} Examples</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {/* Show actual hints and examples and resources to the student view so they can see them! */}
+                                        {(displayHints.length > 0 || displayExamples.length > 0 || ans.supportingResources?.length > 0) && (
+                                          <div className="mt-4 space-y-5 pt-4 border-t border-slate-50 transition-all">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                              {displayHints.length > 0 && (
+                                                <div className="space-y-2.5">
+                                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Incremental Hints</p>
+                                                  <div className="space-y-2">
+                                                    {displayHints.map((h, i) => (
+                                                      <div key={i} className="group/hint p-3.5 bg-slate-50/40 rounded-2xl border border-slate-100 transition-colors relative overflow-hidden">
+                                                        <div className="absolute top-0 left-0 w-0.5 h-full bg-blue-200" />
+                                                        <div className="flex gap-2.5">
+                                                          <span className="text-[9px] font-black text-blue-500 bg-blue-50 w-4 h-4 rounded flex items-center justify-center shrink-0">
+                                                            {i + 1}
+                                                          </span>
+                                                          <p className="text-xs text-slate-600 font-bold leading-relaxed">{h}</p>
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {displayExamples.length > 0 && (
+                                                <div className="space-y-2.5">
+                                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Example Scenarios</p>
+                                                  <div className="space-y-2">
+                                                    {displayExamples.map((ex, i) => (
+                                                      <div key={i} className="p-3.5 bg-blue-50/10 border border-blue-100/30 rounded-2xl text-[10px] text-slate-500 font-bold italic leading-relaxed relative">
+                                                        <div className="absolute -top-1.5 -left-1.5 p-0.5 bg-white border border-blue-100 rounded shadow-xs">
+                                                          <Zap size={8} className="text-blue-500" />
+                                                        </div>
+                                                        "{ex}"
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {ans.supportingResources?.length > 0 && (
+                                              <div className="pt-4 border-t border-slate-50">
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Learning Resources</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                  {ans.supportingResources.map((res, i) => (
+                                                    <a
+                                                      key={i}
+                                                      href={res.url}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-slate-200/60 hover:border-blue-300 rounded-xl text-[10px] font-black text-blue-600 shadow-sm transition-all hover:-translate-y-0.5"
+                                                    >
+                                                      <ExternalLink size={10} />
+                                                      {res.title}
+                                                    </a>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                             </div>
+                        </div>
+                </div>
               </div>
             </div>
-          </div>
+          )
         )}
 
+
+        <VoiceInteractionModal
+          isOpen={isVoiceModalOpen}
+          onClose={() => setIsVoiceModalOpen(false)}
+          selectedModule={selectedModule}
+          user={user}
+          onDraftQuestion={handleDraftVoiceQuestion}
+        />
+
         {viewingProfileId && <UserProfileModal userId={viewingProfileId} currentUser={user} onClose={() => setViewingProfileId(null)} />}
-      </div >
+      </div>
     );
   }
 
@@ -2144,7 +2213,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       setSelectedModule(module);
                       setActiveView("qa");
                     }}
-                    className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group"
+                    className="flex flex-col p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group"
                   >
                     <div className="flex justify-between items-center mb-4">
                       <div className="px-2 py-1 bg-white border border-slate-100 rounded text-[10px] font-bold text-[#002147] uppercase">
@@ -2155,7 +2224,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                       </div>
                     </div>
                     <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
                       {module.description || "Browse resources and discussions for " + module.moduleName}
                     </p>
                   </div>
@@ -2167,6 +2236,21 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
       </div>
 
       {viewingProfileId && <UserProfileModal userId={viewingProfileId} currentUser={user} onClose={() => setViewingProfileId(null)} />}
+      <style jsx global>{`
+        .group\\/scroll::-webkit-scrollbar {
+          width: 5px;
+        }
+        .group\\/scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .group\\/scroll::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .group\\/scroll::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e1;
+        }
+      `}</style>
     </div>
   );
 }

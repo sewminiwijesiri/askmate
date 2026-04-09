@@ -23,13 +23,12 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
     { id: "academic", label: "Academic Hub", icon: GraduationCap },
     { id: "resources", label: "Resources", icon: FileText },
     { id: "reminders", label: "Reminders", icon: Bell },
-    { id: "qa", label: user.role === "helper" ? "Recommended" : "Ask & Answer", icon: user.role === "helper" ? Brain : MessageSquare },
+    { id: "qa", label: "Ask & Answer", icon: MessageSquare },
     { id: "profile", label: "My Profile", icon: User },
   ];
 
   return (
-    <aside className={`fixed left-0 top-0 h-full w-64 border-r border-slate-200/50 z-50 hidden lg:flex flex-col transition-colors duration-300 ${user.role === "helper" ? "bg-[#e0f2fe]/60 backdrop-blur-xl" : "bg-white/60 backdrop-blur-xl"
-      }`}>
+    <aside className="fixed left-0 top-0 h-full w-64 border-r border-slate-200/50 z-50 hidden lg:flex flex-col transition-colors duration-300 bg-white/60 backdrop-blur-xl">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-10 px-2 cursor-pointer">
           <div className="w-10 h-10 rounded-xl bg-[#002147] flex items-center justify-center shadow-lg shadow-blue-200">
@@ -37,7 +36,7 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
           </div>
           <div>
             <h2 className="text-xl font-bold text-[#002147] tracking-tight">ASKmate</h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.role} Portal</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Student Portal</p>
           </div>
         </div>
 
@@ -47,8 +46,8 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id
-                ? (user.role === "helper" ? "bg-white/80 text-[#FF9F1C] shadow-sm" : "bg-[#FF9F1C]/10 text-[#FF9F1C]")
-                : (user.role === "helper" ? "text-slate-500 hover:bg-white/40 hover:text-slate-800" : "text-slate-500 hover:bg-white/40 hover:text-slate-800")
+                ? "bg-[#FF9F1C]/10 text-[#FF9F1C]"
+                : "text-slate-500 hover:bg-white/40 hover:text-slate-800"
                 }`}
             >
               <div className="w-5 flex items-center justify-center">
@@ -70,19 +69,15 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
         <div className="p-5 bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-100/50">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              {user.role === "helper" ? "Reputation Progress" : "Level Progress"}
+              Level Progress
             </p>
-            {user.role === "helper" ? (
-              <Star size={14} className="text-orange-500" />
-            ) : (
-              <Zap size={14} className="text-[#FF9F1C]" />
-            )}
+            <Zap size={14} className="text-[#FF9F1C]" />
           </div>
           <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full ${user.role === "helper" ? "w-3/4 bg-orange-500" : "w-2/3 bg-[#FF9F1C]"}`}></div>
+            <div className="h-full rounded-full w-2/3 bg-[#FF9F1C]"></div>
           </div>
           <p className="text-[10px] text-slate-400 font-bold mt-2">
-            {user.role === "helper" ? "750 / 1000 pts to Silver Rank" : "67% to next level"}
+            67% to next level
           </p>
         </div>
 
