@@ -6,6 +6,7 @@ import LecturerMaterials from "./LecturerMaterials";
 import ProfileSection from "@/components/student/ProfileSection";
 import AcademicBrowser from "@/components/student/AcademicBrowser";
 import UnansweredManager from "./UnansweredManager";
+import AcademicManager from "@/components/admin/AcademicManager";
 import {
     Bell,
     BookOpen,
@@ -399,11 +400,17 @@ export default function LecturerDashboard({ user, onLogout }) {
                 )}
 
                 {/* Placeholder for other tabs */}
-                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && activeTab !== "students" && (
+                {activeTab === "modules" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <AcademicManager />
+                    </div>
+                )}
+
+                {/* Placeholder for other tabs (except modules which is now handled above) */}
+                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && activeTab !== "modules" && (
                     <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto mb-8">
-                            {activeTab === "modules" ? <BookOpen size={32} /> :
-                                <Users size={32} />}
+                            <Users size={32} />
                         </div>
                         <h3 className="text-2xl font-bold text-[#002147] mb-3 capitalize">
                             {activeTab} Workspace

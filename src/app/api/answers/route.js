@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import Answer from "@/models/Answer";
 import Question from "@/models/Question";
+import Notification from "@/models/Notification";
 import { NextResponse } from "next/server";
 
 // POST: Create a new answer
@@ -39,10 +40,23 @@ export async function POST(req) {
         });
 
         // Update question's answer count
-        await Question.findByIdAndUpdate(questionId, {
+        const updatedQuestion = await Question.findByIdAndUpdate(questionId, {
             $inc: { answersCount: 1 },
             lastAnsweredAt: new Date()
         });
+
+        // ── NOTIFICATION ──
+        if (updatedQuestion && updatedQuestion.student) {
+            try {
+                await new Notification({
+                    userId: updatedQuestion.student,
+                    title: "New Answer to Your Question",
+                    message: `Someone has provided an answer to your question: "${updatedQuestion.title.substring(0, 30)}..."`,
+                }).save();
+            } catch (notifErr) {
+                console.error("Answer notification error:", notifErr);
+            }
+        }
 
         return NextResponse.json(newAnswer, { status: 201 });
     } catch (error) {

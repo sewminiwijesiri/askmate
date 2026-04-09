@@ -70,7 +70,12 @@ export default function AcademicManager() {
   const fetchModules = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/academic");
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/academic", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setModules(data);
@@ -141,9 +146,13 @@ export default function AcademicManager() {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch("/api/admin/academic", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ ...newModule, year: selectedYear, semester: selectedSemester }),
       });
       
@@ -179,9 +188,13 @@ export default function AcademicManager() {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`/api/admin/academic/${editingModule._id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(newModule),
       });
 
@@ -211,7 +224,13 @@ export default function AcademicManager() {
   const handleDeleteModule = async (id) => {
     if (!confirm("Are you sure? This will delete all associated data.")) return;
     try {
-      const res = await fetch(`/api/admin/academic/${id}`, { method: "DELETE" });
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/admin/academic/${id}`, { 
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       if (res.ok) fetchModules();
     } catch (error) {
       console.error("Error deleting module:", error);
