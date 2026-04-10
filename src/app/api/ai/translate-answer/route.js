@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { callGemini } from "@/lib/ai/gemini-client";
 
 export async function POST(req) {
     try {
@@ -6,11 +7,6 @@ export async function POST(req) {
 
         if (!content && !concept) {
             return NextResponse.json({ error: "Content or concept is required." }, { status: 400 });
-        }
-
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return NextResponse.json({ error: "Translation service unavailable." }, { status: 503 });
         }
 
         const langName = targetLang === "sinhala" ? "Sinhala" : "Tamil";
@@ -39,33 +35,21 @@ Rules:
 - Produce ONLY the JSON object, nothing else.
 `;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-        const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    temperature: 0.2
-                }
-            })
-        });
-
-        if (!res.ok) {
-            const err = await res.json();
-            const errMsg = err.error?.message || JSON.stringify(err);
-            console.error("Answer Translation API Error:", errMsg);
-            return NextResponse.json({ error: `AI API Error: ${errMsg}` }, { status: 502 });
+        let text;
+        try {
+            const result = await callGemini({
+                contents: [{ parts: [{ text: prompt }] }]
+            }, { jsonMode: true });
+            text = result.text;
+        } catch (error) {
+            console.error("Answer Translation API Error:", error.message);
+            return NextResponse.json({ error: `AI API Error: ${error.message}` }, { status: 502 });
         }
-
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!text) {
-            console.error("Answer Translation Error - No response text:", JSON.stringify(data, null, 2));
             return NextResponse.json({ error: "Translation returned empty response." }, { status: 502 });
         }
+
 
         try {
             const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();

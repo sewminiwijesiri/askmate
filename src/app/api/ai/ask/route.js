@@ -8,6 +8,7 @@ import AiChat from "@/models/AiChat";
 import AiMessage from "@/models/AiMessage";
 import { systemPrompt } from "@/lib/ai/prompts";
 import { isSolutionSeeking, buildIntegrityResponse } from "@/lib/ai/integrity";
+import { callGemini } from "@/lib/ai/gemini-client";
 
 async function getAuthUser(req) {
   try {
@@ -160,44 +161,16 @@ export async function POST(req) {
       },
     };
 
-    // Gemini Call with automatic retry for 503 (High Demand)
-    let response;
-    let aiData;
-    let maxRetries = 2;
-    let attempt = 0;
-
-    while (attempt <= maxRetries) {
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(geminiPayload),
-        }
-      );
-
-      aiData = await response.json();
+    // Gemini Call with centralized utility (handles 429/503 retries)
+    let aiAnswer;
+    try {
+      const { text } = await callGemini(geminiPayload);
+      aiAnswer = text;
+    } catch (e) {
+      console.error("Gemini Final Error:", e.message);
       
-      if (response.ok) break;
-      
-      // If busy, wait and retry
-      if (response.status === 503 && attempt < maxRetries) {
-        attempt++;
-        console.log(`Gemini busy (503). Retrying attempt ${attempt}...`);
-        await new Promise(r => setTimeout(r, 1500 * attempt)); // Exponential backoff: 1.5s, 3s
-        continue;
-      }
-      
-      break;
-    }
-
-    if (!response.ok) {
-      console.error("Gemini Final Error:", JSON.stringify(aiData, null, 2));
-      
-      // Specially handle high demand (503)
-      if (response.status === 503) {
+      // Specially handle busy state
+      if (e.message.includes("503") || e.message.includes("heavy load")) {
         return NextResponse.json(
           { message: "The AI is currently under heavy load. Please try again in 15-30 seconds." },
           { status: 503 }
@@ -206,11 +179,10 @@ export async function POST(req) {
 
       return NextResponse.json(
         { message: "AI Assistant is temporarily unavailable. Please try again later." },
-        { status: response.status || 500 }
+        { status: 502 }
       );
     }
 
-    const aiAnswer = aiData.candidates[0].content.parts[0].text;
 
     // Citations extraction from context used
     const usedCitations = contextChunks.map((c) => {
