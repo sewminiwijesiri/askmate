@@ -105,29 +105,38 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     if (dictationRecognitionRef.current) dictationRecognitionRef.current.stop();
 
     const recognition = new SpeechRecognition();
-    recognition.lang = comfortableLanguage; // Dynamically set based on user selection
+    // Set language based on current translation tab for better accuracy
+    recognition.lang = translationTab === 'sinhala' ? 'si-LK' : 
+                       translationTab === 'tamil' ? 'ta-LK' : 
+                       (comfortableLanguage || 'en-US');
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onresult = async (event) => {
-      let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let interimTranscript = "";
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
       }
-      if (transcript) {
+
+      if (finalTranscript) {
         if (translationTab === "sinhala") {
           setSinhalaData(prev => ({
             ...prev,
-            [field === "whatIveTried" ? "stuck" : field]: prev[field === "whatIveTried" ? "stuck" : field] ? prev[field === "whatIveTried" ? "stuck" : field] + " " + transcript : transcript
+            [field === "whatIveTried" ? "stuck" : field]: (prev[field === "whatIveTried" ? "stuck" : field] || "") + finalTranscript
           }));
         } else if (translationTab === "tamil") {
           setTamilData(prev => ({
             ...prev,
-            [field === "whatIveTried" ? "stuck" : field]: prev[field === "whatIveTried" ? "stuck" : field] ? prev[field === "whatIveTried" ? "stuck" : field] + " " + transcript : transcript
+            [field === "whatIveTried" ? "stuck" : field]: (prev[field === "whatIveTried" ? "stuck" : field] || "") + finalTranscript
           }));
         } else {
-          // Default to English askData
-          handleFieldChange(field, askData[field] ? askData[field] + " " + transcript : transcript);
+          handleFieldChange(field, (askData[field] || "") + finalTranscript);
         }
       }
     };
@@ -523,19 +532,31 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
       // Update all datasets
       if (data.enhancedEnglish) {
-        setAskData(prev => ({
-          ...prev,
-          title: data.enhancedEnglish.title || prev.title,
-          description: data.enhancedEnglish.description || prev.description,
-          whatIveTried: data.enhancedEnglish.stuck || prev.whatIveTried
-        }));
+        setAskData(prev => {
+          // If the user is currently typing in English, only fill in empty fields to avoid "changing" their question
+          if (translationTab === 'english') {
+            return {
+              ...prev,
+              title: prev.title || data.enhancedEnglish.title,
+              description: prev.description || data.enhancedEnglish.description,
+              whatIveTried: prev.whatIveTried || data.enhancedEnglish.stuck
+            };
+          }
+          // If they came from Sinhala/Tamil, they likely want the "Enhanced English" version
+          return {
+            ...prev,
+            title: data.enhancedEnglish.title || prev.title,
+            description: data.enhancedEnglish.description || prev.description,
+            whatIveTried: data.enhancedEnglish.stuck || prev.whatIveTried
+          };
+        });
       }
 
       setSinhalaData(data.sinhala);
       setTamilData(data.tamil);
 
-      // Visual feedback
-      setTranslationTab("sinhala");
+      // Visual feedback: briefly show a success toast or indicator instead of switching tabs
+      // setTranslationTab("sinhala"); // REMOVED: Don't force tab switch
     } catch (error) {
       console.error("Global Auto-Fill Error:", error);
       setSubmitError("Advanced AI Sync failed. Proceeding with manual translation...");
@@ -569,48 +590,24 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     try {
       setIsSubmitting(true);
 
-      // Determine main submission data based on user's selected language
-      let mainData = askData;
-      let langLabel = "English";
-
-      if (comfortableLanguage === "si-LK" || translationTab === "sinhala") {
-        if (sinhalaData.title && sinhalaData.description) {
-          mainData = { ...sinhalaData, whatIveTried: sinhalaData.stuck };
-          langLabel = "Sinhala";
-        }
-      } else if (comfortableLanguage === "ta-LK" || translationTab === "tamil") {
-        if (tamilData.title && tamilData.description) {
-          mainData = { ...tamilData, whatIveTried: tamilData.stuck };
-          langLabel = "Tamil";
-        }
-      }
-
+      // Strictly submit in English as per requirement
       const res = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: (mainData.title || askData.title).trim(),
-          description: (mainData.description || askData.description).trim(),
-          topic: askData.topic.trim(),
+          title: askData.title.trim(),
+          description: askData.description.trim(),
+          topic: askData.topic.trim() || askData.title.trim(),
           urgencyLevel: askData.urgencyLevel,
           difficultyLevel: askData.difficultyLevel,
-          whatIveTried: (mainData.whatIveTried || askData.whatIveTried).trim(),
+          whatIveTried: askData.whatIveTried.trim(),
           assignmentContext: askData.assignmentContext.trim(),
           codeSnippet: askData.codeSnippet.trim(),
           module: selectedModule.moduleName,
           year: String(selectedYear),
           semester: String(selectedSemester),
           student: user?.id || user?.userId,
-          originalLanguage: langLabel,
-          translatedVersions: (sinhalaData.title || tamilData.title) ? {
-            english: askData.title.trim(),
-            sinhala: sinhalaData.title.trim(),
-            tamil: tamilData.title.trim(),
-            sinhalaDescription: sinhalaData.description.trim(),
-            tamilDescription: tamilData.description.trim(),
-            sinhalaStuck: sinhalaData.stuck.trim(),
-            tamilStuck: tamilData.stuck.trim()
-          } : null
+          originalLanguage: "English"
         }),
       });
       console.log("Submission Status:", res.status);

@@ -314,22 +314,63 @@ export default function GuidanceForm({
                             </div>
                           </div>
 
-                          {(ans.hints?.length > 0 || ans.examples?.length > 0) && (
-                            <div className="pt-4 border-t border-slate-50 grid grid-cols-2 gap-4">
-                              {ans.hints?.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center text-blue-500">
-                                    <Zap size={10} />
+                          {/* Expanded Guidance Details */}
+                          {(ans.hints?.length > 0 || ans.examples?.length > 0 || ans.supportingResources?.length > 0) && (
+                            <div className="mt-4 space-y-5 pt-4 border-t border-slate-50 transition-all">
+                              <div className="grid grid-cols-1 gap-5">
+                                {ans.hints?.length > 0 && (
+                                  <div className="space-y-2.5">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Incremental Hints</p>
+                                    <div className="space-y-2">
+                                      {ans.hints.map((h, i) => (
+                                        <div key={i} className="group/hint p-3.5 bg-slate-50/40 rounded-2xl border border-slate-100 transition-colors relative overflow-hidden">
+                                          <div className="absolute top-0 left-0 w-0.5 h-full bg-blue-200" />
+                                          <div className="flex gap-2.5">
+                                            <span className="text-[9px] font-black text-blue-500 bg-blue-50 w-4 h-4 rounded flex items-center justify-center shrink-0">
+                                              {i + 1}
+                                            </span>
+                                            <p className="text-xs text-slate-600 font-bold leading-relaxed">{h}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                  <span className="text-[9px] font-black text-slate-400">{ans.hints.length} Hints</span>
-                                </div>
-                              )}
-                              {ans.examples?.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-500">
-                                    <GraduationCap size={10} />
+                                )}
+
+                                {ans.examples?.length > 0 && (
+                                  <div className="space-y-2.5">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Example Scenarios</p>
+                                    <div className="space-y-2">
+                                      {ans.examples.map((ex, i) => (
+                                        <div key={i} className="p-3.5 bg-blue-50/10 border border-blue-100/30 rounded-2xl text-[10px] text-slate-500 font-bold italic leading-relaxed relative">
+                                          <div className="absolute -top-1.5 -left-1.5 p-0.5 bg-white border border-blue-100 rounded shadow-xs">
+                                            <Zap size={8} className="text-blue-500" />
+                                          </div>
+                                          "{ex}"
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                  <span className="text-[9px] font-black text-slate-400">{ans.examples.length} Examples</span>
+                                )}
+                              </div>
+
+                              {ans.supportingResources?.length > 0 && (
+                                <div className="pt-4 border-t border-slate-50">
+                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Learning Resources</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {ans.supportingResources.map((res, i) => (
+                                      <a
+                                        key={i}
+                                        href={res.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2.5 px-3 py-1.5 bg-white border border-slate-200/60 hover:border-blue-300 rounded-xl text-[10px] font-black text-blue-600 shadow-sm transition-all hover:-translate-y-0.5"
+                                      >
+                                        <ExternalLink size={10} />
+                                        {res.title}
+                                      </a>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
