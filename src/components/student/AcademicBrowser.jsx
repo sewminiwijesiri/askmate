@@ -1021,16 +1021,40 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
                               </a>
                               {res.resourceType !== 'link' && (
                                 <button
-                                  onClick={() => {
-                                    const link = document.createElement('a');
-                                    link.href = res.url;
-                                    link.download = res.title || 'download';
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
+                                  onClick={async (e) => {
+                                    e.preventDefault();
+                                    try {
+                                      const response = await fetch(res.url);
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      
+                                      // Ensure file has correct extension
+                                      let fileName = res.title || 'resource';
+                                      if (res.resourceType === 'pdf' && !fileName.toLowerCase().endsWith('.pdf')) {
+                                        fileName += '.pdf';
+                                      } else if (res.resourceType === 'word' && !fileName.toLowerCase().endsWith('.doc') && !fileName.toLowerCase().endsWith('.docx')) {
+                                        fileName += '.docx';
+                                      }
+                                      
+                                      link.download = fileName;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      window.URL.revokeObjectURL(url);
+                                    } catch (err) {
+                                      console.error("Download error:", err);
+                                      // Fallback to simple download/open
+                                      const link = document.createElement('a');
+                                      link.href = res.url;
+                                      link.target = "_blank";
+                                      link.download = res.title || 'download';
+                                      link.click();
+                                    }
                                   }}
                                   className="p-2.5 bg-white text-slate-400 hover:text-orange-500 rounded-xl shadow-sm border border-slate-100"
-                                  title="Download"
+                                  title="Download Resource"
                                 >
                                   <Download size={16} />
                                 </button>
