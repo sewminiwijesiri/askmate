@@ -1,26 +1,20 @@
-export async function translateText(text, targetLang = "en") {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY not found");
-    const prompt = `Translate text to ${targetLang === 'en' ? 'English' : targetLang === 'si' ? 'Sinhala' : 'Tamil'}. Text: "${text}" Response: Just translation.`;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-    try {
-        const res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        
-        if (!res.ok) {
-            const err = await res.json();
-            console.error("Translate Text Error:", err);
-            return text;
-        }
+import { callGemini } from "./gemini-client";
 
-        const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text;
-    } catch (e) { return text; }
+export async function translateText(text, targetLang = "en") {
+    const prompt = `Translate text to ${targetLang === 'en' ? 'English' : targetLang === 'si' ? 'Sinhala' : 'Tamil'}. Text: "${text}" Response: Just translation.`;
+    
+    try {
+        const { text: translatedText } = await callGemini({
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        return translatedText?.trim() || text;
+    } catch (e) { 
+        console.error("Translation logic error (translateText):", e.message);
+        return text; 
+    }
 }
 
 export async function translateQuestion(title, description, stuck, enhance = true) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
-
     const prompt = `
     TASK: You are an Academic Concierge processing a student's question.
     
@@ -43,58 +37,37 @@ export async function translateQuestion(title, description, stuck, enhance = tru
     }
     `;
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
     try {
-        const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    temperature: 0.2
-                }
-            })
-        });
+        const { text } = await callGemini({
+            contents: [{ parts: [{ text: prompt }] }]
+        }, { jsonMode: true });
 
-        if (!res.ok) {
-            const err = await res.json();
-            const errMsg = err.error?.message || JSON.stringify(err);
-            console.error("Advanced Translate API Error:", errMsg);
-            throw new Error(`AI API Error: ${errMsg}`);
-        }
-
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!text) {
-             console.error("Advanced Translate Error - No Text Component. Full API Response:", JSON.stringify(data, null, 2));
-             throw new Error("AI API Error: No content generated (possible safety block)");
-        }
+        if (!text) throw new Error("No content generated");
 
         try {
             const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
             return JSON.parse(cleanText);
         } catch (parseError) {
-            console.error("Advanced Translate Error - JSON Parsing Failed. Raw text was:", text);
+            console.error("JSON Parsing Failed. Raw text:", text);
             throw new Error("AI API Error: Failed to parse generated content");
         }
     } catch (e) {
-        console.error("Advanced Translate Error:", e.message);
+        console.error("Translation logic error (translateQuestion):", e.message);
         throw e;
     }
 }
 
 export async function detectLanguage(text) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return "en";
     const prompt = `Detect lang for: "${text}". Only "en", "si", or "ta".`;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
     try {
-        const res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-        if (!res.ok) return "en";
-        const data = await res.json();
-        const lang = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
-        return ["en", "si", "ta"].includes(lang) ? lang : "en";
-    } catch (e) { return "en"; }
+        const { text: lang } = await callGemini({
+            contents: [{ parts: [{ text: prompt }] }]
+        });
+        const detected = lang?.trim().toLowerCase();
+        return ["en", "si", "ta"].includes(detected) ? detected : "en";
+    } catch (e) { 
+        console.error("Language detection error:", e.message);
+        return "en"; 
+    }
 }
+

@@ -2,6 +2,7 @@ import { translateText, detectLanguage } from "@/lib/ai/translation";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
+import { callGemini } from "@/lib/ai/gemini-client";
 
 /**
  * Interaction Hub API Route
@@ -24,7 +25,6 @@ export async function POST(req) {
         }
 
         // 3. AI-Based Answer Generation (Gemini 2.5 Flash)
-        const apiKey = process.env.GEMINI_API_KEY;
         const systemPrompt = `
             You are "ASKmate AI", an intelligent academic assistant at SLIIT University.
             Maintain a helpful, encouraging, and highly academic tone.
@@ -34,22 +34,17 @@ export async function POST(req) {
             Question: ${processedQuestion}
         `;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-        const aiRes = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
-        });
-
-        if (!aiRes.ok) {
-            const err = await aiRes.json();
-            const errMsg = err.error?.message || JSON.stringify(err);
-            console.error("Hub AI Error:", errMsg);
-            return NextResponse.json({ error: `Hub AI Error: ${errMsg}` }, { status: 502 });
+        let englishAnswer = "I'm sorry, I couldn't generate a response.";
+        try {
+            const { text } = await callGemini({
+                contents: [{ parts: [{ text: systemPrompt }] }]
+            });
+            englishAnswer = text;
+        } catch (error) {
+            console.error("Hub AI Error:", error.message);
+            return NextResponse.json({ error: `Hub AI Error: ${error.message}` }, { status: 502 });
         }
 
-        const aiData = await aiRes.json();
-        const englishAnswer = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
 
         // 4. Target Translation (Back to student's comfortable language)
         const targetShortCode = targetLocale === 'si-LK' ? 'si' : targetLocale === 'ta-LK' ? 'ta' : 'en';

@@ -368,7 +368,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
     for (const ans of answers) {
       const cacheKey = `${ans._id}_${lang}`;
       if (!translatedAnswersCache[cacheKey] && !ansTranslatingIds[cacheKey]) {
-        translateSingleAnswer(ans, lang);
+        // Use await to sequence translations slightly to avoid overwhelming the 15 RPM limit
+        await translateSingleAnswer(ans, lang);
+        // Small stagger to stay within free tier limits
+        await new Promise(r => setTimeout(r, 800)); 
       }
     }
   };
