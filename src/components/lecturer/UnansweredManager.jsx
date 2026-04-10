@@ -36,7 +36,12 @@ export default function UnansweredManager({ user }) {
     const fetchModules = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/admin/academic");
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/admin/academic", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
         if (res.ok) {
           const data = await res.json();
           setModules(Array.isArray(data) ? data : []);
@@ -142,10 +147,10 @@ export default function UnansweredManager({ user }) {
                 <ChevronRight size={18} className="rotate-180" /> Back to Modules
             </button>
             <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase border border-orange-100 shadow-sm">
+                <span className="px-3 py-1 bg-[#FF9F1C]/10 text-[#FF9F1C] rounded-full text-[10px] font-black uppercase border border-[#FF9F1C]/20 shadow-sm animate-pulse">
                     {selectedModule?.moduleCode}
                 </span>
-                <h2 className="text-xl font-bold text-[#002147]">Unanswered Questions</h2>
+                <h2 className="text-xl font-extrabold text-[#002147] tracking-tight underline decoration-[#FF9F1C] decoration-4 underline-offset-8">Unanswered Question Vault</h2>
             </div>
         </div>
 
@@ -284,7 +289,7 @@ export default function UnansweredManager({ user }) {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Navigation Sidebar */}
+        {/* Navigation Sidebar - EXACT match to AcademicBrowser */}
         <div className="w-full lg:w-64 space-y-4">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Academic Year</h3>
@@ -294,7 +299,7 @@ export default function UnansweredManager({ user }) {
                   key={year}
                   onClick={() => { setSelectedYear(year); setSelectedModule(null); }}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-[13px] transition-all ${selectedYear === year
-                    ? "bg-[#002147] text-white shadow-md font-black"
+                    ? "bg-[#002147] text-white shadow-md"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
                     }`}
                 >
@@ -313,35 +318,35 @@ export default function UnansweredManager({ user }) {
                   key={sem}
                   onClick={() => { setSelectedSemester(sem); setSelectedModule(null); }}
                   className={`py-4 rounded-xl font-bold text-sm transition-all text-center flex flex-col items-center gap-1 ${selectedSemester === sem
-                    ? "bg-orange-50 text-orange-600 border border-orange-200 ring-2 ring-orange-400/10"
+                    ? "bg-orange-50 text-orange-600 border border-orange-200"
                     : "bg-slate-50 text-slate-500 border border-transparent hover:bg-slate-100"
                     }`}
                 >
                   <span className="text-[9px] opacity-60 uppercase">Sem</span>
-                  <span className="text-lg leading-none font-black">{sem}</span>
+                  <span className="text-lg leading-none">{sem}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Modules List */}
+        {/* Modules List - EXACT match to AcademicBrowser Grid */}
         <div className="flex-1">
           <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm min-h-[500px]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
               <div>
-                <h2 className="text-2xl font-bold text-[#002147] tracking-tight">Unanswered Questions Portal</h2>
+                <h2 className="text-2xl font-bold text-[#002147] tracking-tight">Academic Hub</h2>
                 <p className="text-slate-500 text-sm mt-1">Year {selectedYear} • Semester {selectedSemester}</p>
               </div>
 
               <div className="relative w-full sm:w-64 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors" size={16} />
                 <input
                   type="text"
-                  placeholder="Filter local modules..."
+                  placeholder="Search modules..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all shadow-inner"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400 focus:bg-white transition-all shadow-sm"
                 />
               </div>
             </div>
@@ -349,13 +354,12 @@ export default function UnansweredManager({ user }) {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[300px]">
                 <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="text-xs text-slate-400 font-bold mt-4 uppercase tracking-widest">Loading Modules...</p>
               </div>
             ) : filteredModules.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[300px] text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
                 <BookOpen size={40} className="text-slate-200 mb-4" />
                 <h3 className="text-lg font-bold text-[#002147] mb-1">No modules found</h3>
-                <p className="text-slate-500 text-sm max-w-xs mx-auto">Select a different academic segment to find questions.</p>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto">Try selecting a different year or semester.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -369,11 +373,14 @@ export default function UnansweredManager({ user }) {
                       <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${selectedModule?._id === module._id ? 'bg-blue-600 text-white' : 'bg-white border border-slate-100 text-[#002147]'}`}>
                         {module.moduleCode}
                       </div>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedModule?._id === module._id ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 group-hover:bg-[#002147] group-hover:text-white'}`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedModule?._id === module._id ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 group-hover:bg-[#002147] group-hover:text-white transition-all'}`}>
                         <ArrowRight size={16} />
                       </div>
                     </div>
                     <h4 className="text-lg font-bold text-[#002147] mb-2">{module.moduleName}</h4>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
+                      {module.description || "Browse unanswered questions for " + module.moduleName}
+                    </p>
                     
                     {selectedModule?._id === module._id && (
                         <div className="mt-5 pt-4 border-t border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -382,7 +389,7 @@ export default function UnansweredManager({ user }) {
                                     e.stopPropagation();
                                     handleViewQuestions();
                                 }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-orange-700 transition-all shadow-lg shadow-orange-900/10 active:scale-95"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 text-white rounded-xl font-bold text-[11px] uppercase tracking-widest hover:bg-orange-700 transition-all shadow-lg active:scale-95"
                             >
                                 <HelpCircle size={14} /> View Unanswered Questions
                             </button>

@@ -103,7 +103,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <h1 className="text-3xl font-bold text-[#FF9F1C] capitalize">
                                 {activeTab === "modules" ? "Module Management" :
                                     activeTab === "resources" ? "Course Materials" :
-                                        activeTab === "students" ? "Unanswered Questions" :
+                                        activeTab === "students" ? "Unanswered Question" :
                                             activeTab === "qa" ? "Consultation Hub" :
                                                 activeTab === "heatmap" ? "Confusion Analytics" :
                                                     activeTab === "profile" ? "Lecturer Profile" : activeTab}
@@ -111,7 +111,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                             <p className="text-slate-500 font-medium">
                                 Lecturer Portal • {activeTab === "modules" ? "View and edit classes" :
                                     activeTab === "resources" ? "Upload and manage materials" :
-                                        activeTab === "students" ? "Focus on providing academic guidance" :
+                                        activeTab === "students" ? "Provide vital academic guidance to pending student queries" :
                                             activeTab === "heatmap" ? "Identify difficult academic areas" :
                                                 activeTab === "profile" ? "Account Settings" : "Workspace"}
                             </p>
@@ -407,7 +407,7 @@ export default function LecturerDashboard({ user, onLogout }) {
                 )}
 
                 {/* Placeholder for other tabs (except modules which is now handled above) */}
-                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && activeTab !== "modules" && (
+                {activeTab !== "dashboard" && activeTab !== "profile" && activeTab !== "resources" && activeTab !== "qa" && activeTab !== "heatmap" && activeTab !== "modules" && activeTab !== "students" && (
                     <div className="bg-white p-12 py-20 rounded-3xl border border-slate-200 border-dashed text-center animate-in fade-in zoom-in-95 duration-500">
                         <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto mb-8">
                             <Users size={32} />
