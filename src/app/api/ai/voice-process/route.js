@@ -1,4 +1,4 @@
-import { translateText, detectLanguage } from "@/lib/translation";
+import { translateText, detectLanguage } from "@/lib/ai/translation";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
@@ -34,12 +34,20 @@ export async function POST(req) {
             Question: ${processedQuestion}
         `;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
         const aiRes = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
         });
+
+        if (!aiRes.ok) {
+            const err = await aiRes.json();
+            const errMsg = err.error?.message || JSON.stringify(err);
+            console.error("Hub AI Error:", errMsg);
+            return NextResponse.json({ error: `Hub AI Error: ${errMsg}` }, { status: 502 });
+        }
+
         const aiData = await aiRes.json();
         const englishAnswer = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
 
@@ -72,6 +80,7 @@ export async function POST(req) {
             sourceText: transcript,
             targetText: translatedAnswer,
             englishVersion: englishAnswer,
+            translatedQuestion: processedQuestion,
             detectedLang
         });
 

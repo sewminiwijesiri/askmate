@@ -39,7 +39,7 @@ Rules:
 - Produce ONLY the JSON object, nothing else.
 `;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
         const res = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -51,6 +51,13 @@ Rules:
                 }
             })
         });
+
+        if (!res.ok) {
+            const err = await res.json();
+            const errMsg = err.error?.message || JSON.stringify(err);
+            console.error("Answer Translation API Error:", errMsg);
+            return NextResponse.json({ error: `AI API Error: ${errMsg}` }, { status: 502 });
+        }
 
         const data = await res.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;

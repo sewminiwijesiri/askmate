@@ -12,16 +12,9 @@ export async function POST(req) {
         console.log(`On-demand advanced translation request for: "${title.substring(0, 30)}..." (Enhance: ${enhance})`);
         
         const translations = await translateQuestion(title, description, stuck || "", enhance);
-
-        if (!translations) {
-            return NextResponse.json({ 
-                error: "Translation service failed. Check your API configuration, quota, or if the content is being blocked by safety filters." 
-            }, { status: 502 });
-        }
-
         return NextResponse.json(translations);
     } catch (error) {
-        console.error("Translation API Route Error:", error);
-        return NextResponse.json({ error: `Internal server error during translation: ${error.message}` }, { status: 500 });
+        console.error("Translation API Route Error:", error.message);
+        return NextResponse.json({ error: error.message || "Internal server error during translation" }, { status: 502 });
     }
 }

@@ -39,15 +39,23 @@ export default function VoiceInteractionHub({ isOpen, onClose, selectedModule, u
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
+        recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = targetLocale.id;
 
         recognitionRef.current.onresult = (e) => {
-          let text = Array.from(e.results).map(res => res[0].transcript).join("");
-          setTranscript(text);
+          let fullTranscript = "";
+          for (let i = 0; i < e.results.length; i++) {
+            fullTranscript += e.results[i][0].transcript;
+          }
+          setTranscript(fullTranscript);
         };
-        recognitionRef.current.onend = () => setIsRecording(false);
+        recognitionRef.current.onend = () => {
+          if (isRecording) {
+            // If it stopped but we think we're still recording, restart
+            try { recognitionRef.current.start(); } catch(e) {}
+          }
+        };
       }
       synthRef.current = window.speechSynthesis;
     }
@@ -190,13 +198,29 @@ export default function VoiceInteractionHub({ isOpen, onClose, selectedModule, u
                 </div>
               </div>
 
+              {/* Question Translation Area */}
+              {hubResult.detectedLang !== 'en' && hubResult.translatedQuestion && (
+                <div className="p-6 bg-amber-50/80 rounded-[2rem] border border-amber-100/50 space-y-3 animate-in zoom-in-95 duration-300">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-amber-500 flex items-center justify-center">
+                      <Languages size={12} className="text-white" />
+                    </div>
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Formal English Translation</span>
+                  </div>
+                  <p className="text-sm font-bold text-amber-900 leading-relaxed italic">
+                    "{hubResult.translatedQuestion}"
+                  </p>
+                  <p className="text-[9px] font-bold text-amber-500 uppercase tracking-tight">This version will be used for the official submission.</p>
+                </div>
+              )}
+
               {/* Target Response Area */}
               <div className="bg-[#002147] text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
                 <div className="relative z-10 space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
                       <Globe size={18} className="text-blue-400" />
-                      Localized Answer
+                      Localized AI Insight
                     </h3>
                     <button
                       onClick={() => isSpeaking ? synthRef.current?.cancel() : speakText(hubResult.targetText)}
@@ -210,7 +234,15 @@ export default function VoiceInteractionHub({ isOpen, onClose, selectedModule, u
                   </p>
                   <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                     <button
-                      onClick={() => onDraftQuestion?.({ title: hubResult.sourceText, description: hubResult.targetText })}
+                      onClick={() => onDraftQuestion?.({ 
+                        title: hubResult.translatedQuestion || hubResult.sourceText, 
+                        description: hubResult.translatedQuestion || hubResult.sourceText,
+                        originalTranscript: hubResult.sourceText,
+                        language: hubResult.detectedLang,
+                        translations: {
+                          "en-US": hubResult.translatedQuestion || hubResult.sourceText
+                        }
+                      })}
                       className="flex items-center gap-2 text-[11px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors"
                     >
                       <CornerUpRight size={14} /> Send to Submission Form
