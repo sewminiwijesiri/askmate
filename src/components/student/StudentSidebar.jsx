@@ -14,16 +14,25 @@ import {
   Award,
   Zap,
   Star,
-  Brain
+  Brain,
+  Trophy // NEW: Imported Trophy icon for Achievements
 } from "lucide-react";
+// NEW: Imported Link and usePathname for routing
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout }) {
+  // NEW: Added usePathname to check the current route
+  const pathname = usePathname();
+
   const menuItems = [
     { id: "dashboard", label: "Overview", icon: LayoutDashboard },
     { id: "academic", label: "Academic Hub", icon: GraduationCap },
     { id: "resources", label: "Resources", icon: FileText },
     { id: "reminders", label: "Reminders", icon: Bell },
     { id: "qa", label: "Ask & Answer", icon: MessageSquare },
+    // NEW: Added Achievements menu item
+    { id: "achievements", label: "Achievements", icon: Trophy, href: "/dashboard/achievements" },
     { id: "profile", label: "My Profile", icon: User },
   ];
 
@@ -41,27 +50,49 @@ export default function StudentSidebar({ activeTab, setActiveTab, user, onLogout
         </div>
 
         <nav className="space-y-1">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative group ${activeTab === item.id
+          {menuItems.map((item) => {
+            // NEW: Route detection - active if path matches href or activeTab matches id
+            const isActive = item.href ? pathname === item.href : activeTab === item.id;
+            
+            const btnContent = (
+              <>
+                <div className="w-5 flex items-center justify-center">
+                  <item.icon
+                    size={18}
+                    className={isActive ? "text-[#FF9F1C]" : "text-slate-400 group-hover:text-slate-600 transition-colors"}
+                  />
+                </div>
+                <span className="text-[13px] flex-1 text-left leading-tight">{item.label}</span>
+                {isActive && (
+                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#FF9F1C] shadow-[0_0_8px_rgba(255,159,28,0.5)]"></div>
+                )}
+              </>
+            );
+
+            const btnClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative group ${isActive
                 ? "bg-[#FF9F1C]/10 text-[#FF9F1C]"
                 : "text-slate-500 hover:bg-white/40 hover:text-slate-800"
-                }`}
-            >
-              <div className="w-5 flex items-center justify-center">
-                <item.icon
-                  size={18}
-                  className={activeTab === item.id ? "text-[#FF9F1C]" : "text-slate-400 group-hover:text-slate-600 transition-colors"}
-                />
-              </div>
-              <span className="text-[13px] flex-1 text-left leading-tight">{item.label}</span>
-              {activeTab === item.id && (
-                <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-[#FF9F1C] shadow-[0_0_8px_rgba(255,159,28,0.5)]"></div>
-              )}
-            </button>
-          ))}
+              }`;
+
+            // NEW: Use Link component for items having an href (Achievements)
+            if (item.href) {
+              return (
+                <Link key={item.id} href={item.href} className={btnClass}>
+                  {btnContent}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={btnClass}
+              >
+                {btnContent}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
