@@ -67,27 +67,34 @@ export default function AdminAnalytics() {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: "Total Members", value: users.total || 0, icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-                    { label: "Active Modules", value: content.modules || 0, icon: BookOpen, color: "text-emerald-500", bg: "bg-emerald-50" },
-                    { label: "Questions Asked", value: content.questions || 0, icon: MessageSquare, color: "text-orange-500", bg: "bg-orange-50" },
-                    { label: "Answers Given", value: content.answers || 0, icon: Activity, color: "text-indigo-500", bg: "bg-indigo-50" },
+                    { label: "Total Members", value: users.total || 0, icon: Users, color: "bg-blue-600" },
+                    { label: "Active Modules", value: content.modules || 0, icon: BookOpen, color: "bg-emerald-600" },
+                    { label: "Questions Asked", value: content.questions || 0, icon: MessageSquare, color: "bg-orange-600" },
+                    { label: "Answers Given", value: content.answers || 0, icon: Activity, color: "bg-indigo-600" },
                 ].map((stat, i) => (
-                    <div key={i} className="p-6 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-3xl border border-slate-100 border-b-4 hover:border-b-indigo-500 transition-all hover:-translate-y-1 relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-                        <div className={`w-12 h-12 rounded-[1rem] ${stat.bg} ${stat.color} flex items-center justify-center mb-4 relative z-10 shadow-sm border border-white`}>
-                            <stat.icon size={22} strokeWidth={2.5} />
+                    <div key={i} className={`bg-white p-7 rounded-[8px] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
+                      <div className="flex justify-between items-start">
+                        <div className={`w-12 h-12 rounded-[6px] text-white ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                          <stat.icon size={24} />
                         </div>
-                        <div className="relative z-10">
-                            <h3 className="text-3xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">{stat.label}</p>
-                        </div>
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.15em] bg-slate-50/50 px-3 py-1.5 rounded-full border border-slate-100">
+                          Live
+                        </span>
+                      </div>
+                      <div className="mt-6">
+                        <p className="text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider opacity-80">{stat.label}</p>
+                        <h3 className="text-3xl font-extrabold text-[#002147] tracking-tight">{stat.value}</h3>
+                      </div>
+                      <div className={`absolute -right-2 -bottom-2 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`}>
+                        <stat.icon size={80} />
+                      </div>
                     </div>
                 ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Weekly Question Volume Trend */}
-                <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] lg:col-span-2 relative overflow-hidden">
+                <div className="bg-white rounded-[8px] p-8 lg:col-span-2 relative overflow-hidden">
                     <div className="flex justify-between items-start mb-8 relative z-10">
                         <div>
                             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -161,7 +168,7 @@ export default function AdminAnalytics() {
                 {/* Right Side Column */}
                 <div className="space-y-6">
                     {/* Resolution Rate Circular Visual */}
-                    <div className="bg-gradient-to-br from-[#002147] to-[#001730] rounded-3xl p-8 shadow-xl relative overflow-hidden text-white flex flex-col justify-center items-center min-h-[220px]">
+                    <div className="bg-gradient-to-br from-[#002147] to-[#001730] rounded-[8px] p-8 relative overflow-hidden text-white flex flex-col justify-center items-center min-h-[220px]">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/20 rounded-full blur-[50px] -mr-20 -mt-20"></div>
                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/20 rounded-full blur-[50px] -ml-20 -mb-20"></div>
                         
@@ -184,11 +191,11 @@ export default function AdminAnalytics() {
 
                     {/* Quick Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] text-center">
+                        <div className="bg-white p-5 rounded-[8px] text-center">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Students</p>
                             <p className="text-2xl font-black text-slate-800">{users.students}</p>
                         </div>
-                        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] text-center">
+                        <div className="bg-white p-5 rounded-[8px] text-center">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lecturers</p>
                             <p className="text-2xl font-black text-slate-800">{users.lecturers}</p>
                         </div>
@@ -197,7 +204,7 @@ export default function AdminAnalytics() {
             </div>
 
             {/* Bottom Row - Hot Modules */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+            <div className="bg-white rounded-[8px] p-8">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">

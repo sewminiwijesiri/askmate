@@ -94,7 +94,7 @@ export default function StudentDashboard() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-100 via-[#f8fafc] to-orange-100">
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f3f3]">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-[#002147]/10 border-t-[#FF9F1C] rounded-full animate-spin mb-4"></div>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Synchronizing Portal...</p>
@@ -112,7 +112,7 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-[#f8fafc] to-orange-100 text-slate-800 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-[#f3f3f3] text-slate-800 font-sans selection:bg-blue-100">
       <StudentSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -128,7 +128,7 @@ export default function StudentDashboard() {
             <div className="space-y-1">
               <h1 className="text-3xl font-bold text-[#002147] flex flex-wrap items-center gap-3">
                 Welcome back, <span className="text-[#4DA8DA]">{user.userId}</span>
-                 <span className={`text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-[0.15em] font-black border shadow-sm ${user.role === 'student' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-600 border-slate-100'}`}>
+                 <span className={`text-[10px] px-2.5 py-1 rounded-full uppercase tracking-[0.15em] font-black border ${user.role === 'student' ? 'bg-purple-500 text-white border-purple-600' : 'bg-slate-50 text-slate-600 border-slate-100'}`} style={{ textTransform: 'uppercase' }}>
                    {user.role}
                  </span>
               </h1>
@@ -146,7 +146,7 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-4">
             <NotificationBell user={user} />
 
-            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-xl border border-slate-200/50 shadow-sm">
+            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md pl-1.5 pr-4 py-1.5 rounded-xl border border-[#e2e8f0]">
               <div className="w-8 h-8 rounded-lg bg-[#002147] flex items-center justify-center text-white font-bold text-sm">
                 {user.userId?.[0]?.toUpperCase()}
               </div>
@@ -163,14 +163,14 @@ export default function StudentDashboard() {
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Trust Score", value: "850", icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-                { label: "Answers", value: "12", icon: MessageSquare, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
-                { label: "Points", value: "2.4k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
-                { label: "Helper Rank", value: "#42", icon: Award, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+                { label: "Trust Score", value: "850", icon: ShieldCheck, color: "bg-blue-600", bg: "bg-white", border: "border-blue-100" },
+                { label: "Answers", value: "12", icon: MessageSquare, color: "bg-indigo-600", bg: "bg-white", border: "border-indigo-100" },
+                { label: "Points", value: "2.4k", icon: Star, color: "bg-orange-600", bg: "bg-white", border: "border-orange-100" },
+                { label: "Helper Rank", value: "#42", icon: Award, color: "bg-emerald-600", bg: "bg-white", border: "border-emerald-100" },
               ].map((stat, i) => (
-                <div key={i} className={`${stat.bg} border ${stat.border} p-7 rounded-[28px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
+                <div key={i} className={`${stat.bg} p-7 rounded-[8px] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
                   <div className="flex justify-between items-start">
-                    <div className={`w-12 h-12 rounded-2xl bg-white shadow-sm ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-12 h-12 rounded-[6px] text-white ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                       <stat.icon size={24} />
                     </div>
                     <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.15em] bg-slate-50/50 px-3 py-1.5 rounded-full border border-slate-100">
@@ -209,7 +209,7 @@ export default function StudentDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {modulesLoading ? (
                       Array(2).fill(0).map((_, i) => (
-                        <div key={i} className="bg-white border border-slate-100 p-6 rounded-2xl animate-pulse">
+                        <div key={i} className="bg-white p-6 rounded-[8px] animate-pulse">
                           <div className="flex justify-between items-start mb-4">
                             <div className="w-16 h-5 bg-slate-100 rounded"></div>
                             <div className="w-5 h-5 bg-slate-100 rounded"></div>
@@ -228,7 +228,7 @@ export default function StudentDashboard() {
                       ))
                     ) : modules.length > 0 ? (
                       modules.map((module, i) => (
-                        <div key={module._id} className={`bg-white border ${i === 0 ? 'border-blue-100 hover:border-blue-200' : 'border-orange-100 hover:border-orange-200'} p-6 rounded-2xl hover:shadow-md transition-all group relative overflow-hidden`}>
+                        <div key={module._id} className={`bg-white p-6 rounded-[8px] transition-all group relative overflow-hidden`}>
                           <div className={`absolute top-0 left-0 w-1 h-full ${i === 0 ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
                           <div className="flex justify-between items-start mb-4">
                             <span className={`px-2.5 py-1 ${i === 0 ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'} rounded-lg text-[10px] font-bold uppercase tracking-wider`}>
@@ -254,7 +254,7 @@ export default function StudentDashboard() {
                         </div>
                       ))
                     ) : (
-                      <div className="col-span-2 py-10 text-center bg-white border border-slate-100 rounded-2xl">
+                      <div className="col-span-2 py-10 text-center bg-white rounded-[8px]">
                         <BookOpen size={32} className="text-slate-200 mx-auto mb-3" />
                         <p className="text-slate-400 font-bold text-sm">No modules found for your current semester.</p>
                       </div>
@@ -264,7 +264,7 @@ export default function StudentDashboard() {
 
 
 
-                <div className="bg-[#002147] p-8 rounded-3xl text-white relative overflow-hidden group">
+                <div className="bg-[#002147] p-8 rounded-[8px] text-white relative overflow-hidden group">
                   <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold mb-2">Stuck on a problem?</h3>
@@ -287,7 +287,7 @@ export default function StudentDashboard() {
 
               {/* Right Column: Leaderboard & Extra */}
               <div className="space-y-8">
-                <div className="bg-white border border-slate-200 p-8 rounded-2xl">
+                <div className="bg-white p-8 rounded-[8px]">
                   <h3 className="text-lg font-bold text-[#002147] mb-6 flex items-center gap-2">
                     <TrendingUp size={18} className="text-emerald-500" />
                     Top Helpers
@@ -322,7 +322,7 @@ export default function StudentDashboard() {
                   </button>
                 </div>
 
-                <div className="bg-orange-50 border border-orange-100 p-8 rounded-2xl">
+                <div className="bg-white p-8 rounded-[8px]">
                   <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-orange-500 shadow-sm mb-4">
                     <Clock size={20} />
                   </div>
@@ -396,11 +396,11 @@ export default function StudentDashboard() {
       </div >
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
         
         body {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          background: linear-gradient(to bottom right, #e0f2fe, #f8fafc, #ffedd5);
+          font-family: 'Roboto', sans-serif;
+          background: #f3f3f3;
           -webkit-font-smoothing: antialiased;
         }
 

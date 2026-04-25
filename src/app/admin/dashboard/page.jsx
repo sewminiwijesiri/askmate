@@ -178,7 +178,7 @@ export default function AdminDashboard() {
   if (!admin) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-[#f3f3f3] text-slate-800 font-sans selection:bg-blue-100">
       {/* Sidebar */}
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-[#002147] text-white z-50 transition-all duration-300 shadow-2xl">
@@ -198,8 +198,6 @@ export default function AdminDashboard() {
             </div>
 
             <nav className="space-y-1.5">
-              <p className="px-4 py-2 text-[10px] font-bold text-blue-300/40 uppercase tracking-[0.2em] mb-2">Main Navigation</p>
-
               {[
                 { id: "analytics", label: "Analytics", icon: BarChart },
                 { id: "stats", label: "Metrics & Logs", icon: LayoutDashboard },
@@ -216,7 +214,7 @@ export default function AdminDashboard() {
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 group ${isActive
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-[6px] font-semibold transition-all duration-200 group ${isActive
                       ? "bg-blue-600/10 text-white border border-blue-500/20"
                       : "text-blue-100/50 hover:bg-white/5 hover:text-white"
                       }`}
@@ -235,7 +233,7 @@ export default function AdminDashboard() {
           <div className="mt-auto p-6 border-t border-white/5">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-white text-rose-600 hover:bg-rose-50 transition-all duration-200 font-bold text-[13px] shadow-lg shadow-black/20 group"
+              className="flex items-center gap-3 w-full px-4 py-3 bg-[#ffffff14] text-white rounded-[6px] transition-all duration-200 font-bold text-[13px] hover:bg-[#ffffff20] group"
             >
               <LogOut size={18} className="transition-transform group-hover:-translate-x-1" />
               <span>Sign Out</span>
@@ -247,7 +245,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       {/* Main Content */}
       <main className="ml-64 min-h-screen">
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 pt-8 pb-4 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-6 flex items-center justify-between">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-slate-900 leading-tight">
               {activeTab === 'stats' ? 'Metrics & Logs' :
@@ -287,28 +285,31 @@ export default function AdminDashboard() {
           {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               {[
-                { label: "Total Members", value: stats.total, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
-                { label: "Pending Approval", value: stats.pending, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-                { label: "Active Modules", value: "18", icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-50" },
+                { label: "Total Members", value: stats.total, icon: Users, color: "bg-indigo-600" },
+                { label: "Pending Approval", value: stats.pending, icon: Clock, color: "bg-amber-600" },
+                { label: "Active Modules", value: "18", icon: BookOpen, color: "bg-emerald-600" },
               ].map((stat, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color} transition-transform group-hover:scale-105`}>
-                      <stat.icon size={22} />
+                    <div key={i} className={`bg-white p-7 rounded-[8px] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
+                      <div className="flex justify-between items-start">
+                        <div className={`w-12 h-12 rounded-[6px] text-white ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                          <stat.icon size={24} />
+                        </div>
+                      </div>
+                      <div className="mt-6">
+                        <p className="text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider opacity-80">{stat.label}</p>
+                        <h3 className="text-3xl font-extrabold text-[#002147] tracking-tight">{stat.value}</h3>
+                      </div>
+                      <div className={`absolute -right-2 -bottom-2 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500`}>
+                        <stat.icon size={80} />
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                      <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
-                    </div>
-                  </div>
-                </div>
               ))}
             </div>
           )}
 
           {/* User Directory Section */}
           {(activeTab === "helpers" || activeTab === "students" || activeTab === "lecturers") && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+            <div className="bg-white rounded-[8px] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
               <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/30">
                 <div className="flex flex-col lg:flex-row gap-6 justify-between items-center">
                   {/* Tabs */}
@@ -514,7 +515,7 @@ export default function AdminDashboard() {
           {/* stats Tab Placeholder */}
           {activeTab === "stats" && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-               <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+               <div className="bg-white rounded-[8px] p-8">
                   <div className="flex items-center gap-4 mb-8">
                      <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
                         <TrendingUp size={24} />
@@ -732,11 +733,11 @@ export default function AdminDashboard() {
       </main>
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
         
         body {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          background-color: #f8fafc;
+          font-family: 'Roboto', sans-serif;
+          background: #f3f3f3;
           -webkit-font-smoothing: antialiased;
         }
 

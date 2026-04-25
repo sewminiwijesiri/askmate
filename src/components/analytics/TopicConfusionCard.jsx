@@ -20,7 +20,7 @@ export default function TopicConfusionCard({ topic, module, confusionScore, unre
   const heatColor = getHeatColor(confusionScore);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+    <div className="bg-white border border-slate-200 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] p-5 hover:shadow-lg transition-all group overflow-hidden relative">
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
