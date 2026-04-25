@@ -42,3 +42,6 @@ next-env.d.ts
 
 # User uploaded files
 /public/uploads
+
+playwright-report/
+test-results/
