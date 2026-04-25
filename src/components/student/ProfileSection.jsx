@@ -157,13 +157,6 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
           <h2 className="text-2xl font-bold text-[#002147]">Profile Settings</h2>
           <p className="text-slate-500">Manage your account information and preferences</p>
         </div>
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-rose-600 border border-rose-100 bg-rose-50/50 hover:bg-rose-50 rounded-xl font-bold text-sm transition-all"
-        >
-          <Trash2 size={16} />
-          Delete Account
-        </button>
       </div>
 
       {error && (
@@ -183,10 +176,10 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-            <div className="h-24 bg-gradient-to-r from-[#002147] to-[#4DA8DA]"></div>
-            <div className="px-6 pb-6 -mt-12 text-center">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white border-4 border-white shadow-xl mb-4 overflow-hidden">
+          <div className="bg-white rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] h-full overflow-hidden flex flex-col">
+            <div className="h-24 shrink-0 bg-gradient-to-r from-[#002147] to-[#4DA8DA]"></div>
+            <div className="px-6 pb-6 -mt-12 text-center flex-1 flex flex-col">
+              <div className="inline-flex shrink-0 items-center justify-center w-24 h-24 rounded-[16px] bg-white border-4 border-white shadow-xl mb-4 overflow-hidden mx-auto">
                 <div className="w-full h-full bg-blue-50 text-[#002147] flex items-center justify-center">
                   <UserCircle size={48} />
                 </div>
@@ -228,8 +221,8 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
 
         {/* Edit Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-            <form onSubmit={handleUpdate} className="space-y-6">
+          <div className="bg-white rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] p-8 h-full flex flex-col">
+            <form onSubmit={handleUpdate} className="space-y-6 flex-1 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(user.role === 'lecturer' || user.role === 'helper' || user.role === 'admin') && (
                   <div className="space-y-2">
@@ -335,7 +328,15 @@ export default function ProfileSection({ user, onUpdate, onDelete }) {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-50 flex justify-end">
+              <div className="pt-6 mt-auto border-t border-slate-50 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 text-slate-400 hover:text-rose-500 font-bold text-xs uppercase tracking-wider transition-colors"
+                >
+                  <Trash2 size={14} />
+                  Delete Account
+                </button>
                 <button
                   type="submit"
                   disabled={updating}

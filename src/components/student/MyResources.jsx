@@ -139,7 +139,7 @@ export default function MyResources({ user }) {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 relative overflow-hidden">
                 <div className="relative z-10">
                     <h2 className="text-2xl font-bold text-[#002147] mb-1">My Resource Library</h2>
                     <p className="text-slate-500 font-medium">Manage and track your Shared study materials.</p>
@@ -178,7 +178,7 @@ export default function MyResources({ user }) {
             </div>
 
             {filteredResources.length === 0 ? (
-                <div className="bg-white p-16 rounded-[2rem] border-2 border-dashed border-slate-100 text-center">
+                <div className="bg-white p-16 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border-2 border-dashed border-slate-100 text-center">
                     <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-6">
                         <FileText size={32} />
                     </div>
@@ -190,7 +190,7 @@ export default function MyResources({ user }) {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredResources.map((res) => (
-                        <div key={res._id} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:border-blue-200 transition-all group relative flex flex-col">
+                        <div key={res._id} className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 hover:border-blue-200 transition-all group relative flex flex-col">
                             <div className="flex justify-between items-start mb-6">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${res.category === 'YouTube Link' ? 'bg-rose-50 text-rose-500' :
                                         res.category === 'Lecture Note' ? 'bg-emerald-50 text-emerald-500' :

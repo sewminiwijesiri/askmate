@@ -52,7 +52,7 @@ export default function HelperDashboard({ user, onLogout }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-sky-50 via-[#f8fafc] to-blue-50/30 text-slate-800 font-sans selection:bg-blue-100">
+        <div className="min-h-screen bg-[#f3f3f3] text-slate-800 font-sans selection:bg-blue-100">
             <HelperSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -96,10 +96,10 @@ export default function HelperDashboard({ user, onLogout }) {
                         {/* High-Fidelity Helper Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
-                                { label: "Questions Answered", value: "24", icon: Brain, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-                                { label: "Reputation Points", value: "1.2k", icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
-                                { label: "Helper Rank", value: "#12", icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-                                { label: "Pending Recommends", value: "5", icon: Hourglass, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+                                { label: "Questions Answered", value: "24", icon: Brain, color: "text-blue-600", bg: "bg-white", border: "border-blue-100" },
+                                { label: "Reputation Points", value: "1.2k", icon: Star, color: "text-orange-600", bg: "bg-white", border: "border-orange-100" },
+                                { label: "Helper Rank", value: "#12", icon: Trophy, color: "text-emerald-600", bg: "bg-white", border: "border-emerald-100" },
+                                { label: "Pending Recommends", value: "5", icon: Hourglass, color: "text-amber-600", bg: "bg-white", border: "border-amber-100" },
                             ].map((stat, i) => (
                                 <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden flex flex-col justify-between min-h-[160px]`}>
                                     <div className="flex justify-between items-start">

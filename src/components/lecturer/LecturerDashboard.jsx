@@ -76,7 +76,7 @@ export default function LecturerDashboard({ user, onLogout }) {
     }, [activeTab, selectedYear, selectedSemester, moduleFocus]);
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-orange-100">
+        <div className="min-h-screen bg-[#f3f3f3] text-slate-800 font-sans selection:bg-orange-100">
             <LecturerSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -143,10 +143,10 @@ export default function LecturerDashboard({ user, onLogout }) {
                         {/* KPI Stats */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
-                                { label: "Active Modules", value: dashData ? dashData.stats.activeModules : "-", icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-                                { label: "Total Students", value: dashData ? dashData.stats.totalStudents : "-", icon: Users, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-                                { label: "Pending Queries", value: dashData ? dashData.stats.pendingQueries : "-", icon: AlertCircle, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
-                                { label: "Avg. Engagement", value: dashData ? dashData.stats.engagement : "-", icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+                                { label: "Active Modules", value: dashData ? dashData.stats.activeModules : "-", icon: BookOpen, color: "text-blue-600", bg: "bg-white", border: "border-blue-100" },
+                                { label: "Total Students", value: dashData ? dashData.stats.totalStudents : "-", icon: Users, color: "text-emerald-600", bg: "bg-white", border: "border-emerald-100" },
+                                { label: "Pending Queries", value: dashData ? dashData.stats.pendingQueries : "-", icon: AlertCircle, color: "text-rose-600", bg: "bg-white", border: "border-rose-100" },
+                                { label: "Avg. Engagement", value: dashData ? dashData.stats.engagement : "-", icon: TrendingUp, color: "text-orange-600", bg: "bg-white", border: "border-orange-100" },
                             ].map((stat, i) => (
                                 <div key={i} className={`${stat.bg} border ${stat.border} p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between`}>
                                     <div className="flex justify-between items-start mb-4">
@@ -464,7 +464,7 @@ export default function LecturerDashboard({ user, onLogout }) {
             </main>
 
             <style jsx global>{`
-        body { background-color: #f8fafc; }
+        body { background-color: #f3f3f3; }
       `}</style>
         </div>
     );

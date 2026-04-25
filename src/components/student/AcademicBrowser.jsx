@@ -2160,10 +2160,10 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch">
         {/* Navigation Sidebar */}
-        <div className="w-full lg:w-64 space-y-4">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="w-full lg:w-64 flex flex-col gap-4">
+          <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 relative overflow-hidden flex-1 flex flex-col">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Academic Year</h3>
             <div className="space-y-1">
               {[1, 2, 3, 4].map((year) => (
@@ -2182,7 +2182,7 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+          <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 relative overflow-hidden flex-1 flex flex-col">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Semester</h3>
             <div className="grid grid-cols-2 gap-2">
               {[1, 2].map((sem) => (
@@ -2203,8 +2203,8 @@ export default function AcademicBrowser({ defaultYear, defaultSemester, user, in
         </div>
 
         {/* Modules List */}
-        <div className="flex-1">
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm min-h-[500px]">
+        <div className="flex-1 flex flex-col">
+          <div className="bg-white p-8 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col min-h-[500px]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
               <div>
                 <h2 className="text-2xl font-bold text-[#002147] tracking-tight">Academic Hub</h2>

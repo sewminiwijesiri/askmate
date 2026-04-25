@@ -97,10 +97,10 @@ export default function ConfusionAnalytics() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch">
         {/* Navigation Sidebar for Years/Semesters */}
-        <div className="w-full lg:w-64 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="w-full lg:w-64 flex flex-col gap-6">
+          <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <GraduationCap size={14} className="text-indigo-500" />
               Academic Year
@@ -121,7 +121,7 @@ export default function ConfusionAnalytics() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <Calendar size={14} className="text-amber-500" />
               Semester
@@ -142,7 +142,7 @@ export default function ConfusionAnalytics() {
             </div>
           </div>
 
-          <div className="bg-[#001730] rounded-2xl p-6 relative overflow-hidden group">
+          <div className="bg-[#001730] rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] p-6 relative overflow-hidden group flex-1 flex flex-col">
             <div className="absolute right-0 top-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-orange-500/20 transition-all"></div>
             <div className="relative z-10">
               <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
@@ -157,8 +157,8 @@ export default function ConfusionAnalytics() {
         </div>
 
         {/* Dynamic Display Area */}
-        <div className="flex-1 space-y-6">
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm min-h-[500px]">
+        <div className="flex-1 flex flex-col gap-6">
+          <div className="bg-white p-8 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col min-h-[500px]">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
               <div>
                 <h2 className="text-xl font-bold text-[#002147] flex items-center gap-2">
@@ -252,7 +252,7 @@ export default function ConfusionAnalytics() {
                   />
                 ))
               ) : (
-                <div className="col-span-full flex flex-col items-center justify-center py-20 text-center bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
+                <div className="col-span-full flex flex-col items-center justify-center py-20 text-center bg-slate-50/50 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border-2 border-dashed border-slate-100">
                   <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center text-slate-300 mb-4 border border-slate-100">
                     <Thermometer size={24} />
                   </div>

@@ -336,11 +336,11 @@ export default function AcademicManager() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch">
         {/* Navigation Sidebar for Years/Semesters */}
         {!selectedModule && (
-          <div className="w-full lg:w-64 space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="w-full lg:w-64 flex flex-col gap-6">
+            <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col">
               <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <GraduationCap size={14} className="text-indigo-500" />
                 Academic Year
@@ -361,7 +361,7 @@ export default function AcademicManager() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-6 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col">
               <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Calendar size={14} className="text-amber-500" />
                 Semester
@@ -386,9 +386,9 @@ export default function AcademicManager() {
         )}
 
         {/* Dynamic Display Area */}
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 flex flex-col gap-6">
           {!selectedModule ? (
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm min-h-[500px]">
+            <div className="bg-white p-8 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col min-h-[500px]">
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="text-xl font-bold text-rose-600">
@@ -465,7 +465,7 @@ export default function AcademicManager() {
               )}
             </div>
           ) : (
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm min-h-[600px] animate-in slide-in-from-right-2 duration-500">
+            <div className="bg-white p-8 rounded-[8px] shadow-[0_20px_17px_-6px_#0000000a] border border-slate-200 flex-1 flex flex-col min-h-[600px] animate-in slide-in-from-right-2 duration-500">
               <button
                 onClick={() => setSelectedModule(null)}
                 className="flex items-center gap-1 text-slate-400 hover:text-indigo-600 font-bold text-[11px] uppercase tracking-widest mb-8 transition-all"
