@@ -87,7 +87,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister, adminMode = f
           } else {
             router.push("/dashboard");
           }
-        }, 1500);
+        }, 500);
       } else {
         setToast({ message: result.message || "Login failed. Please check your credentials.", type: "error" });
       }
