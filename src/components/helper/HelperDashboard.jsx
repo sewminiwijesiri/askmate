@@ -16,20 +16,46 @@ import {
     ArrowRight,
     Search,
     ChevronRight,
-    ShieldCheck
+    ShieldCheck,
+    Thermometer
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import TopicConfusionCard from "@/components/analytics/TopicConfusionCard";
 
 export default function HelperDashboard({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [modules, setModules] = useState([]);
     const [modulesLoading, setModulesLoading] = useState(true);
+    const [confusionData, setConfusionData] = useState([]);
+    const [loadingConfusion, setLoadingConfusion] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(user?.year || "1");
+    const [selectedSemester, setSelectedSemester] = useState(user?.semester || "1");
+    const [moduleFocus, setModuleFocus] = useState("All Modules");
 
     useEffect(() => {
         if (activeTab === "dashboard") {
             fetchCurrentModules();
         }
-    }, [activeTab]);
+        if (activeTab === "heatmap") {
+            setLoadingConfusion(true);
+            let url = `/api/analytics/confusion?year=${selectedYear}&semester=${selectedSemester}`;
+            if (moduleFocus !== "All Modules") {
+                url += `&module=${encodeURIComponent(moduleFocus)}`;
+            }
+            fetch(url)
+                .then(res => res.json())
+                .then(resData => {
+                    if (resData.success) {
+                        setConfusionData(resData.data);
+                    }
+                    setLoadingConfusion(false);
+                })
+                .catch(err => {
+                    console.error("Confusion fetch error:", err);
+                    setLoadingConfusion(false);
+                });
+        }
+    }, [activeTab, selectedYear, selectedSemester, moduleFocus]);
 
     const fetchCurrentModules = async () => {
         try {
@@ -232,6 +258,93 @@ export default function HelperDashboard({ user, onLogout }) {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "heatmap" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        {/* Confusion Heatmap Section */}
+                        <div className="bg-white border border-slate-200/60 rounded-[2.5rem] p-8 shadow-sm">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-black text-[#002147] flex items-center gap-2">
+                                        <Thermometer size={24} className="text-orange-500" />
+                                        {moduleFocus === "All Modules" ? `Y${selectedYear}S${selectedSemester} Module Heatmap` : `${moduleFocus} Topics`}
+                                    </h3>
+                                    <p className="text-slate-500 text-sm font-medium">
+                                        Detecting academic confusion trends for peer guidance intervention.
+                                    </p>
+                                </div>
+                                <div className="flex gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                                    <select 
+                                        value={moduleFocus}
+                                        onChange={(e) => setModuleFocus(e.target.value)}
+                                        className="text-[10px] font-bold bg-white border border-slate-200 rounded-lg px-3 py-1 outline-none text-[#002147] cursor-pointer"
+                                    >
+                                        <option value="All Modules">All Modules</option>
+                                        {modules.map(m => (
+                                            <option key={m.moduleName} value={m.moduleName}>{m.moduleName}</option>
+                                        ))}
+                                    </select>
+                                    <div className="flex items-center px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-wider text-[#002147] gap-2 shadow-sm">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                        Expert View
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Period Selector Grid */}
+                            <div className="flex flex-wrap gap-2 mb-8">
+                                {[1, 2, 3, 4].map(y => (
+                                    [1, 2].map(s => (
+                                        <button
+                                            key={`${y}-${s}`}
+                                            onClick={() => {
+                                                setSelectedYear(y.toString());
+                                                setSelectedSemester(s.toString());
+                                            }}
+                                            className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                                selectedYear === y.toString() && selectedSemester === s.toString()
+                                                    ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20"
+                                                    : "bg-white text-slate-500 border-slate-200 hover:border-orange-200 hover:text-orange-600"
+                                            }`}
+                                        >
+                                            Y{y}S{s}
+                                        </button>
+                                    ))
+                                ))}
+                            </div>
+
+                            {loadingConfusion ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="h-48 bg-slate-50 border border-slate-100 rounded-[2rem] animate-pulse"></div>
+                                    ))}
+                                </div>
+                            ) : confusionData.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {confusionData.map((data, i) => (
+                                        <TopicConfusionCard
+                                            key={i}
+                                            topic={data.topic}
+                                            module={data.module}
+                                            confusionScore={data.confusionScore}
+                                            unresolvedQuestions={data.unresolvedQuestions}
+                                            totalQuestions={data.totalQuestions}
+                                            difficultyScore={data.difficultyScore}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-[2.5rem]">
+                                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-300 mx-auto mb-4 border border-slate-100 shadow-sm">
+                                        <Thermometer size={24} />
+                                    </div>
+                                    <h4 className="text-lg font-bold text-[#002147]">No significant confusion detected</h4>
+                                    <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">Your peers seem to be following the course content smoothly.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
