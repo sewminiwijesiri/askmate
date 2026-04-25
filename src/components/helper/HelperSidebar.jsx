@@ -13,7 +13,8 @@ import {
   Star,
   Brain,
   ShieldCheck,
-  Award
+  Award,
+  Thermometer
 } from "lucide-react";
 
 export default function HelperSidebar({ activeTab, setActiveTab, user, onLogout }) {
@@ -22,6 +23,7 @@ export default function HelperSidebar({ activeTab, setActiveTab, user, onLogout 
     { id: "academic", label: "Academic Hub", icon: GraduationCap },
     { id: "resources", label: "Resources", icon: FileText },
     { id: "qa", label: "Recommended Hub", icon: Brain },
+    { id: "heatmap", label: "Confusion Heatmap", icon: Thermometer },
     { id: "profile", label: "Academic Profile", icon: User },
   ];
 
